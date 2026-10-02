@@ -18,6 +18,7 @@ canvas#game{position:absolute;inset:0;width:100%;height:100%;display:block;backg
 .cell{width:26px;height:13px;border:1px solid rgba(201,162,39,.55);position:relative;background:linear-gradient(#2a2119,#14100c);transform:skewX(-14deg);box-shadow:0 0 0 1px rgba(0,0,0,.6)}
 .cell i{position:absolute;inset:2px;background:linear-gradient(#ffd98a,#d0702a);box-shadow:0 0 10px rgba(255,160,60,.75);transition:opacity .18s}
 .cell.off i{opacity:0}
+.cell.half{border-style:dashed;opacity:.55;background:linear-gradient(90deg,rgba(201,162,39,.25) 50%,transparent 50%),linear-gradient(#2a2119,#14100c)}
 .gaugeline{display:flex;align-items:center;gap:8px}
 .gaugebox{width:132px;height:9px;border:1px solid rgba(140,150,160,.35);background:#0d0f10;position:relative;overflow:hidden}
 .gaugebox i{position:absolute;left:0;top:0;bottom:0;width:100%;background:linear-gradient(90deg,#5d8ea3,#cfe6ee);box-shadow:0 0 12px rgba(150,210,230,.5);transition:width .09s linear}

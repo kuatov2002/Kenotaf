@@ -18,7 +18,9 @@ class HUD{
   }
   buildHp(){this.el.hp.innerHTML='';this.cells=[];
     for(let i=0;i<this.game.gs.maxHp();i++){const d=document.createElement('div');d.className='cell';d.innerHTML='<i></i>';
-      this.el.hp.appendChild(d);this.cells.push(d);}}
+      this.el.hp.appendChild(d);this.cells.push(d);}
+    /* нечётная пластина — пустая рамка будущей ячейки */
+    if(this.game.gs.plates()%2){const d=document.createElement('div');d.className='cell half';this.el.hp.appendChild(d);}}
   buildAb(){
     const icons={
       pulse:'<svg viewBox="0 0 24 24" fill="none" stroke="#e8c96a" stroke-width="1.6"><path d="M3 12h5l2-4 3 8 2-4h6"/></svg>',

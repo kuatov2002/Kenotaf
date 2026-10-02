@@ -1,9 +1,10 @@
 "use strict";
 /* ============================== PARTICLES ============================== */
 class ParticleSystem{
-  constructor(max){this.max=max;this.list=[];for(let i=0;i<max;i++)this.list.push({alive:false});this.aliveCount=0;}
-  spawn(o){for(let i=0;i<this.max;i++){const p=this.list[i];
-    if(!p.alive){p.alive=true;this.aliveCount++;
+  /* пул фиксированного размера: свободные ячейки — стек индексов (спаун за O(1)); пул полон — частица не рождается */
+  constructor(max){this.max=max;this.list=[];this.free=[];for(let i=0;i<max;i++){this.list.push({alive:false});this.free.push(max-1-i);}this.aliveCount=0;this.view=null;}
+  spawn(o){{if(!this.free.length)return null;const i=this.free.pop(),p=this.list[i];
+    {p.alive=true;this.aliveCount++;
       p.x=o.x;p.y=o.y;p.vx=o.vx||0;p.vy=o.vy||0;p.life=o.life||1;p.max=p.life;
       p.size=o.size||0.1;p.g=o.g||0;p.drag=o.drag===undefined?0.6:o.drag;p.kind=o.kind||'dust';
       p.col=o.col||'#fff';p.a=o.a===undefined?1:o.a;p.rot=o.rot||0;p.vr=o.vr||0;p.add=!!o.add;
@@ -15,13 +16,15 @@ class ParticleSystem{
       vx:Math.cos(a)*s+(o.vx||0),vy:Math.sin(a)*s+(o.vy||0),life:o.life,size:o.size,g:o.g,drag:o.drag,
       kind:o.kind,col:o.col,a:o.a,add:o.add,grow:o.grow,ringR:o.ringR,noise:o.noise});}}
   update(dt){for(let i=0;i<this.max;i++){const p=this.list[i];if(!p.alive)continue;
-    p.life-=dt;if(p.life<=0){p.alive=false;this.aliveCount--;continue;}
+    p.life-=dt;if(p.life<=0){p.alive=false;this.aliveCount--;this.free.push(i);continue;}
     p.vy+=p.g*dt;const d=Math.exp(-p.drag*dt);p.vx*=d;p.vy*=d;
     if(p.noise){p.vx+=Math.sin((p.y+p.life)*7)*p.noise*dt;p.vy+=Math.cos((p.x+p.life)*6)*p.noise*dt;}
     p.x+=p.vx*dt;p.y+=p.vy*dt;p.rot+=p.vr*dt;p.size+=p.grow*dt;}}
-  render(c,mode){
+  /* кадр: только то, что в кадре (v — {x0,y0,x1,y1} в метрах) */
+  render(c,mode,v){
     for(let i=0;i<this.max;i++){const p=this.list[i];if(!p.alive)continue;
       if((p.add?'add':'norm')!==mode)continue;
+      if(v){const m=p.size*2+(p.ringR||0)+0.5;if(p.x<v.x0-m||p.x>v.x1+m||p.y<v.y0-m||p.y>v.y1+m)continue;}
       const t=p.life/p.max,a=p.a*t;if(a<=0.012)continue;
       c.save();c.globalAlpha=clamp(a,0,1);
       if(p.add)c.globalCompositeOperation='lighter';
@@ -39,5 +42,5 @@ class ParticleSystem{
       else{c.fillStyle=p.col;c.beginPath();c.arc(0,0,p.size,0,TAU);c.fill();}
       c.restore();}
     c.globalCompositeOperation='source-over';c.globalAlpha=1;}
-  clear(){for(let i=0;i<this.max;i++)this.list[i].alive=false;this.aliveCount=0;}
+  clear(){this.free.length=0;for(let i=0;i<this.max;i++){this.list[i].alive=false;this.free.push(this.max-1-i);}this.aliveCount=0;}
 }

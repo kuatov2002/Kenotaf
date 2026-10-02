@@ -307,7 +307,8 @@ class Game{
     this.renderer.worldTransform(c,cam,zoom);
     drawLightShafts(c,room,t);
     if(!inMenu)drawWorldDyn(c,room,t,this.gs);
-    this.particles.render(c,'norm');
+    const vs=this.ppm*zoom,pv={x0:cam.cx-this.vw/vs/2,x1:cam.cx+this.vw/vs/2,y0:cam.cy-this.vh/vs/2,y1:cam.cy+this.vh/vs/2};
+    this.particles.render(c,'norm',pv);
     c.setTransform(1,0,0,1,0,0);
     this.renderer.lighting(c,cam,zoom,room,zone,t);
     if(par.layers.emit){c.save();c.globalCompositeOperation='lighter';c.globalAlpha=0.85;
@@ -320,7 +321,7 @@ class Game{
       this.renderer.entities(c,room,t);
     }
     this.renderer.worldTransform(c,cam,zoom);
-    this.particles.render(c,'add');
+    this.particles.render(c,'add',pv);
     c.setTransform(1,0,0,1,0,0);
     if(!inMenu)this.renderer.distortPass(c,dt);
     this.renderer.foreground(c,par,cam,zoom,room);

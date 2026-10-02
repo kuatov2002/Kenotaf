@@ -7,7 +7,9 @@ class GameState{
     this.room='z1_start';this.visited={};this.bosses={};}
   has(a){return !!this.abilities[a];}
   /* пластины куртки (plate_N) — по ячейке сверх базовых */
-  maxHp(){let n=0;for(const k in this.flags)if(k.indexOf('plate_')===0&&this.flags[k])n++;return CFG.player.hp+n;}
+  /* пластины куртки: две пластины — ещё одна ячейка (нечётная — половина собранной ячейки) */
+  plates(){let n=0;for(const k in this.flags)if(k.indexOf('plate_')===0&&this.flags[k])n++;return n;}
+  maxHp(){return CFG.player.hp+Math.floor(this.plates()/2);}
   weldMax(){return CFG.player.weldMax+(this.flags.weld_kit?50:0)+(this.flags.weld_kit2?50:0);}
   grant(a){this.abilities[a]=true;this.save();}
   flag(k,v){this.flags[k]=v===undefined?true:v;this.save();}

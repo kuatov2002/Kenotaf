@@ -38,11 +38,12 @@ const UPGRADES={
 /* правду можно сказать ярусам, когда её достаточно */
 const BROADCAST_N=18;
 /* пластины куртки: любая plate_* — ещё одна ячейка (и сразу полная починка) */
-const PLATE_UP={name:'ПЛАСТИНА КУРТКИ',desc:'ЕЩЁ ОДНА ЯЧЕЙКА ДАВЛЕНИЯ В КУРТКЕ. КУРТКА ЗАЛАТАНА ЦЕЛИКОМ.'};
+const PLATE_UP={name:'ПЛАСТИНА КУРТКИ',desc:'ДВЕ ПЛАСТИНЫ — ЕЩЁ ОДНА ЯЧЕЙКА ДАВЛЕНИЯ. КУРТКА ЗАЛАТАНА ЦЕЛИКОМ.'};
 function grantUpgrade(g,u){
   if(!UPGRADES[u]&&u.indexOf('plate_')===0)UPGRADES[u]=PLATE_UP;
   g.gs.flag(u);g.audio.pickup();g.flash(0.3);
-  if(u.indexOf('plate_')===0){g.gs.hp=g.gs.maxHp();g.hud.buildHp();g.hud.syncHp();}
+  if(u.indexOf('plate_')===0){g.gs.hp=g.gs.maxHp();g.hud.buildHp();g.hud.syncHp();
+    g.hud.say(g.gs.plates()%2?'ПОЛОВИНА ЯЧЕЙКИ. НУЖНА ЕЩЁ ОДНА ПЛАСТИНА.':'ЯЧЕЙКА СОБРАНА. КУРТКА ДЕРЖИТ БОЛЬШЕ.','');}
 }
 /* ---------- нарратив: вступление и цели ---------- */
 const INTRO=[
