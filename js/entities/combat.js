@@ -76,7 +76,7 @@ class Combat{
     }
     /* гайки и осколки отбиваются ключом (не волны, не орбы Архивариуса — те только импульсом) */
     for(const pr of w.projectiles){
-      if(pr.back||pr.dead||pr.kind==='wave'||pr.kind==='orb')continue;
+      if(pr.back||pr.dead||pr.kind==='wave'||pr.kind==='orb'||BOSS_PR[pr.kind])continue;
       if(aabb(hb,{x:pr.x-pr.r,y:pr.y-pr.r,w:pr.r*2,h:pr.r*2})){pr.life=0;pr.dead=true;hitAny=true;plain=true;g.audio.hitMetal();
         g.particles.burst(pr.x,pr.y,12,{kind:'spark',col:'#ffe6a3',spd:6,life:0.4,size:0.05,add:true,g:12});}
     }
@@ -138,6 +138,7 @@ class Combat{
         }
       }
     }
+    pulseZones(w,p,dir,hb);
     /* обломки летят — импульс управляет всем, у чего есть масса */
     for(const d of w.debris){if(!aabb(hb,d))continue;d.launch(dir*19,-6);hitAny=true;}
     /* снаряды: отражаются назад; орбы Архивариуса — в ядро */
@@ -151,7 +152,9 @@ class Combat{
         g.audio.hitMetal();g.tutorial.notify('reflect');
         g.particles.burst(pr.x,pr.y,16,{kind:'spark',col:'#cfe6ee',spd:7,life:0.45,size:0.06,add:true});
         continue;}
-      if(inBox&&pr.kind!=='wave'){const sp=Math.max(12,Math.hypot(pr.vx,pr.vy)*1.2);
+      if(inBox&&pr.kind==='gear'&&!pr.mine){pr.vx=dir*Math.max(9,Math.abs(pr.vx)*1.3);pr.vy=-6;pr.mine=true;pr.bounces=2;pr.life=4;hitAny=true;
+        g.audio.deflect();g.particles.burst(pr.x,pr.y,12,{kind:'spark',col:'#dff0f6',spd:6,life:0.4,size:0.05,add:true});continue;}
+      if(inBox&&pr.kind!=='wave'&&!BOSS_PR[pr.kind]){const sp=Math.max(12,Math.hypot(pr.vx,pr.vy)*1.2);
         pr.vx=dir*sp;pr.vy=-Math.abs(pr.vy)*0.2-1;pr.back=true;pr.mine=true;pr.life=2.2;hitAny=true;
         g.audio.deflect();g.particles.burst(pr.x,pr.y,10,{kind:'spark',col:'#ffd27a',spd:5,life:0.4,size:0.05,add:true});}
     }

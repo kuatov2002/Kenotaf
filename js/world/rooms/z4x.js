@@ -89,7 +89,8 @@ z4_boss:gs=>({id:'z4_boss',zone:'seal',sub:'clock',name:'ЦИФЕРБЛАТ',w:4
     const dead=gs.bosses.regulator;
     RB.shell(R,'lead',{ceil:0.4});
     R.solids.push(S(0,24,48,4,'lead'),P(6,19.6,6),P(36,19.6,6),P(18,15.6,12));
-    R.boss=dead?null:{type:'regulator',x:24,y:24-4};
+    R.boss=dead?null:{type:'regulator',x:24,y:24-4.8};
+    if(!dead)R.hazards=[10,24,38].map(x=>Object.assign(PRESS(x-1.1,14.4,2.2,9.6,2,0),{ctl:'reg'}));
     R.bossTrigger={x:5,y:12,w:38,h:12};
     R.bossDoor={x:0,y:21.9,w:1.4,h:2.1,active:!dead};
     R.doors=[RB.L(24,'z4_clocktower','ЧАСОВАЯ БАШНЯ'),RB.R(R,24,'z4_quiet','КАМОРКА СМОТРИТЕЛЯ',{reqFlag:'boss4_dead',reqMsg:'ЗАПЕРТО. ЧАСЫ ИДУТ.'})];

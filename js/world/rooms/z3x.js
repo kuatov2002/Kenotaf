@@ -136,7 +136,7 @@ z3_boss:gs=>({id:'z3_boss',zone:'eden',sub:'orchard',name:'КОРЧЕВАЛЬН�
     const dead=gs.bosses.uprooter;
     RB.shell(R,'marble',{ceil:0.4});
     R.solids.push(S(0,22,56,4,'marble'),P(8,17.6,6),P(42,17.6,6),P(24,13.6,8));
-    R.boss=dead?null:{type:'uprooter',x:30,y:22-3.4};
+    R.boss=dead?null:{type:'uprooter',x:32,y:22-3.4};
     R.bossTrigger={x:6,y:12,w:44,h:10};
     R.bossDoor={x:0,y:19.9,w:1.4,h:2.1,active:!dead};
     R.doors=[RB.L(22,'z3_shed','САРАЙ'),RB.R(R,22,'z3_quiet','ПИТОМНИК',{reqFlag:'boss3_dead',reqMsg:'ВОРОТА ЗАРОСЛИ. КОРЧЕВАТЕЛЬ ЕЩЁ РАБОТАЕТ.'})];

@@ -38,7 +38,7 @@ class World{
     this.room=new Room(def,gs);this.room.id=id;
     gs.room=id;gs.visited[id]=true;
     this.time=0;this.projectiles.length=0;this.enemies.length=0;
-    this.pushables.length=0;this.interactables.length=0;this.debris.length=0;this.scrap.clear();g.combat.reset();
+    this.pushables.length=0;this.interactables.length=0;this.debris.length=0;this.scrap.clear();g.combat.reset();this.zones=[];
     this.boss=null;this.bossDoorClosed=false;this.waveIdx=-1;this.waveT=0;this.doorCd=0.35;
     this.anims={};
     this.wheelSeq=false;this.wheelT=0;this.wheelDone2=false;
@@ -65,7 +65,7 @@ class World{
       const en=new C(this,e,e.x,e.y);if(amb)en.key=key;this.enemies.push(en);}
     if(this.room.boss){
       const b=this.room.boss;
-      const BC={overseer:Overseer,primarch:Primarch,archivist:Archivist}[b.type];
+      const BC={overseer:Overseer,primarch:Primarch,archivist:Archivist,uprooter:Uprooter,regulator:Regulator}[b.type];
       if(BC)this.boss=new BC(this,b.x,b.y);
     }
     this.parallax.build(this.room);
@@ -155,6 +155,7 @@ class World{
     {const b=this.boss,cz=(b&&b.activated&&!b.dead&&b.camZoom)||1;if(!this.game.cinematic.active)this.game.camera.tzoom=cz;}
     for(let i=0;i<this.pushables.length;i++)this.pushables[i].update(dt);
     this.updateProjectiles(dt);
+    updateZones(this,dt);
     this.updateContact();
     this.updateWeights(dt);
     this.updateCheckpoint();
@@ -274,6 +275,9 @@ class World{
     let dirty=false;
     for(let i=0;i<this.projectiles.length;i++){
       const pr=this.projectiles[i];
+      /* снаряды боссов (падающие, кольца, шестерни, пломбы, вспучивания) — своя физика */
+      if(BOSS_PR[pr.kind]&&!(pr.kind==='seal'&&pr.back)){pr.life-=dt;const done=updateBossProjectile(this,pr,dt);
+        if(done||pr.life<=0){pr.dead=true;dirty=true;}continue;}
       pr.life-=dt;pr.x+=pr.vx*dt;pr.y+=pr.vy*dt;pr.rot=(pr.rot||0)+dt*12;
       if(pr.kind==='nut')pr.vy+=40*dt;
       if(pr.kind==='wave'){pr.vy=0;
@@ -293,7 +297,13 @@ class World{
       }else if(pr.back){
         /* отражённый осколок: летит сквозь всё, бьёт только ядро */
         const b=this.boss;
-        if(b&&!b.dead&&Math.hypot(pr.x-b.coreX,pr.y-b.coreY)<1.6){
+        if(b&&!b.dead&&b.isMech&&Math.hypot(pr.x-b.coreX,pr.y-b.coreY)<1.4){
+          const cn=b.nodes.find(n=>n.core);
+          const tgt=cn&&!cn.locked&&!cn.broken?cn:b.nodes.filter(n=>!n.broken&&!n.locked).sort((a,c)=>Math.hypot(a.wx-pr.x,a.wy-pr.y)-Math.hypot(c.wx-pr.x,c.wy-pr.y))[0];
+          if(tgt)b.hitNode(tgt,{kind:'reflect',dmg:pr.rdmg||45,hb:b.rect(),sx:tgt.wx,sy:tgt.wy,fromX:pr.x-Math.sign(pr.vx||1),dir:Math.sign(pr.vx)||1,ky:0},false);
+          g.audio.explosion();g.hitstop(0.08);g.flash(0.18,'#bfe3ff');
+          g.particles.burst(pr.x,pr.y,30,{kind:'spark',col:'#dff0ff',spd:9,life:0.7,size:0.07,add:true,g:12});hit=true;}
+        else if(b&&!b.dead&&!b.isMech&&Math.hypot(pr.x-b.coreX,pr.y-b.coreY)<1.6){
           b.hurt(1,0,0,true);b.hitT=0.35;g.audio.explosion();g.camera.addShake(0.9);g.hitstop(0.12);g.flash(0.25,'#bfe3ff');
           g.particles.burst(b.coreX,b.coreY,40,{kind:'spark',col:'#dff0ff',spd:10,life:0.8,size:0.07,add:true,g:12});
           const left=Math.ceil(b.hp);

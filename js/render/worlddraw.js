@@ -232,8 +232,9 @@ function drawWorldLive(c,R,t,gs){
       }
     }
   }
+  drawBossFX(c,W,t);
   for(let i=0;i<W.projectiles.length;i++){
-    const pr=W.projectiles[i];
+    const pr=W.projectiles[i];if(BOSS_PR[pr.kind])continue;
     c.save();c.translate(pr.x,pr.y);c.rotate(pr.rot||0);
     if(pr.kind==='nut'){
       c.fillStyle='#9aa1a8';c.beginPath();

@@ -363,6 +363,8 @@ class MechBoss extends Mech{
   }
   /* узел-ядро сломан — механизм кончился */
   onBreak(n,h){if(n.core&&!this.dead){this.hp=0;this.die(h);}}
+  get coreX(){const n=this.nodes.find(q=>q.core);return n?n.wx:this.cx;}
+  get coreY(){const n=this.nodes.find(q=>q.core);return n?n.wy:this.cy;}
   die(h){
     if(this.dead)return;
     super.die(h);
