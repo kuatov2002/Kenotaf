@@ -96,7 +96,8 @@ class HUD{
     }
     let pr=null;
     if(g.world&&!g.cinematic.active){
-      if(g.world.nearInter)pr=g.world.nearInter.prompt();
+      if(g.world.nearRest)pr='ОТДОХНУТЬ · ПОДКАЧАТЬ КУРТКУ';
+      else if(g.world.nearInter)pr=g.world.nearInter.prompt();
       else if(g.world.nearDoor){
         const nd=g.world.nearDoor,d=nd.d;
         if(nd.locked)pr=(d.reqMsg||d.msg||'ЗАБЛОКИРОВАНО');

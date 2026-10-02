@@ -110,6 +110,10 @@ class AudioSystem{
     [0,150,300,480].forEach((d,i)=>setTimeout(()=>this.tone([392,523,659,784][i],0.6,'sine',0.04),d));
     this.nz(0.6,650,0.6,0.03,'lowpass');}
   lore(){this.tone(660,0.4,'sine',0.035,880);this.nz(0.12,1300,2,0.014);}
+  /* лампада: замах — нарастающий вой винта, пике — свист; мокрица — сухой стрёкот лапок */
+  lampWind(){this.tone(380,0.58,'sawtooth',0.026,1250);this.nz(0.58,2000,3,0.018);}
+  lampDive(){this.nz(0.32,900,0.8,0.05);this.tone(1000,0.26,'triangle',0.02,320);}
+  skitter(){this.nz(0.05,2600+Math.random()*900,3,0.01);}
   enemyDie(){this.tone(220,0.4,'triangle',0.06,60);this.nz(0.4,700,0.5,0.08,'lowpass');}
   bossRoar(){this.tone(58,1.6,'sawtooth',0.14,38);this.nz(1.4,200,0.4,0.1,'lowpass');this.tone(116,1.2,'triangle',0.04,58);}
   explosion(){this.nz(0.9,170,0.3,0.22,'lowpass');this.tone(50,0.9,'sine',0.18,26);}

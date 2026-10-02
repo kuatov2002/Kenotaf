@@ -148,7 +148,7 @@ class Game{
     void f.offsetWidth;f.style.transition='opacity .55s ease';f.style.opacity=0;}
   hitstop(t){this.hitstopT=Math.max(this.hitstopT,t);}
   onPlayerDeath(){
-    this.gs.hp=this.gs.maxHp();
+    this.gs.hp=this.gs.maxHp();this.world.slain={};
     this.transition(()=>{this.world.load(this.gs.cp.room,this.gs.cp.x,this.gs.cp.y);this.hud.syncHp();});
   }
   ending(){

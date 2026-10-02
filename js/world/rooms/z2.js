@@ -13,8 +13,7 @@ z2_escalator:gs=>({id:'z2_escalator',zone:'hives',name:'МЁРТВЫЙ ЭСКА�
     R.checkpoint={x:3,y:23,h:1.7,lit:gs.cp.room==='z2_escalator'};
     R.enemies=gs.flags.esc_clear?[]:[{type:'aristocrat',x:38,y:4.65,patrol:[36,42]}];
     R.clearFlag='esc_clear';
-    R.interactables=gs.loreIds[5]?[]:[{kind:'lore',loreId:5,x:39.4,y:7.0,title:'ЦИЛИНДР №5 · ПРАВИЛА ЖИЛЬЦОВ',
-      text:'«ТИШИНА — ПОРЯДОК. ЛЮБОЙ ЗВУК ВЫШЕ ЯРУСА 12 СЛЫШИТ ЦЕНЗУРА. ВОПРОСЫ О ПОВЕРХНОСТИ ЗАДАЮТ ТОЛЬКО ОДИН РАЗ.»'}];
+    R.enemies.push({type:'lampada',x:22,y:5,amb:true});
     R.lights=[lit(6,4,8,'#d9a441',0.85),lit(18,4,8,'#d9a441',0.8),lit(30,4,8,'#d9a441',0.85),
       lit(40,5,7,'#d9a441',0.9),lit(1.4,21.6,3,'#d9a441',0.5),lit(43,5.6,3,'#d9a441',0.5),
       lit(14,17,6,'#ffcf8a',0.4),lit(26,11,6,'#ffcf8a',0.4)];
@@ -27,6 +26,7 @@ z2_escalator:gs=>({id:'z2_escalator',zone:'hives',name:'МЁРТВЫЙ ЭСКА�
       Kit.railing(c,35.1,7.0,8.9,0.95,'#4a3b38');
       for(let i=0;i<6;i++)Kit.poster(c,3+i*7,3.2+r(),2.0,2.8,(i*13)|0);
       Kit.stencil(c,4,8.6,'ТИШИНА — ПОРЯДОК',0.7,'rgba(216,164,65,.4)',0.4);
+      Kit.stencil(c,36.4,5.6,'ВОПРОСЫ О ПОВЕРХНОСТИ ЗАДАЮТ ОДИН РАЗ',0.3,'rgba(200,69,47,.5)',0.5);
       Kit.stencil(c,24,6.2,'СОТЫ B · ЯРУС 12',0.6,'rgba(216,164,65,.35)',0.35);
       Kit.stencil(c,30,20.2,'НЕ ШУМЕТЬ',0.6,'rgba(200,69,47,.45)',0.45);
       for(let i=0;i<6;i++){const x=4+i*7;
@@ -54,17 +54,22 @@ z2_atrium:gs=>({id:'z2_atrium',zone:'hives',name:'СОТЫ-АТРИУМ',w:36,h:
       {x:10.4,y:32.9,w:1.4,h:2.1,to:'z2_apartment',link:'apt_low',label:'КВАРТИРЫ'},
       {x:34.6,y:23.9,w:1.4,h:2.1,to:'z2_stairwell',label:'ЛЕСТНИЧНАЯ КЛЕТЬ'},
       {x:34.6,y:14.9,w:1.4,h:2.1,to:'z2_apartment',link:'apt_up',label:'КВАРТИРЫ · ВЕРХ'},
-      {x:0.2,y:14.9,w:1.3,h:2.1,to:'z2_post',label:'ГЛАВПОЧТАМТ'}];
+      {x:0.2,y:14.9,w:1.3,h:2.1,to:'z2_post',label:'ГЛАВПОЧТАМТ'},
+      /* кв. 14-Б: опечатана Цензурой, из-под двери тянет жёлтой пыльцой — видно задолго до фильтра */
+      {x:7.2,y:23.9,w:1.4,h:2.1,to:'z2_overgrown',label:'КВ. 14-Б'}];
     R.checkpoint={x:3.4,y:35,h:1.7,lit:gs.cp.room==='z2_atrium'};
     R.mapPlate={kind:'mapplate',x:6.8,y:35,flag:'map_hives',title:'СХЕМА СОТ'};
     R.station={kind:'station',station:'atrium',x:30.5,y:35,tubeTop:26.5};
     R.enemies=gs.flags.atrium_clear?[]:[{type:'aristocrat',x:27,y:23.65,patrol:[25.5,33.5]}];
     R.clearFlag='atrium_clear';
+    R.enemies.push({type:'lampada',x:17.5,y:21,amb:true},{type:'lampada',x:22,y:10,amb:true},{type:'mokrica',x:26,y:34.38,patrol:[24,35],amb:true});
     R.lights=[lit(6,33.4,9,'#d9a441',0.9),lit(29,33.4,9,'#d9a441',0.9),
       lit(5,24.4,8,'#d9a441',0.75,{flicker:1.1}),lit(30,24.4,8,'#d9a441',0.8),
       lit(6,15.6,8,'#d9a441',0.7),lit(29,15.6,8,'#d9a441',0.7,{flicker:0.6}),
-      lit(18,40,9,'#d9a441',0.5),lit(1.4,15.6,4,'#c8452f',0.5,{flicker:1.7}),lit(34,30,5,'#ffcf8a',0.45),lit(2,30,5,'#ffcf8a',0.45)];
-    R.emitters=[{type:'dust',rate:34},{type:'drip',x:14,y:26.4,rate:0.5},{type:'drip',x:24,y:35.4,rate:0.7}];
+      lit(18,40,9,'#d9a441',0.5),lit(1.4,15.6,4,'#c8452f',0.5,{flicker:1.7}),lit(34,30,5,'#ffcf8a',0.45),lit(2,30,5,'#ffcf8a',0.45),
+      lit(7.9,25.2,2.8,'#d8e07a',0.55,{flicker:0.9})];
+    R.emitters=[{type:'dust',rate:34},{type:'drip',x:14,y:26.4,rate:0.5},{type:'drip',x:24,y:35.4,rate:0.7},
+      {type:'pollen',x:7.9,y:25.7,rate:2.4,sw:1.8}];
     R.machines=[{kind:'swayCab',x:16.4,y:6,w:3.4,h:4.0,len:14,amp:0.05}];
     R.extraGame=(c,L,r)=>{
       const real=R.doors;
@@ -84,6 +89,14 @@ z2_atrium:gs=>({id:'z2_atrium',zone:'hives',name:'СОТЫ-АТРИУМ',w:36,h:
       Kit.furniture(c,8,34.6,'tv',11);Kit.furniture(c,4,34.6,'chair',12);
       Kit.furniture(c,26,34.6,'plant',13);Kit.furniture(c,27,25.6,'table',14);
       Kit.clothesline(c,13,33.0,23,33.4,3);Kit.clothesline(c,11,24.0,25,24.4,4);
+      /* кв. 14-Б: сорванная лента Цензуры, жёлтый налёт на пороге, номер */
+      const dg=c.createLinearGradient(0,24.4,0,26);dg.addColorStop(0,'rgba(216,224,122,0)');dg.addColorStop(1,'rgba(216,224,122,.35)');
+      c.fillStyle=dg;c.fillRect(6.4,24.4,3.0,1.6);
+      c.fillStyle='rgba(216,224,122,.4)';c.fillRect(6.2,25.86,3.4,0.14);
+      c.save();c.translate(7.0,24.6);c.rotate(0.5);c.fillStyle='#b8402c';c.fillRect(-0.06,-0.1,1.0,0.2);
+      c.fillStyle='rgba(240,226,207,.75)';c.font='600 0.13px Oswald';c.fillText('ЦЕНЗУРА',0.08,0.05);c.restore();
+      c.save();c.translate(8.8,25.2);c.rotate(-0.9);c.fillStyle='#b8402c';c.fillRect(-0.5,-0.1,0.7,0.2);c.restore();
+      Kit.stencil(c,7.3,23.5,'14-Б',0.34,'rgba(216,204,178,.7)',0.7);
       Kit.rubble(c,10,40.0,16,1.0,rng('at1'),'ply');
       Kit.furniture(c,14,40.4,'table',21);Kit.furniture(c,20,40.4,'chair',22);
       for(let i=0;i<14;i++)Kit.poster(c,13+r()*9,2+r()*36,0.9+r()*0.6,1.2+r()*0.6,(i*17)|0);
@@ -110,6 +123,7 @@ z2_apartment:gs=>({id:'z2_apartment',zone:'hives',name:'ОБРУШЕННАЯ К�
              'КОШКИ САДЯТСЯ НА КРАГИ. РИФЛЁНАЯ СТЕНА БОЛЬШЕ НЕ СТЕНА.']});
     if(!gs.loreIds[6])R.interactables.push({kind:'lore',loreId:6,x:28.2,y:13.4,title:'ЦИЛИНДР №6 · МАРШРУТНЫЙ ЛИСТ',
       text:'«КУРЬЕР 38. ГРУЗ: КАПСУЛА «ОТ ПЕЧАТИ», ВНУТРИ — СЕМЕНА. ВЕЛЕНО СДАТЬ В ЦЕНЗУРУ. ПРИПИСКА ЧУЖОЙ РУКОЙ: «НЕ ВЕРНУЛСЯ».»'});
+    R.enemies.push({type:'mokrica',x:13,y:12.78,patrol:[11,18.5],amb:true},{type:'mokrica',x:29,y:12.78,patrol:[26.5,36.5],amb:true});
     R.lights=[lit(5,4,7,'#d9a441',0.7),lit(16,4,7,'#d9a441',0.75,{flicker:1.4}),
       lit(28,4,7,'#d9a441',0.7),lit(38,3.4,6,'#d9a441',0.8),lit(43,3.0,5,'#d9a441',0.6),lit(1.4,12,3,'#d9a441',0.4),
       lit(40.8,10.4,6,'#ffcf8a',0.6),lit(40.8,6,5,'#d9a441',0.5),lit(22.5,12.8,4,'#ff9c4a',0.7,{flicker:0.7})];
@@ -166,6 +180,7 @@ z2_stairwell:gs=>({id:'z2_stairwell',zone:'hives',name:'ЛЕСТНИЧНАЯ К�
     R.checkpoint={x:2.4,y:39,h:1.7,lit:gs.cp.room==='z2_stairwell'};
     R.enemies=gs.flags.stair_clear?[]:[{type:'censor',x:5,y:12.9,patrol:[3,8]},{type:'censor',x:15,y:12.9,patrol:[13,17]}];
     R.clearFlag='stair_clear';
+    R.enemies.push({type:'lampada',x:10,y:6,amb:true});
     R.lights=[lit(3,36,7,'#d9a441',0.7),lit(16,34,6,'#d9a441',0.6),lit(9.8,34,5,'#ffcf8a',0.55),
       lit(9.8,26,5,'#ffcf8a',0.55),lit(9.8,19,5,'#ffcf8a',0.55),lit(9,12,8,'#d9a441',0.85),lit(16,12,6,'#d9a441',0.7),
       lit(9.8,38,4,'#c8452f',0.35)];
@@ -219,6 +234,7 @@ z2_turbine:gs=>({id:'z2_turbine',zone:'hives',name:'ТУРБИННЫЙ ЗАЛ',w
       {x:43.4,y:19.4,keys:[],text:'КЛАПАН II ▴'}];
     R.checkpoint={x:3,y:21,h:1.7,lit:gs.cp.room==='z2_turbine'};
     R.machines=[{kind:'turbines',on:on,xs:[24,30,36],y:21}];
+    R.enemies.push({type:'repairer',x:28,y:19.45,patrol:[22,40],amb:true},{type:'lampada',x:33,y:8,amb:true});
     R.lights=[lit(8,6,9,'#d9a441',0.8),lit(22,5,10,'#d9a441',0.85),lit(34,6,9,'#d9a441',0.8),
       lit(2.2,10.4,4.5,'#ff9c4a',0.85),lit(51,3.8,4.5,'#ff9c4a',0.85),lit(16.9,10.6,4,'#ffcf8a',0.6),
       lit(30,20.4,9,on?'#ffe0a0':'#8a6d3b',on?0.9:0.4),lit(43.4,15,5,'#ffcf8a',0.5),lit(48,19.6,5,'#d9a441',0.6),
@@ -371,6 +387,122 @@ z2_post:gs=>({id:'z2_post',zone:'hives',name:'ГЛАВПОЧТАМТ · СОРТ
     R.extraTop=(c,L,r)=>{
       for(const m of R.magnetRects){Kit.plate(c,m.x,m.y,m.w,m.h,'steel',1206,{rust:0.3,boltStep:0.9});
         Kit.magnetRivets(c,m.x,m.y+m.h-0.5,m.w);}
+    };
+  }})
+});
+/* ============================== КВАРТИРА 14-Б ============================== */
+/* Тайник за опечатанной дверью 2-го яруса атриума. Курьер 38 не сдал капсулу «ОТ ПЕЧАТИ» Цензуре —
+   принёс матери. Семена взошли без лампы и затянули квартиру пыльцой: без фильтра дальше прихожей
+   не пройти (жёлтую дымку видно из атриума задолго до фильтра). Под рухнувшим шкафом — лаз,
+   посередине — продувочный стояк (фильтр восполняется), в саду — цилиндр №5 и кассета фильтра на полке. */
+Object.assign(ROOMDEFS,{
+z2_overgrown:gs=>({id:'z2_overgrown',zone:'hives',name:'КВАРТИРА 14-Б',w:34,h:14,
+  art:{bg:Art.bgHives,mid:Art.midHives,game:Art.gameHives},
+  build(R){
+    const got=!!gs.flags.got_filter_cap;
+    R.solids=[S(-2,-2,38,2.4,'concrete'),S(-2,0,2,14,'concrete'),S(34,0,2,14,'concrete'),S(0,12,34,2,'carpet'),
+      /* обвал перекрытия и упавший шкаф: под ним лаз 1.2 м — ползком или подкатом */
+      S(22.8,0.4,3.4,8.8,'concrete'),S(22.2,9.2,4.6,1.6,'ply'),
+      /* корни подняли плиту пола; по лозе на лопнувшей трубе — к полке с кассетами */
+      S(2.8,10.8,7.4,1.2,'concrete'),P(4.4,8.5,2.8,0.34),S(0,6.1,3.4,0.5,'ply')];
+    R.pollen=[{x:0.4,y:0.4,w:27.6,h:11.6}];
+    R.air=[{x:13,y:0.4,w:2,h:11.6}];
+    R.amb=[98,92,64];
+    R.doors=[{x:32.8,y:9.9,w:1.2,h:2.1,to:'z2_atrium',label:'АТРИУМ'}];
+    R.interactables=[];
+    if(!got)R.interactables.push({kind:'salvage',upgrade:'filter_cap',x:1.7,y:6.1,flag:'got_filter_cap',title:'КАССЕТА ФИЛЬТРА',
+      lines:['НА ВЕРХНЕЙ ПОЛКЕ, ПОДАЛЬШЕ ОТ КОРНЕЙ, — ЯЩИК С КАССЕТАМИ. ОНА УХАЖИВАЛА ЗА САДОМ В ФИЛЬТРЕ.',
+             'ОДНА КАССЕТА ЕЩЁ В ПЛОМБЕ. ВСТАЁТ В ПАЗ MK-II С ЩЕЛЧКОМ. ДЫШАТЬ ПЫЛЬЦОЙ МОЖНО ДОЛЬШЕ.']});
+    if(!gs.loreIds[5])R.interactables.push({kind:'lore',loreId:5,x:11.6,y:12,title:'ЦИЛИНДР №5 · КВАРТИРА 14-Б',
+      text:'«СЫН НЕ СДАЛ КАПСУЛУ ЦЕНЗУРЕ — ПРИНЁС МНЕ. СЕМЕНА ВЗОШЛИ ЗА ТРИ ДНЯ, БЕЗ ЛАМПЫ, И ТЯНУТСЯ ВВЕРХ, К ПЕЧАТИ. СЫНА ЗАБРАЛИ. ЦВЕТЫ Я ИМ НЕ ОТДАМ.»'});
+    R.lights=[lit(31,7.6,6,'#d9a441',0.7),lit(30.2,11.4,3,'#ffcf8a',0.4),lit(18.4,5.4,7,'#c8b060',0.45,{flicker:1.3}),
+      lit(14,5,6,'#cfeaff',0.75),lit(14,11,3.5,'#cfeaff',0.5),
+      lit(6.8,2.6,9,'#e8e07a',0.95),lit(4.4,9.6,5,'#d8e07a',0.5),lit(1.7,4.8,3,'#ffcf7a',0.45)];
+    R.emitters=[{type:'dust',rate:12},{type:'pollen',x:6.8,y:3,rate:12,sw:7},{type:'pollen',x:18,y:7,rate:6,sw:8},
+      {type:'pollen',x:27.4,y:11.4,rate:3,sw:1.2},{type:'airjet',x:14,y:11.8,rate:10},{type:'leaf',x:6.8,y:1.2,rate:0.7,sw:7},
+      {type:'drip',x:24.4,y:0.6,rate:0.5}];
+    /* головки цветков под трещиной в своде: покачиваются, светятся сами — «растут не под лампой» */
+    const HEADS=[[5.6,2.2,0.9,0.0],[7.6,1.6,1.1,1.7],[9.2,3.0,0.8,3.1]];
+    R.dyn=(c,t,W)=>{
+      for(const [hx,hy,hr,ph] of HEADS){const sw=Math.sin(t*0.7+ph)*0.12,x=hx+sw,y=hy+Math.cos(t*0.5+ph)*0.05;
+        c.save();c.translate(x,y);c.rotate(sw*0.6);
+        for(let i=0;i<14;i++){const a=i/14*TAU+ph;
+          c.fillStyle=i%2?'#e9e2a0':'#d8cf7c';c.beginPath();
+          c.ellipse(Math.cos(a)*hr*0.62,Math.sin(a)*hr*0.62,hr*0.42,hr*0.15,a,0,TAU);c.fill();}
+        const g=c.createRadialGradient(0,0,0,0,0,hr*0.42);g.addColorStop(0,'#6b5a2a');g.addColorStop(0.7,'#4a3d1c');g.addColorStop(1,'#8a7a3a');
+        c.fillStyle=g;c.beginPath();c.arc(0,0,hr*0.42,0,TAU);c.fill();
+        c.fillStyle='rgba(255,246,170,.55)';for(let k=0;k<9;k++){const a=k*2.4+ph,rr2=hr*0.3*Math.sqrt((k+1)/9);
+          c.fillRect(Math.cos(a)*rr2-0.03,Math.sin(a)*rr2-0.03,0.06,0.06);}
+        c.restore();
+        game.renderer.glowAdd(x,y,hr*2.2,'#efe58a',0.3+0.1*Math.sin(t*1.3+ph));}
+    };
+    R.extraGame=(c,L,r)=>{
+      /* обои ячейки: выцветший ромб, потёки; ближе к саду — лоза поверх всего */
+      c.fillStyle='rgba(62,46,38,.84)';c.fillRect(0,0.4,34,11.6);
+      c.strokeStyle='rgba(190,160,120,.13)';c.lineWidth=0.04;
+      for(let x=0;x<34;x+=1.2)for(let y=1;y<12;y+=1.2){c.beginPath();c.moveTo(x,y-0.4);c.lineTo(x+0.4,y);c.lineTo(x,y+0.4);c.lineTo(x-0.4,y);c.closePath();c.stroke();}
+      for(let i=0;i<14;i++){const x=r()*34;c.fillStyle='rgba(40,30,22,'+(0.1+r()*0.15)+')';c.fillRect(x,0.4,0.1+r()*0.2,2+r()*5);}
+      c.fillStyle='rgba(30,22,16,.6)';c.fillRect(0,11.4,34,0.6);
+      /* нарисованное окно в гостиной: небо, которого никто не видел */
+      Kit.plate(c,16.4,2.6,4.4,3.0,'ply',1301,{bolts:false});
+      const sk=c.createLinearGradient(0,2.8,0,5.4);sk.addColorStop(0,'#6f8ea6');sk.addColorStop(1,'#d8c89a');
+      c.fillStyle=sk;c.fillRect(16.6,2.8,4.0,2.6);
+      c.fillStyle='rgba(255,240,200,.8)';c.beginPath();c.arc(19.6,3.6,0.32,0,TAU);c.fill();
+      c.fillStyle='#4a5a3a';c.beginPath();c.moveTo(16.6,5.4);c.quadraticCurveTo(17.6,4.4,18.6,5.0);c.quadraticCurveTo(19.6,4.6,20.6,5.2);c.lineTo(20.6,5.4);c.closePath();c.fill();
+      c.fillStyle='#3a2c22';c.fillRect(18.55,2.8,0.1,2.6);c.fillRect(16.6,4.05,4.0,0.1);
+      Kit.stencil(c,16.5,6.2,'«ОКНО» · ЗАКАЗ ЖИЛЬЦОВ',0.22,'rgba(216,204,178,.35)',0.35);
+      /* прихожая: вешалка с форменной фуражкой, рамка с фото курьера, обувь */
+      c.fillStyle='#3a2c22';c.fillRect(29.4,7.0,0.12,5.0);c.fillRect(28.9,7.0,1.1,0.1);
+      c.fillStyle='#2b3a4a';c.beginPath();c.ellipse(29.46,7.0,0.42,0.14,0,PI,TAU);c.fill();c.fillRect(29.0,6.98,0.92,0.08);
+      c.fillStyle='#c9a227';c.fillRect(29.36,6.82,0.2,0.08);
+      c.fillStyle='#4a3a2c';rr(c,30.8,5.4,1.2,1.5,0.06);c.fill();c.fillStyle='#8a7d68';c.fillRect(30.92,5.52,0.96,1.26);
+      c.fillStyle='#3a3230';c.beginPath();c.arc(31.4,5.95,0.2,0,TAU);c.fill();c.fillRect(31.12,6.12,0.56,0.66);
+      c.fillStyle='#2b3a4a';c.fillRect(31.16,5.72,0.48,0.1);
+      c.fillStyle='rgba(20,14,10,.8)';c.fillRect(31.0,6.86,0.8,0.04);
+      for(let i=0;i<3;i++){c.fillStyle='#2a2220';c.beginPath();c.ellipse(28.8+i*0.5,11.92,0.22,0.09,0,PI,TAU);c.fill();}
+      Kit.stencil(c,30.4,4.6,'14-Б',0.4,'rgba(216,204,178,.6)',0.6);
+      /* гостиная: диван, телевизор, стол под лозой */
+      c.fillStyle='#5a3a34';rr(c,15.6,10.6,3.6,1.4,0.2);c.fill();c.fillStyle='#6b4840';rr(c,15.4,10.0,0.6,2.0,0.2);c.fill();rr(c,18.8,10.0,0.6,2.0,0.2);c.fill();
+      c.fillStyle='#4a302a';rr(c,15.9,9.4,3.0,1.4,0.2);c.fill();
+      Kit.furniture(c,21.0,11.8,'tv',1302);Kit.furniture(c,20.4,11.8,'plant',1303);
+      /* стояк продувки: решётки в полу и под сводом */
+      c.fillStyle='rgba(12,14,16,.75)';c.fillRect(13,0.4,2,11.6);
+      Kit.vent(c,13.1,0.5,1.8,0.9);Kit.vent(c,13.1,11.1,1.8,0.8);
+      Kit.stencil(c,12.6,1.9,'СТОЯК · ПРОДУВКА',0.24,'rgba(150,180,200,.7)',0.7);
+      /* сад: корни через пол, разбитый цветочный ящик, кресло с шалью, лейка */
+      c.strokeStyle='#5c4a32';c.lineCap='round';
+      for(let i=0;i<9;i++){const x0=6.6+(r()-0.5)*1.2;c.lineWidth=0.08+r()*0.14;c.beginPath();c.moveTo(x0,10.6);
+        c.quadraticCurveTo(x0+(r()-0.5)*5,11.4+r()*0.4,x0+(r()-0.5)*9,12.0);c.stroke();}
+      c.fillStyle='#6b4a30';c.save();c.translate(6.4,10.7);c.rotate(-0.12);c.fillRect(-1.6,-0.5,3.2,0.5);c.restore();
+      c.fillStyle='#3a2a1c';c.fillRect(5.2,10.25,2.6,0.12);
+      c.fillStyle='#5a4636';rr(c,10.2,10.4,1.4,1.6,0.25);c.fill();c.fillStyle='#6b5240';rr(c,10.0,9.8,0.5,2.2,0.2);c.fill();
+      c.fillStyle='rgba(184,160,110,.8)';c.beginPath();c.moveTo(10.1,9.9);c.quadraticCurveTo(10.9,10.6,11.5,10.3);c.lineTo(11.4,11.0);c.quadraticCurveTo(10.7,11.2,10.1,10.7);c.closePath();c.fill();
+      c.fillStyle='#7a8087';c.beginPath();c.ellipse(12.4,11.8,0.32,0.22,0,0,TAU);c.fill();c.fillRect(12.6,11.5,0.4,0.08);
+      /* стебли — от корней к трещине в своде */
+      for(const [x1,y1,w] of [[5.6,2.2,0.2],[7.6,1.6,0.26],[9.2,3.0,0.18]]){c.strokeStyle='#4a6438';c.lineWidth=w;
+        c.beginPath();c.moveTo(6.6,10.6);c.bezierCurveTo(6.6+(x1-6.6)*0.2-0.8,7.2,x1+0.6,5.0,x1,y1+0.3);c.stroke();}
+      for(let i=0;i<10;i++){const y=3+r()*7,x=5.6+r()*2.6,a=(r()<0.5?-1:1)*(0.6+r()*0.6);
+        c.save();c.translate(x,y);c.rotate(a);c.fillStyle=r()<0.5?'#5a7a42':'#6f8a4a';
+        c.beginPath();c.ellipse(0.5,0,0.6,0.2,0,0,TAU);c.fill();c.restore();}
+      c.fillStyle='#14100c';c.beginPath();c.moveTo(6.0,0.4);c.lineTo(8.6,0.4);c.lineTo(7.6,1.0);c.lineTo(6.8,0.7);c.closePath();c.fill();
+      Kit.vine(c,[[0.4,1.0],[3,1.4],[6,0.9],[10,1.3],[13,0.9]],1304);Kit.vine(c,[[0.6,1.2],[0.8,4],[0.5,6]],1305);
+      Kit.vine(c,[[3.6,6.4],[3.4,8.8],[4.6,10.8]],1306);Kit.vine(c,[[15,1.0],[18,1.6],[22,1.0]],1307);
+      Kit.vine(c,[[10.4,4],[11.8,6],[12.6,9]],1308);Kit.vine(c,[[16,9.4],[18,9.0],[19.4,10.0]],1309);
+      /* лопнувшая труба с лозой — настил к полке */
+      Kit.pipe(c,[[3.8,8.7],[7.6,8.7]],0.22,'rust',{seed:1310});Kit.vine(c,[[4.4,8.5],[5.8,8.8],[7.2,8.5]],1311);
+      Kit.plate(c,0,6.1,3.4,0.5,'ply',1312,{bolts:false});
+      if(!got){c.fillStyle='#4a5560';rr(c,1.1,5.4,1.2,0.7,0.06);c.fill();
+        for(let i=0;i<3;i++){c.fillStyle='#d8cf7c';c.fillRect(1.25+i*0.34,5.5,0.22,0.5);}}
+    };
+    R.extraTop=(c,L,r)=>{
+      /* обвал и шкаф поверх твёрдых блоков */
+      Kit.rubble(c,22.8,0.4,3.4,8.8,rng('ovg_slab'),'concrete');
+      c.save();c.translate(24.5,10.0);c.rotate(0.03);
+      c.fillStyle='#5a3e2c';c.fillRect(-2.3,-0.8,4.6,1.6);c.fillStyle='#6b4a34';c.fillRect(-2.2,-0.7,4.4,0.6);
+      c.fillStyle='#3a2a1c';c.fillRect(-0.04,-0.7,0.08,1.4);c.fillStyle='#c9a227';c.fillRect(-0.3,-0.2,0.12,0.12);c.fillRect(0.18,-0.2,0.12,0.12);
+      c.restore();
+      Kit.hazardTape(c,22.2,10.8,4.6,0.18);
+      Kit.vine(c,[[22.4,9.4],[24,9.0],[26.6,9.6]],1313);
     };
   }})
 });

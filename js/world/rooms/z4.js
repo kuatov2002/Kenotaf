@@ -107,6 +107,7 @@ z4_exam_b:gs=>({id:'z4_exam_b',zone:'seal',name:'ЭКЗАМЕН B · ШАХТА 
       {x:0.0,y:10.5,w:1.2,h:2.1,to:'z4_antechamber',link:'b_top',label:'ПРЕДПЕЧАТЬЕ'}];
     R.interactables=gs.flags.gaugeB?[]:[{kind:'gauge',x:1.6,y:12.6,label:'МАНОМЕТР B',flag:'gaugeB'}];
     R.checkpoint={x:2.6,y:32,h:1.7,lit:gs.cp.room==='z4_exam_b'};
+    R.enemies.push({type:'lampada',x:12,y:4,amb:true});
     R.lights=[lit(3,29,6,'#e8e8e8',0.65),lit(12,25,7,'#8fb6c9',0.6),lit(22.4,28,5,'#e8e8e8',0.6),
       lit(22.4,19,5,'#e8e8e8',0.6),lit(18,12,6,'#8fb6c9',0.6),lit(9,7.5,7,'#8fb6c9',0.6),
       lit(1.6,11.6,4,gs.flags.gaugeB?'#69d68f':'#c8452f',0.9),lit(12,33.6,6,'#c8452f',0.4)];

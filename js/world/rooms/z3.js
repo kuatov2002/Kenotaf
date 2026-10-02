@@ -83,6 +83,7 @@ z3_greenhouse:gs=>({id:'z3_greenhouse',zone:'eden',name:'ОРАНЖЕРЕИ-ТЕ
     R.clearFlag='gh_clear';
     R.interactables=gs.loreIds[9]?[]:[{kind:'lore',loreId:9,x:5.6,y:21.6,title:'ЦИЛИНДР №9 · ДНЕВНИК БОТАНИКА',
       text:'«ПОД ЛАМПАМИ-СОЛНЦАМИ САД ЧАХНЕТ ДВЕСТИ ЛЕТ. ПО КАТАЛОГУ — 412 ВИДОВ. ЖИВЫХ ОСТАЛОСЬ СОРОК.»'}];
+    R.enemies.push({type:'lampada',x:14,y:6,amb:true});
     R.lights=[lit(26,4,18,'#f2d98c',1.15),lit(10,14,12,'#fff2cf',0.7),lit(42,14,12,'#fff2cf',0.7),
       lit(8,28,9,'#ffe6a8',0.6),lit(26,28,10,'#ffe6a8',0.6),lit(44,28,9,'#ffe6a8',0.6),
       lit(16,20,8,'#dff0b0',0.5),lit(38,20,8,'#dff0b0',0.5),
@@ -210,6 +211,7 @@ z3_dome:gs=>({id:'z3_dome',zone:'eden',name:'КУПОЛЬНЫЙ ПОДЪЁМ',w:
     R.checkpoint={x:3,y:26,h:1.7,lit:gs.cp.room==='z3_dome'};
     R.interactables=gs.loreIds[11]?[]:[{kind:'lore',loreId:11,x:24.5,y:17.4,title:'ЦИЛИНДР №11 · ПРОТОКОЛ СОВЕТА',
       text:'«ВОПРОС: ВСКРЫТИЕ ПЕЧАТИ. ЗА — 0. ПРОТИВ — 7. ЗАСЕДАНИЕ № 1904. СЛЕДУЮЩЕЕ — ЧЕРЕЗ МЕСЯЦ.»'}];
+    R.enemies.push({type:'lampada',x:14,y:19,amb:true});
     R.lights=[lit(14,13,7,'#f2d98c',0.8),lit(31,11.6,7,'#f2d98c',0.85),lit(48,10.2,7,'#f2d98c',0.8),
       lit(31,3,14,'#fff2cf',0.95),lit(5,23,8,'#ffe6a8',0.7),lit(24.5,16,5,'#ffe6a8',0.65),lit(41,14.6,5,'#ffe6a8',0.65),
       lit(59,11,6,'#e8e8e8',0.75)];

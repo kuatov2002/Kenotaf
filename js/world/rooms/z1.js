@@ -17,6 +17,7 @@ z1_start:gs=>({id:'z1_start',zone:'sump',name:'СТАРТОВАЯ НИША',w:44
       {x:9.8,y:5.6,keys:['SPACE'],text:'ПРЫЖОК'},
       {x:16.9,y:7.0,keys:['S'],text:'ПОДКАТ'},
       {x:27.4,y:6.6,keys:['J'],alt:'ЛКМ',text:'УДАР',hideFlag:'start_grate'}];
+    R.enemies.push({type:'mokrica',x:37,y:10.38,patrol:[33,40],amb:true});
     R.lights=[lit(4.4,3.0,9,'#ffbe63',1.2,{flicker:1.6}),lit(12,3.4,8.5,'#ffbe63',0.95),
       lit(21.8,10.4,4.2,'#ff9c4a',0.85,{flicker:0.7}),lit(27,3.2,8.5,'#ffbe63',0.9),
       lit(30.5,7.0,4,'#c8452f',0.45,{flicker:0.9}),lit(35,3.2,8.5,'#ffbe63',0.85),
@@ -75,12 +76,13 @@ z1_hub:gs=>({id:'z1_hub',zone:'sump',name:'НАСОСНАЯ СТАНЦИЯ',w:36
       {x:34.8,y:28.9,w:1.2,h:2.1,to:'z1_east',tx:1.8,ty:9.6,label:'ВОСТОЧНЫЙ КОРИДОР'},
       {x:34.8,y:16.7,w:1.2,h:2.1,to:'z1_sluice',tx:1.8,ty:7.6,label:'СЕВЕРНЫЙ ШЛЮЗ'},
       {x:4.2,y:33.6,w:1.6,h:0.9,down:true,to:'z1_cellar',tx:1.8,ty:4.8,label:'ПОДВАЛ'},
-      {x:0.0,y:22.8,w:1.1,h:2.2,to:'z1_vent',link:'vent_low',label:'ВЕНТШАХТА',reqAbility:'claws',
-        reqMsg:'ВЕНТШАХТА · ГЛАДКИЕ СТЕНЫ, ВВЕРХ НЕ ЗА ЧТО ЗАЦЕПИТЬСЯ'},
+      /* в шахту можно войти всегда: рифлёные стены внутри сами говорят, что нужны кошки */
+      {x:0.0,y:22.8,w:1.1,h:2.2,to:'z1_vent',link:'vent_low',label:'ВЕНТШАХТА'},
       {x:0.0,y:5.0,w:1.2,h:2.1,to:'z1_vent',link:'vent_top',label:'ВЕНТШАХТА · ВЕРХ'}];
     R.interactables=gs.flags.got_energy?[]:[{kind:'salvage',upgrade:'energy_cap',x:34.9,y:7.4,flag:'got_energy',
       title:'РЕСИВЕР ДАВЛЕНИЯ',
       lines:['В НИШЕ ПОД СВОДОМ — ЗАПАСНОЙ РЕСИВЕР КРАНОВЩИКОВ.','ЛАТУННЫЙ БАЛЛОН ВСТАЁТ В РАНЕЦ РЯДОМ С КЛАПАНОМ.']}];
+    R.enemies.push({type:'mokrica',x:5,y:24.38,patrol:[1.5,10],amb:true});
     R.lights=[lit(6,30.4,9,'#ffbe63',1.0),lit(30,30.2,9,'#ffbe63',1.05),
       lit(6,24.4,8,'#ffbe63',0.85,{flicker:1.2}),lit(30,24.6,8,'#ffa64a',0.8),
       lit(6,18.4,8,'#ffbe63',0.8),lit(30,17.6,9,'#ffbe63',0.9),
@@ -161,20 +163,33 @@ z1_vent:gs=>({id:'z1_vent',zone:'sump',name:'ВЕНТШАХТА B-2',w:12,h:34,
        Наверху — выход под потолок Насосной (к балкам с клёпками) */
     R.solids=[S(-2,-3,16,3,'steel'),S(-2,0,2,34,'steel'),S(12,0,2,34,'steel'),S(0,31,12,3,'rust'),
       S(3.4,6,1.2,22.4,'rust',{grip:'r'}),S(7.8,6,1.2,25,'rust',{grip:'l'}),
-      P(7.0,18,0.8,0.4,'steel'),S(0,6,4.6,0.6,'steel')];
+      P(7.0,18,0.8,0.4,'steel'),S(0,6,4.6,0.6,'steel'),
+      /* правый столб: наверху — карман за сорванной решёткой, ниже — забит (раньше туда можно было
+         сорваться на 25 м без выхода) */
+      S(9,8.0,3,23,'rust')];
+    /* карман верхней венты: сюда тянет пыльцу с поверхности (см. цилиндр №3) — без фильтра не войти */
+    R.pollen=[{x:8.7,y:2.6,w:3.3,h:5.4}];
+    if(!gs.flags.got_plate_vent)R.interactables.push({kind:'salvage',upgrade:'plate_vent',x:10.6,y:8.0,flag:'got_plate_vent',
+      title:'ПЛАСТИНА КУРТКИ',lines:['В КАРМАНЕ ВЕНТЫ — СЛОЙ ЖЁЛТОЙ ПЫЛЬЦЫ. ПОД НЕЙ — ЧЕЙ-ТО ИНСТРУМЕНТАЛЬНЫЙ ЯЩИК.',
+        'НАГРУДНАЯ ПЛАСТИНА МОНТАЖНИКА. ЗАКЛЁПКИ ВСТАЮТ НА МЕСТО.']});
     R.doors=[{x:0.0,y:28.9,w:1.2,h:2.1,to:'z1_hub',link:'vent_low',label:'НАСОСНАЯ'},
       {x:0.0,y:3.9,w:1.2,h:2.1,to:'z1_hub',link:'vent_top',label:'НАСОСНАЯ · ПОД СВОДОМ'}];
-    R.interactables=gs.loreIds[3]?[]:[{kind:'lore',loreId:3,x:2.6,y:6,title:'ЦИЛИНДР №3 · ПРОБА ВОЗДУХА',
-      text:'«ВЕРХНЯЯ ВЕНТА. ВЛАЖНОСТЬ 64%. В ФИЛЬТРЕ — ПЫЛЬЦА НЕИЗВЕСТНОГО ВИДА. ОБРАЗЕЦ ИЗЪЯТ ЦЕНЗУРОЙ.»'}];
+    if(!gs.loreIds[3])R.interactables.push({kind:'lore',loreId:3,x:2.6,y:6,title:'ЦИЛИНДР №3 · ПРОБА ВОЗДУХА',
+      text:'«ВЕРХНЯЯ ВЕНТА. ВЛАЖНОСТЬ 64%. В ФИЛЬТРЕ — ПЫЛЬЦА НЕИЗВЕСТНОГО ВИДА. ОБРАЗЕЦ ИЗЪЯТ ЦЕНЗУРОЙ.»'});
     R.lights=[lit(6.2,29,6,'#ffbe63',0.8),lit(6.2,21,6,'#9fe6c0',0.6,{flicker:1.6}),lit(6.2,12,6,'#9fe6c0',0.6),
-      lit(2.4,4.6,5,'#ffbe63',0.8),lit(6.2,1.5,5,'#cfeaff',0.6)];
-    R.emitters=[{type:'dust',rate:14},{type:'airjet',x:6.2,y:30,rate:5},{type:'drip',x:5,y:7,rate:0.6}];
+      lit(2.4,4.6,5,'#ffbe63',0.8),lit(6.2,1.5,5,'#cfeaff',0.6),lit(10.5,6,4,'#d8e07a',0.75,{flicker:0.8})];
+    R.emitters=[{type:'dust',rate:14},{type:'airjet',x:6.2,y:30,rate:5},{type:'drip',x:5,y:7,rate:0.6},
+      {type:'pollen',x:10.4,y:5,rate:7,sw:3}];
     R.extraGame=(c,L,r)=>{
       c.fillStyle='rgba(6,8,8,.6)';c.fillRect(4.6,0,3.2,31);
       c.strokeStyle='#2b3136';c.lineWidth=0.5;
       for(let y=1;y<31;y+=0.9){c.beginPath();c.ellipse(6.2,y,1.4,0.32,0,0,TAU);c.stroke();}
       Kit.stencil(c,0.6,27.6,'ВЕНТ · B-2',0.4,'rgba(200,190,170,.5)',0.5);
-      Kit.vent(c,9.4,10,1.8,1.2);Kit.vent(c,9.4,22,1.8,1.2);
+      Kit.vent(c,9.4,22,1.8,1.2);
+      /* карман: сорванная решётка венты, жёлтый налёт, ящик монтажника */
+      c.strokeStyle='#4d545a';c.lineWidth=0.08;for(let i=0;i<5;i++){c.beginPath();c.moveTo(8.9+i*0.12,3.0+i*0.5);c.lineTo(9.6+i*0.16,3.2+i*0.5);c.stroke();}
+      c.fillStyle='rgba(216,224,122,.35)';c.fillRect(9,7.3,3,0.7);
+      if(!gs.flags.got_plate_vent){Kit.crate(c,10.0,7.3,1.2,0.7,{seed:71,mat:'steel'});}
       Kit.lampCage(c,2.4,4.4,0.26);Kit.pipe(c,[[10.6,0],[10.6,31]],0.2,'rust',{seed:7});
     };
   }}),
@@ -193,6 +208,7 @@ z1_cellar:gs=>({id:'z1_cellar',zone:'sump',name:'ПОДВАЛ ХАБА',w:18,h:9
     R.doors=[{x:0.0,y:4.9,w:1.2,h:2.1,to:'z1_hub',tx:5.0,ty:31.8,label:'ХАБ'},
       {x:14,y:8.0,w:2.2,h:1.0,to:'z1_drain',link:'cellar_hole',fall:true,label:'ДРЕНАЖ',reqFlag:'cellar_grate'}];
     R.signs=[{x:12.6,y:2.0,keys:['↓','J'],text:'В ПРЫЖКЕ — УДАР ВНИЗ',showFlag:'cellar_open',hideFlag:'cellar_grate'}];
+    R.enemies.push({type:'mokrica',x:3.4,y:6.38,patrol:[1.6,7.6],amb:true});
     R.lights=[lit(4,3,6,'#ffbe63',0.7,{flicker:1.3}),lit(11,3.4,5,'#69d68f',0.6),lit(15.1,8.4,4.5,'#69d68f',0.9)];
     R.emitters=[{type:'drip',x:6,y:2,rate:0.5},{type:'dust',rate:10},{type:'coolant',x:15.1,y:8.8,rate:2.5,sw:2}];
     R.interactables=gs.loreIds[1]?[]:[{kind:'lore',loreId:1,x:11.4,y:6.4,
@@ -226,6 +242,7 @@ z1_east:gs=>({id:'z1_east',zone:'sump',name:'ВОСТОЧНЫЙ КОРИДОР',
     R.doors=[{x:0.0,y:9.9,w:1.2,h:2.1,to:'z1_hub',tx:33.4,ty:28.6,label:'НАСОСНАЯ'},
       {x:36.8,y:9.9,w:1.2,h:2.1,to:'z1_arena',tx:1.8,ty:17.6,label:'РЕМОНТНЫЙ ЦЕХ'},
       {x:31.2,y:11.6,w:1.6,h:0.9,down:true,to:'z1_drain',link:'drain_up',label:'ДРЕНАЖ',latch:'drain_latch',msg:'ЛЮК ЗАДРАЕН СНИЗУ.'}];
+    R.enemies.push({type:'mokrica',x:8,y:11.38,patrol:[3,15],amb:true},{type:'wrench',x:26,y:10.45,patrol:[23,35],amb:true});
     R.lights=[lit(5,4.4,10,'#ffbe63',0.95),lit(14,4.2,9.5,'#ffbe63',0.85,{flicker:1.1}),
       lit(24,4.4,10,'#ffa64a',0.9),lit(33,4.2,10,'#ffbe63',0.9),
       lit(9,11.4,5,'#ffb070',0.55),lit(28,11.4,5,'#ffb070',0.5),
@@ -586,6 +603,7 @@ z1_sluice:gs=>({id:'z1_sluice',zone:'sump',name:'СЕВЕРНЫЙ ШЛЮЗ',w:48
       plaque:'ФЕРМА · ПОСТОЯННОЕ СОЕДИНЕНИЕ',flag:'bridge_out',sys:'bridge'}];
     if(!gs.loreIds[4])R.interactables.push({kind:'lore',loreId:4,x:39.6,y:10,title:'ЦИЛИНДР №4 · ГРАФИК ЛИФТА 07',
       text:'«ПОСЛЕДНИЙ ПОДЪЁМ ВЫШЕ ЭДЕМА — 214 ЛЕТ НАЗАД. ДАЛЬШЕ ГРАФИК ПУСТ.»'});
+    R.enemies.push({type:'lampada',x:20,y:3.5,amb:true},{type:'mokrica',x:34,y:9.38,patrol:[28,42],amb:true});
     R.lights=[lit(4,4,8,'#ffbe63',0.9),lit(13,5,6,'#c8452f',0.7,{flicker:0.8}),
       lit(30,4,9,'#ffbe63',0.9),lit(42,4,7,'#ffbe63',0.8),lit(21,14,10,'#3d6a52',0.5),
       lit(45.4,8.6,4,'#8fd6ff',0.7),lit(1.4,8.6,3,'#8fd6ff',0.4)];
@@ -642,6 +660,7 @@ z1_drain:gs=>({id:'z1_drain',zone:'sump',name:'ДРЕНАЖ ХЛАДАГЕНТА
     R.interactables=gs.flags.got_plate_drain?[]:[{kind:'salvage',upgrade:'plate_drain',x:37.4,y:10,flag:'got_plate_drain',
       title:'ПЛАСТИНА КУРТКИ',
       lines:['НА УСТУПЕ — БРЕЗЕНТОВАЯ КУРТКА ДРЕНАЖНИКА. ХОЗЯИНА НЕТ.','НАГРУДНАЯ ПЛАСТИНА ЦЕЛА. ЗАКЛЁПКИ САДЯТСЯ НА ТВОЮ КУРТКУ.']}];
+    R.enemies.push({type:'mokrica',x:39,y:9.38,patrol:[35,42.5],amb:true});
     R.lights=[lit(4,4,7,'#ffbe63',0.8,{flicker:1.1}),lit(27,13.4,12,'#69d68f',1.1),lit(12,13,5,'#8a7a5a',0.5),
       lit(38,4.4,7,'#ffbe63',0.85),lit(41.1,7.6,3.5,'#8fd6ff',0.6),lit(3.1,1.6,3,'#69d68f',0.6)];
     R.emitters=[{type:'coolant',x:27,y:13.1,rate:5,sw:14},{type:'drip',x:12,y:1,rate:0.7},{type:'drip',x:30,y:1,rate:0.5},

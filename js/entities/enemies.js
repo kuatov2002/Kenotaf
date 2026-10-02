@@ -20,7 +20,8 @@ class Enemy extends Body{
     if(this.hp<=0)this.die();
   }
   die(){
-    this.dead=true;this.deadT=0;const g=this.world.game;
+    this.dead=true;this.deadT=0;const g=this.world.game,W=this.world;
+    if(this.key&&W.room){const id=W.room.id;(W.slain[id]=W.slain[id]||{})[this.key]=true;}
     g.audio.enemyDie();g.camera.addShake(0.4);
     g.particles.burst(this.cx,this.cy,26,{kind:'debris',col:this.def.blood||'#6b4a3a',spd:6,life:1.2,size:0.14,g:30});
     g.particles.burst(this.cx,this.cy,16,{kind:'spark',col:'#ffb45a',spd:7,life:0.6,size:0.06,add:true,g:16});
@@ -390,4 +391,162 @@ class Clockmaker extends Enemy{
     if(this.alert>0)game.renderer.glowAdd(this.cx,this.bottom-h*1.44,0.45,'#c8452f',0.3);
   }
 }
-const ENEMY_TYPES={repairer:Repairer,wrench:Repairer,aristocrat:Aristocrat,censor:Censor,gardener:Gardener,clockmaker:Clockmaker};
+/* ЛАМПАДА — летучий соглядатай Цензуры: латунная чаша с огнём под винтом. Висит на посту, а увидев
+   курьера — заходит сверху-сбоку, телеграфирует (огонь белеет, чаша дрожит, винт воет) и пикирует по
+   прямой. Удар сбивает замах; промах о стену или пол — оглушена и падает. Сверху её бьют ударом вниз —
+   отскок (пого): над провалами лампада — ступенька. */
+class Lampada extends Enemy{
+  constructor(world,def,x,y){
+    super(world,Object.assign({w:0.86,h:0.9,hp:56,dmg:1,aggro:10.5,blood:'#7a3a22'},def),x,y);
+    this.home={x:x+this.w/2,y:y+this.h/2};this.state='idle';this.st=0;this.ph=rng(x*31+y*7)()*TAU;
+    this.rot=0;this.cd=0.8;this.dv={x:0,y:1};}
+  safe(){return this.state==='stun';}
+  threat(){return this.state==='wind'||this.state==='dive';}
+  hurt(dmg,kx,ky){
+    if(this.state==='stun')dmg*=1.4;
+    super.hurt(dmg,kx*1.15,ky*1.3);
+    if(!this.dead&&this.state!=='stun'){this.state='reel';this.st=0;}
+  }
+  bonk(){const g=this.world.game;this.state='stun';this.st=0;this.vx*=-0.3;this.vy=-2.6;this.cd=1.2;
+    g.audio.hitMetal();g.camera.addShake(0.25);
+    g.particles.burst(this.cx,this.cy,14,{kind:'spark',col:'#ffcf7a',spd:6,life:0.45,size:0.05,add:true,g:14});}
+  physics(dt){
+    if(this.state==='stun'){this.vy+=CFG.gravity*0.55*dt;this.vy=clamp(this.vy,-20,14);}
+    const sp=Math.hypot(this.vx,this.vy);
+    moveBody(this,dt,this.world.room.solids);
+    const hit=this.wall||this.ceilHit||this.onGround;
+    if(hit&&(this.state==='dive'||(this.state==='reel'&&sp>9)))this.bonk();
+  }
+  ai(dt){
+    const p=this.world.player,g=this.world.game;this.st+=dt;this.cd-=dt;
+    const seek=(tx,ty,sp,k)=>{const dx=tx-this.cx,dy=ty-this.cy,d=Math.hypot(dx,dy)||1,v=Math.min(sp,d*2.4);
+      this.vx=damp(this.vx,dx/d*v,k,dt);this.vy=damp(this.vy,dy/d*v,k,dt);};
+    const see=this.sensePlayer()>0;
+    if(this.alert>0)this.alert-=dt;
+    if(see)this.alert=4;
+    switch(this.state){
+      case 'idle':
+        seek(this.home.x+Math.sin(this.t*0.55+this.ph)*1.1,this.home.y+Math.sin(this.t*1.3+this.ph)*0.3,2.2,3);
+        if(see){this.state='track';this.st=0;}
+        break;
+      case 'track':{
+        /* занять точку над курьером, чуть сбоку: оттуда пике идёт под углом и читается */
+        const side=this.cx<p.cx?-1:1;
+        seek(p.cx+side*1.8,p.y-2.6,5.4,4);
+        this.face=p.cx>this.cx?1:-1;
+        if(this.alert<=0){this.state='home';this.st=0;}
+        else if(this.st>0.8&&this.cd<=0&&see&&Math.abs(this.cx-p.cx)<4&&this.cy<p.cy-0.8){
+          this.state='wind';this.st=0;g.audio.lampWind();}
+        break;}
+      case 'wind':
+        this.vx=damp(this.vx,0,9,dt);this.vy=damp(this.vy,-1.4,9,dt);this.face=p.cx>this.cx?1:-1;
+        if(this.st>0.58){const dx=p.cx-this.cx,dy=p.cy+0.2-this.cy,d=Math.hypot(dx,dy)||1;
+          this.dv={x:dx/d,y:dy/d};this.state='dive';this.st=0;g.audio.lampDive();}
+        break;
+      case 'dive':
+        this.vx=this.dv.x*17;this.vy=this.dv.y*17;
+        if(Math.random()<0.6)g.particles.spawn({kind:'spark',x:this.cx,y:this.cy-0.3,vx:-this.dv.x*3,vy:-this.dv.y*3,
+          life:0.3,size:0.05,col:'#ffb45a',add:true});
+        if(this.st>0.62){this.state='rise';this.st=0;this.cd=1.3;}
+        break;
+      case 'rise':
+        seek(this.cx-this.dv.x*1.5,Math.min(this.cy,p.y-2.6),4.2,3);
+        if(this.st>0.7){this.state=this.alert>0?'track':'home';this.st=0;}
+        break;
+      case 'reel':
+        this.vx=damp(this.vx,0,3.2,dt);this.vy=damp(this.vy,0,3.2,dt);
+        if(this.st>0.42){this.state='track';this.st=0;this.cd=Math.max(this.cd,0.7);this.alert=4;}
+        break;
+      case 'stun':
+        this.vx=damp(this.vx,0,4,dt);
+        if(this.st>1.3){this.state='rise';this.st=0;this.cd=0.9;this.vy=-3;}
+        break;
+      case 'home':
+        seek(this.home.x,this.home.y,3.2,3);
+        if(see){this.state='track';this.st=0;}
+        else if(Math.hypot(this.home.x-this.cx,this.home.y-this.cy)<0.4){this.state='idle';this.st=0;}
+        break;
+    }
+    this.rot+=dt*(this.state==='dive'?42:this.state==='stun'?3:this.state==='wind'?60:20);
+  }
+  draw(c,t){
+    const w=this.w,h=this.h,st=this.state;
+    const wind=st==='wind'?clamp(this.st/0.58,0,1):0,stun=st==='stun';
+    if(wind>0)c.translate((Math.random()-0.5)*0.06*wind,(Math.random()-0.5)*0.05*wind);
+    if(st==='dive')c.rotate(Math.atan2(this.dv.y,Math.abs(this.dv.x))*0.35-0.2);
+    if(stun)c.rotate(Math.sin(this.t*9)*0.25);
+    /* винт и ступица */
+    const hy=-h-0.42;
+    c.fillStyle='#5c4a2a';rr(c,-0.14,hy-0.06,0.28,0.18,0.06);c.fill();
+    c.save();c.translate(0,hy-0.06);
+    const bl=Math.cos(this.rot)*0.62;
+    c.fillStyle=stun?'rgba(160,150,130,.6)':'rgba(200,190,160,.28)';c.beginPath();c.ellipse(0,0,0.66,0.07,0,0,TAU);c.fill();
+    c.fillStyle='#8a7444';c.fillRect(-Math.abs(bl),-0.025,Math.abs(bl)*2,0.05);c.restore();
+    /* три цепи к чаше */
+    c.strokeStyle='#4a3d26';c.lineWidth=0.035;
+    for(const sx of [-0.36,0,0.36]){c.beginPath();c.moveTo(0,hy+0.1);c.lineTo(sx,-h*0.52);c.stroke();}
+    /* чаша: латунь, красное стекло, огонь */
+    const g=c.createLinearGradient(-w/2,0,w/2,0);
+    g.addColorStop(0,'#5a4420');g.addColorStop(.35,'#d8b25a');g.addColorStop(.6,'#a8842a');g.addColorStop(1,'#4a3812');
+    c.fillStyle='#7a2418';c.beginPath();c.ellipse(0,-h*0.52,w*0.42,h*0.12,0,0,TAU);c.fill();
+    const fl=stun?0.25:(0.6+0.15*Math.sin(t*11+this.ph)+wind*0.6);
+    const fc=wind>0.5?'#fff2d6':(this.alert>0?'#ff6a3a':'#ffb45a');
+    c.save();c.globalCompositeOperation='lighter';
+    c.fillStyle=rgba(fc,0.85*fl);c.beginPath();c.moveTo(-0.13,-h*0.55);
+    c.quadraticCurveTo(0,-h*0.55-0.5*fl-0.1,0.13,-h*0.55);c.closePath();c.fill();c.restore();
+    c.fillStyle=g;c.beginPath();c.moveTo(-w*0.46,-h*0.52);c.quadraticCurveTo(-w*0.4,-0.05,0,0);
+    c.quadraticCurveTo(w*0.4,-0.05,w*0.46,-h*0.52);c.closePath();c.fill();
+    c.fillStyle='rgba(255,240,200,.28)';c.beginPath();c.ellipse(-w*0.18,-h*0.36,0.06,0.16,0.3,0,TAU);c.fill();
+    c.fillStyle='#3a2a10';c.fillRect(-w*0.46,-h*0.55,w*0.92,0.06);
+    c.fillStyle=g;c.beginPath();c.moveTo(-0.08,0);c.lineTo(0.08,0);c.lineTo(0,0.18);c.closePath();c.fill();
+    if(stun&&Math.random()<0.2)this.world.game.particles.spawn({kind:'smoke',x:this.cx,y:this.y,vx:0,vy:-0.8,life:1,size:0.2,grow:0.6,col:'#3a342c',drag:1,a:0.4});
+    game.renderer.glowAdd(this.cx,this.y+0.3,0.9+wind*0.8,fc,stun?0.1:0.35+0.35*wind);
+  }
+}
+/* МОКРИЦА — сервисная тележка-уборщик: ползёт по полу, у края и у стены разворачивается.
+   Атак нет — только контакт. Два удара ключом; ударом вниз от неё отскакивают. На ней учатся бить. */
+class Mokrica extends Enemy{
+  constructor(world,def,x,y){
+    super(world,Object.assign({w:1.1,h:0.62,hp:52,dmg:1,aggro:6,blood:'#5a4a30'},def),x,y);
+    this.face=def.face||(rng(x*17+3)()<0.5?-1:1);this.curl=0;this.leg=0;this.skT=0;}
+  hurt(dmg,kx,ky){super.hurt(dmg,kx*0.6,Math.min(ky,0)*0.5);if(!this.dead)this.curl=0.45;}
+  ai(dt){
+    if(this.alert>0)this.alert-=dt;
+    if(this.sensePlayer()>0)this.alert=2;
+    if(this.curl>0){this.curl-=dt;this.vx=damp(this.vx,0,10,dt);return;}
+    const R=this.world.room;
+    if(this.onGround){
+      const fx=this.face>0?this.x+this.w:this.x-0.14;
+      const ahead={x:fx,y:this.bottom+0.04,w:0.14,h:0.3};
+      const floor=R.solids.some(s=>!s.hidden&&aabb(ahead,s));
+      const hz=(R.hazards||[]).some(h=>aabb({x:fx,y:this.y,w:0.14,h:this.h+0.35},h));
+      const pt=this.def.patrol;
+      const out=pt&&((this.face<0&&this.cx<pt[0])||(this.face>0&&this.cx>pt[1]));
+      if(!floor||hz||this.wall===this.face||out)this.face=-this.face;
+    }
+    this.vx=damp(this.vx,this.face*(this.alert>0?2.5:1.5),8,dt);
+    this.leg+=Math.abs(this.vx)*dt*7;
+    this.skT-=dt;if(this.skT<=0&&this.onGround){this.skT=0.5+Math.random()*0.4;
+      const p=this.world.player;if(p&&Math.abs(p.cx-this.cx)<9)this.world.game.audio.skitter();}
+  }
+  draw(c,t){
+    const w=this.w,h=this.h,cu=this.curl>0?clamp(this.curl/0.45,0,1):0;
+    c.strokeStyle='#2b241e';c.lineWidth=0.05;c.lineCap='round';
+    for(let i=0;i<5;i++){const x=-w*0.4+i*w*0.2,k=Math.sin(this.leg+i*1.9)*0.07;
+      c.beginPath();c.moveTo(x,-h*0.26);c.lineTo(x+0.05+k,-0.01);c.stroke();}
+    c.save();c.translate(0,-h*0.18);c.scale(1,1-cu*0.28);
+    for(let i=0;i<4;i++){const x=-w*0.44+i*w*0.24,sw=w*0.3,sh=h*(0.6+0.22*Math.sin((i+0.5)/4*PI));
+      const g=c.createLinearGradient(0,-sh,0,0);g.addColorStop(0,'#a8925a');g.addColorStop(.55,'#6b5a34');g.addColorStop(1,'#3a3020');
+      c.fillStyle=g;c.beginPath();c.ellipse(x+sw/2,0,sw*0.64,sh,0,PI,TAU);c.fill();
+      c.strokeStyle='rgba(20,16,10,.75)';c.lineWidth=0.03;c.beginPath();c.ellipse(x+sw/2,0,sw*0.64,sh,0,PI,TAU);c.stroke();
+      c.fillStyle='rgba(255,240,200,.2)';c.beginPath();c.ellipse(x+sw/2-0.04,-sh*0.72,sw*0.22,sh*0.1,0,0,TAU);c.fill();}
+    c.restore();
+    c.fillStyle='#3a3226';rr(c,w*0.36,-h*0.44,w*0.2,h*0.38,0.05);c.fill();
+    c.fillStyle='#8a7a5a';for(let i=0;i<5;i++)c.fillRect(w*0.4+i*0.03,-0.1,0.015,0.1);
+    const eye=this.alert>0?1:0.5+0.25*Math.sin(t*4+this.x);
+    c.fillStyle=rgba('#ff3b22',eye);c.beginPath();c.arc(w*0.5,-h*0.32,0.055,0,TAU);c.fill();
+    if(this.alert>0)game.renderer.glowAdd(this.cx+this.face*w*0.5,this.bottom-h*0.32,0.35,'#ff3b22',0.3);
+  }
+}
+const ENEMY_TYPES={repairer:Repairer,wrench:Repairer,aristocrat:Aristocrat,censor:Censor,gardener:Gardener,clockmaker:Clockmaker,
+  lampada:Lampada,mokrica:Mokrica};

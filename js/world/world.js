@@ -7,7 +7,10 @@ class World{
     this.nearDoor=null;this.nearInter=null;
     this.anims={};
     this.wheelSeq=false;this.wheelT=0;this.wheelDone2=false;
-    this.token=0;this.timers=[];}
+    this.token=0;this.timers=[];
+    /* убитые с последнего отдыха: обычные враги возвращаются, когда курьер отдохнул у фонаря или погиб
+       (как в HK); стражи с clearFlag и арены — навсегда */
+    this.slain={};}
   /* отложенные события в ИГРОВОМ времени: пауза/хитстоп их честно задерживают,
      смена комнаты (token) — отменяет */
   later(ms,fn){this.timers.push({at:this.time+ms/1000,fn:fn,tok:this.token});}
@@ -50,9 +53,13 @@ class World{
     this.room.playerRef=this.player;
     for(let i=0;i<this.room.pushables.length;i++)this.pushables.push(new Pushable(this.room.pushables[i],this));
     for(let i=0;i<this.room.interactables.length;i++)this.interactables.push(new Interactable(this.room.interactables[i],this));
+    /* обычные (amb) враги, убитые с последнего отдыха, не появляются; стражи с clearFlag — по флагу комнаты */
+    const sl=this.slain[id]||{};
     for(let i=0;i<this.room.enemies.length;i++){
       const e=this.room.enemies[i],C=ENEMY_TYPES[e.type];if(!C)continue;
-      this.enemies.push(new C(this,e,e.x,e.y));}
+      const key=e.type+'@'+e.x+','+e.y,amb=e.amb||!this.room.clearFlag;
+      if(amb&&sl[key])continue;
+      const en=new C(this,e,e.x,e.y);if(amb)en.key=key;this.enemies.push(en);}
     if(this.room.boss){
       const b=this.room.boss;
       const BC={overseer:Overseer,primarch:Primarch,archivist:Archivist}[b.type];
@@ -87,7 +94,18 @@ class World{
     g.particles.burst(pb.x+pb.w/2,pb.y+pb.h*0.6,12,{kind:'smoke',col:'#5a4c40',spd:2.4,life:1.6,size:0.5,grow:1.0,drag:1.4,a:0.5});
     g.tutorial.notify('break_'+pb.id);
   }
-  respawn(){const g=this.game;g.gs.hp=g.gs.maxHp();
+  /* отдых у фонаря-чекпоинта: куртка подкачана целиком, враги вернутся на посты, сохранение */
+  rest(cp){
+    const g=this.game,gs=g.gs,p=this.player;
+    this.game.checkpoints.activate(cp);
+    gs.hp=gs.maxHp();this.slain={};gs.save();g.hud.syncHp();
+    g.audio.heal();g.audio.checkpoint();g.flash(0.18,'#ffcf7a');
+    p.vx=0;p.restT=0.6;
+    g.particles.spawn({kind:'ring',x:cp.x,y:cp.y-cp.h*0.55,ringR:2.8,life:0.8,size:0.1,col:'#ffcf7a',add:true,a:0.8});
+    g.particles.burst(p.cx,p.cy,18,{kind:'dust',col:'#ffd79a',spd:1.4,life:1.2,size:0.05,add:true,drag:1.6,g:-1});
+    g.hud.say('КУРТКА ПОДКАЧАНА','ОТДЫХ · '+this.room.name);
+  }
+  respawn(){const g=this.game;g.gs.hp=g.gs.maxHp();this.slain={};
     this.load(g.gs.cp.room,g.gs.cp.x,g.gs.cp.y);g.hud.syncHp();}
   spawnWave(i){
     const R=this.room,wv=R.waves[i];if(!wv)return;
@@ -103,7 +121,7 @@ class World{
   checkClear(){
     const R=this.room;if(!R.clearFlag)return;
     if(R.waves&&this.waveIdx<R.waves.length-1)return;
-    if(this.enemies.some(e=>!e.dead))return;
+    if(this.enemies.some(e=>!e.dead&&!e.key))return;
     if(this.game.gs.flags[R.clearFlag])return;
     this.game.gs.flag(R.clearFlag);
     this.game.audio.checkpoint();
@@ -389,7 +407,7 @@ class World{
   /* Двери НИКОГДА не срабатывают сами: только E/F, стоя в проёме. */
   checkDoors(dt){
     const g=this.game,R=this.room,p=this.player;
-    this.nearDoor=null;this.nearInter=null;
+    this.nearDoor=null;this.nearInter=null;this.nearRest=null;
     if(this.doorCd>0)this.doorCd-=dt;
     const busy=this.bossDoorClosed||(R.waves&&this.waveIdx>=0&&!g.gs.flags[R.clearFlag]);
     if(!busy&&!p.dead){
@@ -409,8 +427,15 @@ class World{
       const r=it.rect(),dd=dist(p.cx,p.cy,r.x+r.w/2,r.y+r.h/2);
       if(dd<best){best=dd;this.nearInter=it;}
     }
+    /* фонарь-чекпоинт: E — отдых (полная куртка, враги возвращаются на посты). У самого фонаря
+       отдых важнее люка/двери под ногами; объект ближе фонаря — важнее отдыха */
+    const cp=R.checkpoint;
+    if(cp&&!p.dead&&p.onGround&&!this.boss&&Math.abs(p.bottom-cp.y)<0.6){
+      const rd=Math.abs(p.cx-cp.x),interD=this.nearInter?best:99;
+      if(rd<1.5&&interD>rd&&(rd<0.9||!this.nearDoor))this.nearRest=cp;}
     if(g.input.consume('use')){
-      if(this.nearInter)this.nearInter.use(g);
+      if(this.nearRest)this.rest(this.nearRest);
+      else if(this.nearInter)this.nearInter.use(g);
       else if(this.nearDoor){
         if(this.nearDoor.locked)g.gates.tryDoor(this.nearDoor.d);
         else if(this.doorCd<=0){this.doorCd=0.9;g.enterRoom(this.nearDoor.d);}

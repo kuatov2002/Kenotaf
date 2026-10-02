@@ -113,6 +113,13 @@ const LevelAudit={
     let starts=opts.starts;
     if(!starts){const ds=R.doors.filter(d=>!opts.from||(d.label||'').indexOf(opts.from)>=0||d.to===opts.from);
       starts=(ds.length?ds:R.doors).slice(0,opts.from?1:99).map(d=>doorArrival(R,d));}
+    /* вход сверху (провал, люк в своде): игрок прибывает в воздухе — сперва дать ему упасть */
+    const settle=s=>{const p=new Player(W,s.x,s.y);W.player=p;R.playerRef=p;FI.h={};FI.p={};
+      for(let i=0;i<720;i++){p.update(DT,FI);
+        if(p.y>R.h+1||hz.some(h=>aabb(p,h))||choke(p))return null;
+        mark(p);if(p.onGround&&i>2)return {x:p.x,y:p.y};}
+      return null;};
+    starts=starts.map(s=>settle(s)).filter(Boolean);
     const key=s=>Math.round(s.x/0.7)+':'+Math.round(s.y*4);
     const seen=new Set(),Q=[];
     for(const s of starts){const k=key(s);if(!seen.has(k)){seen.add(k);Q.push(s);}}

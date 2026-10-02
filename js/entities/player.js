@@ -66,7 +66,8 @@ class Player extends Body{
     if(this.jumpBuf>0)this.jumpBuf-=dt;
     if(this.slashT>0)this.slashT-=dt;
     if(this.pogoT>0)this.pogoT-=dt;
-    const canAct=this.hurtT<=0&&g.state==='play';
+    if(this.restT>0)this.restT-=dt;
+    const canAct=this.hurtT<=0&&g.state==='play'&&!(this.restT>0);
 
     /* 1. INPUT -> INTENT */
     if(inp.consume('jump')&&canAct)this.jumpBuf=C.jumpBuf;
@@ -76,7 +77,7 @@ class Player extends Body{
     const holdDn=inp.dn;
     /* РЕМОНТ: держать Q/I стоя на месте — сварка шва на куртке, ячейка за порцию РЕМОНТА */
     const healing=this.updateHeal(dt,inp,canAct&&!dashReq&&this.jumpBuf<=0);
-    const mv=(this.wallLock>0||healing)?0:inp.move;
+    const mv=(this.wallLock>0||healing||this.restT>0)?0:inp.move;
     /* взгляд вверх/вниз: стоишь и держишь ↑ (или сидишь) — камера заглядывает туда */
     const still=this.onGround&&Math.abs(this.vx)<0.4&&!healing;
     this.lookT=still&&(inp.up||this.crouch)?(this.lookT||0)+dt:0;

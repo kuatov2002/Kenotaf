@@ -37,9 +37,10 @@ async function launch(opts={}){
 }
 /* открыть игру и дождаться готовности (game создан, шрифты загружены или таймаут) */
 async function openGame(page,url){
-  await page.goto(url);
-  await page.waitForFunction(()=>typeof game!=='undefined'&&game&&game.world,null,{timeout:20000});
-  await page.evaluate(()=>document.fonts.ready);
+  /* не ждать 'load': внешние шрифты через прокси иногда висят десятки секунд */
+  await page.goto(url,{waitUntil:'domcontentloaded',timeout:60000});
+  await page.waitForFunction(()=>typeof game!=='undefined'&&game&&game.world,null,{timeout:30000});
+  await page.evaluate(()=>Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,8000))]));
   await page.waitForTimeout(300);
 }
 module.exports={ROOT,serve,launch,openGame};
