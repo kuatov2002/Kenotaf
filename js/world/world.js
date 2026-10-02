@@ -205,7 +205,8 @@ class World{
       const cyc=(this.time+(h.off||0))%(h.per||2.4);
       h.active=cyc<(h.on||0.7);
       h.warn=!h.active&&cyc>(h.per||2.4)-0.5;
-      if(h.active&&h.look==='heat'){if(Math.random()<0.5)this.game.particles.spawn({kind:'dust',x:h.x+Math.random()*h.w,y:h.y+Math.random()*h.h,
+      if(h.look==='press'){}
+      else if(h.active&&h.look==='heat'){if(Math.random()<0.5)this.game.particles.spawn({kind:'dust',x:h.x+Math.random()*h.w,y:h.y+Math.random()*h.h,
         vx:0,vy:-2-Math.random()*2,life:0.8,size:0.06,col:'#fff2c0',drag:0.4,a:0.8,add:true});}
       else if(h.active&&Math.random()<0.7)
         this.game.particles.spawn({kind:'steam',x:h.x+Math.random()*h.w,y:h.y+h.h,
@@ -234,7 +235,7 @@ class World{
         b.activated=true;this.bossDoorClosed=true;
         g.audio.bossRoar();g.audio.door();g.camera.addShake(1.0);
         g.hud.bossOn(b.name);
-        if(R.id==='z4_antechamber')g.hud.say('«ДОСТУП К ПЕЧАТИ — ТОЛЬКО СОВЕТУ.»','АРХИВАРИУС');
+        if(b.type==='archivist')g.hud.say('«ДОСТУП К ПЕЧАТИ — ТОЛЬКО СОВЕТУ.»','АРХИВАРИУС');
         else g.hud.say(R.id==='z1_boss'?'ВОРОТА ЗАХЛОПНУЛИСЬ.':'ГЕРМОДВЕРЬ ЗАКРЫТА.','');
         if(R.bossDoor)g.particles.burst(R.bossDoor.x+0.7,R.bossDoor.y+1,22,{kind:'dust',col:'#7a6c5c',spd:4,life:1,size:0.14,g:12});
       }
@@ -261,6 +262,8 @@ class World{
       }
       else if(b.type==='archivist'){g.gs.bosses.archivist=true;g.gs.flag('archivist_dead');
         g.hud.say('ПРИВОД АРХИВАРИУСА ЛЁГ МОСТОМ К КОЛЕСУ.','');}
+      else if(b.type==='uprooter'){g.gs.bosses.uprooter=true;g.gs.flag('boss3_dead');g.hud.say('КОРЧЕВАТЕЛЬ ЗАМЕР. В КАТАЛОГЕ БОЛЬШЕ НЕКОМУ НАВОДИТЬ ПОРЯДОК.','');}
+      else if(b.type==='regulator'){g.gs.bosses.regulator=true;g.gs.flag('boss4_dead');g.hud.say('ЧАСЫ ВСТАЛИ.','');}
       else{g.gs.bosses.primarch=true;g.gs.flag('boss2_dead');g.gs.flag('turbines_on');}
       g.gs.save();g.audio.door();g.hud.bossOff();
       this.later(2600,()=>this.reload());

@@ -9,9 +9,10 @@ const STATIONS={
   hub:{room:'z1_hub',x:9.4,y:34,name:'НАСОСНАЯ СТАНЦИЯ',zone:'ОТСТОЙНИК'},
   atrium:{room:'z2_atrium',x:30.5,y:35,name:'СОТЫ-АТРИУМ',zone:'СОТЫ'},
   eden:{room:'z3_greenhouse',x:15.6,y:30,name:'ОРАНЖЕРЕИ',zone:'ЭДЕМ'},
-  seal:{room:'z4_antechamber',x:15.8,y:24,name:'ПРЕДПЕЧАТЬЕ',zone:'ПЕЧАТЬ'}
+  seal:{room:'z4_antechamber',x:15.8,y:24,name:'ПРЕДПЕЧАТЬЕ',zone:'ПЕЧАТЬ'},
+  archive:{room:'z5_hall',x:13,y:21,name:'ПРИХОЖАЯ АРХИВА',zone:'АРХИВ'}
 };
-const STATION_ORDER=['hub','atrium','post','eden','seal'];
+const STATION_ORDER=['hub','atrium','post','eden','seal','archive'];
 
 /* Почтмейстер: что сказать и что выдать сейчас. Цилиндры сдаются все сразу, награды — на порогах. */
 const POST_REWARDS=[

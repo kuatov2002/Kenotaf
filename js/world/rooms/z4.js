@@ -4,7 +4,6 @@ Object.assign(ROOMDEFS,{
 z4_antechamber:gs=>({id:'z4_antechamber',zone:'seal',name:'ПРЕДПЕЧАТЬЕ',w:44,h:28,
   art:{bg:Art.bgSeal,mid:Art.midSeal,game:Art.gameSeal},
   build(R){
-    const done=gs.flags.wheel_turned;
     /* к магистрали B — два симметричных марша по 2.4 */
     R.solids=[S(-2,-3,48,3,'lead'),S(-2,0,2,28,'lead'),S(44,0,2,28,'lead'),S(0,24,44,4,'lead'),
       P(9,21.6,3.5,0.4,'lead'),P(12.8,19.2,3.2,0.4,'lead'),P(31.5,21.6,3.5,0.4,'lead'),P(28,19.2,3.2,0.4,'lead'),
@@ -16,15 +15,12 @@ z4_antechamber:gs=>({id:'z4_antechamber',zone:'seal',name:'ПРЕДПЕЧАТЬ�
     R.checkpoint={x:3,y:24,h:1.7,lit:gs.cp.room==='z4_antechamber'};
     R.mapPlate={kind:'mapplate',x:11.5,y:24,flag:'map_seal',title:'СХЕМА ПЕЧАТИ'};
     R.station={kind:'station',station:'seal',x:15.8,y:24,tubeTop:17.2};
-    const ready=gs.flags.gaugeA&&gs.flags.gaugeB&&gs.flags.gaugeC,arch=!!gs.flags.archivist_dead;
-    R.interactables=(ready&&arch&&!done)?[{kind:'wheel',x:22,y:24,label:'КОЛЕСО ПЕЧАТИ',flag:'wheel_turned'}]:[];
-    /* финал: три магистрали под давлением будят Архивариуса над Колесом */
-    if(ready&&!arch){
-      R.boss={type:'archivist',x:19.8,y:3.6};R.bossTrigger={x:1.4,y:2,w:41.2,h:22};
-      R.hazards=[3,8.5,14,27.5,33,38.5].map(x=>({x:x,y:21.8,w:2.6,h:2.2,kind:'steam',ctl:'arch'}));
-    }
-    R.machines=[{kind:'sealwheel',x:22,y:19.4,r:3.0,turned:done},{kind:'archivist',x:22,y:8.0,alive:done}];
-    R.lights=[lit(22,19.4,13,done?'#fff6dd':'#7f8792',done?1.35:0.55),
+    const ready=!!gs.flags.seal_gauges;
+    R.interactables=[];
+    /* подъёмник к ходу Регулятора: оживает, когда три магистрали под давлением */
+    R.doors.push({x:20.4,y:21.6,w:3.2,h:2.4,to:'z4_gearworks',label:'ПОДЪЁМ К РЕГУЛЯТОРУ',elevator:true,reqFlag:'seal_gauges',reqMsg:'ТРИ МАГИСТРАЛИ БЕЗ ДАВЛЕНИЯ'});
+    R.machines=[{kind:'flywheel',x:22,y:19.2,r:2.6,spd:ready?0.9:0.04}];
+    R.lights=[lit(22,19.4,13,ready?'#f2e6c0':'#7f8792',ready?1.1:0.55),
       lit(6,4,9,'#e8e8e8',0.6),lit(38,4,9,'#e8e8e8',0.6),lit(22,3,10,'#e8e8e8',0.5),
       lit(7,20,6,'#8fb6c9',0.4),lit(37,20,6,'#8fb6c9',0.4),
       lit(6.7,22.0,4,gs.flags.gaugeA?'#69d68f':'#c8452f',0.85),
@@ -46,17 +42,11 @@ z4_antechamber:gs=>({id:'z4_antechamber',zone:'seal',name:'ПРЕДПЕЧАТЬ�
       for(let i=0;i<3;i++)Kit.lightStrip(c,6+i*14,24.2,4,0.12);
       c.fillStyle='rgba(200,205,215,.07)';c.font='500 0.4px Oswald';
       for(let i=0;i<16;i++)c.fillText(['Св-41','ПЕЧАТЬ','ГЕРМЕТИЧНО','№'+((r()*90|0)+10)][(r()*4)|0],2+r()*40,4+r()*18);
-      c.save();c.globalAlpha=0.55;
-      c.fillStyle='#2c2e33';rr(c,18,5.0,8,7,0.6);c.fill();
-      Kit.gear(c,22,8.6,3.4,30,0.2,'#3a3d44');
-      c.fillStyle='#22242a';rr(c,20.4,6.2,3.2,4.0,0.4);c.fill();
-      for(let i=0;i<6;i++){const a=-PI*0.8+i*0.32;
-        c.strokeStyle='#2c2e33';c.lineWidth=0.22;c.beginPath();c.moveTo(22,8.0);
-        c.lineTo(22+Math.cos(a)*4.2,8.0+Math.sin(a)*3.2);c.stroke();}
-      c.fillStyle=done?'rgba(255,246,221,.9)':'rgba(90,96,106,.6)';
-      c.beginPath();c.arc(21.3,7.0,0.16,0,TAU);c.arc(22.7,7.0,0.16,0,TAU);c.fill();
-      c.restore();
-      Kit.stencil(c,18.0,4.4,'АРХИВАРИУС · ЗАМУРОВАН',0.3,'rgba(200,205,215,.4)',0.4);
+      /* шахта подъёмника к Регулятору: клеть над полом, тросы уходят в свод */
+      Kit.plate(c,19.6,5,4.8,0.6,'lead',970,{bolts:true});
+      c.strokeStyle='#2b3035';c.lineWidth=0.1;c.beginPath();c.moveTo(20.6,0);c.lineTo(20.6,21.6);c.moveTo(23.4,0);c.lineTo(23.4,21.6);c.stroke();
+      Kit.stencil(c,18.6,4.4,'К РЕГУЛЯТОРУ',0.32,'rgba(220,225,235,.5)',0.5);
+
       for(let i=0;i<20;i++)Kit.bolt(c,2+r()*40,24.1,0.08);
       Kit.pipe(c,[[0,3.4],[44,3.4]],0.3,'lead',{seed:970,rustN:0});
       Kit.pipe(c,[[0,25.4],[44,25.4]],0.24,'lead',{seed:971,rustN:0});
@@ -103,6 +93,7 @@ z4_exam_b:gs=>({id:'z4_exam_b',zone:'seal',name:'ЭКЗАМЕН B · ШАХТА 
     R.magnetRects=[{x:4,y:27.1,w:17,h:0.7},{x:2,y:9.1,w:15,h:0.7}];
     for(const m of R.magnetRects)R.solids.push(S(m.x,m.y,m.w,m.h,'steel'));
     R.hazards=[{x:5,y:33.4,w:15,h:1.2,kind:'pit',back:{x:2,y:30.32}}];
+    RB.lore(R,gs,23,22,32);
     R.doors=[{x:0.0,y:29.9,w:1.2,h:2.1,to:'z4_antechamber',link:'b_low',label:'ПРЕДПЕЧАТЬЕ'},
       {x:0.0,y:10.5,w:1.2,h:2.1,to:'z4_antechamber',link:'b_top',label:'ПРЕДПЕЧАТЬЕ'}];
     R.interactables=gs.flags.gaugeB?[]:[{kind:'gauge',x:1.6,y:12.6,label:'МАНОМЕТР B',flag:'gaugeB'}];

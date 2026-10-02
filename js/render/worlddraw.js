@@ -163,6 +163,16 @@ function drawWorldLive(c,R,t,gs){
     const h=hz[i];
     if(h.kind==='spikes'){Kit.spikes(c,h.x,h.y,h.w,h.h);
       c.fillStyle=rgba('#c8452f',0.16+0.06*Math.sin(t*3));c.fillRect(h.x,h.y+h.h*0.55,h.w,h.h*0.45);}
+    else if(h.look==='none'){}
+    else if(h.kind==='steam'&&h.look==='press'){
+      /* пресс: стальной шток с ударной плитой; перед ударом — дрожит и краснеет кромка */
+      const k=h.active?1:(h.warn?0.12+0.05*Math.sin(t*60):0.08),py=h.y+(h.h-0.6)*k;
+      c.fillStyle='#2b3035';c.fillRect(h.x+h.w*0.35,h.y-1.2,h.w*0.3,py-h.y+1.2);
+      Kit.plate(c,h.x-0.1,py,h.w+0.2,0.6,'steel',(h.x*7)|0,{bolts:true});
+      if(h.warn&&!h.active){c.fillStyle=rgba('#ff5a3a',0.5+0.4*Math.sin(t*20));c.fillRect(h.x-0.1,py+0.5,h.w+0.2,0.1);}
+      c.fillStyle='rgba(0,0,0,.35)';c.fillRect(h.x,h.y+h.h-0.06,h.w,0.06);
+      if(h.active)game.renderer.glowAdd(h.x+h.w/2,h.y+h.h,1.0,'#ffcf7a',0.25);
+    }
     else if(h.kind==='steam'&&h.look==='heat'){
       /* жар лампы-солнца: колонна марева, перед вспышкой — красная полоса на полу */
       if(h.active){c.save();c.globalCompositeOperation='lighter';const g=c.createLinearGradient(h.x,0,h.x+h.w,0);

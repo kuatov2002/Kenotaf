@@ -6,7 +6,7 @@
 class WorldMap{
   constructor(game){this.game=game;this.cache={};this.whole=false;}
   /* регион схемы — по номеру комнаты (тамбур Эдема нарисован свинцом Печати, но это Эдем) */
-  region(id){return {'1':'sump','2':'hives','3':'eden','4':'seal','5':'surface'}[id[1]]||'sump';}
+  region(id){if(id==='z5_surface')return 'surface';return {'1':'sump','2':'hives','3':'eden','4':'seal','5':'archive'}[id[1]]||'sump';}
   sig(){const gs=this.game.gs;return JSON.stringify(gs.flags)+JSON.stringify(gs.bosses)+JSON.stringify(gs.abilities);}
   info(id,sig){
     const c=this.cache[id];if(c&&c.sig===sig)return c;
@@ -21,7 +21,7 @@ class WorldMap{
     if(MAPSECRET[id])return false;
     return !!gs.flags['map_'+this.region(id)];}
   zoneOf(id){const c=this.cache[id];if(c)return c.zone;
-    return id[1]==='1'?'sump':id[1]==='2'?'hives':id[1]==='3'?(id==='z3_airlock'?'seal':'eden'):id[1]==='4'?'seal':'surface';}
+    return id[1]==='1'?'sump':id[1]==='2'?'hives':id[1]==='3'?(id==='z3_airlock'?'seal':'eden'):id[1]==='4'?'seal':(id==='z5_surface'?'surface':'archive');}
   render(cv){
     const g=this.game,gs=g.gs,dpr=Math.min(window.devicePixelRatio||1,2);
     const cw=Math.round(cv.clientWidth*dpr),ch=Math.round(cv.clientHeight*dpr);

@@ -7,6 +7,7 @@ class Interactable{
     if(d.kind==='salvage'||d.kind==='lever'||d.kind==='valve'||d.kind==='gauge'||d.kind==='wheel'||d.kind==='mapplate')return !gs.flags[d.flag];
     if(d.kind==='lore')return !gs.loreIds[d.loreId];
     if(d.kind==='station'||d.kind==='postmaster')return true;
+    if(d.kind==='broadcast')return !gs.flags.broadcast_done;
     if(d.kind==='talk'){if(gs.flags[d.flag]&&!d.again)return false;return d.ready?d.ready(this.world):true;}
     if(d.kind==='salvageBlocked'){
       if(gs.flags[d.flag])return false;
@@ -21,6 +22,7 @@ class Interactable{
     if(d.kind==='mapplate')return 'СКОПИРОВАТЬ СХЕМУ · '+d.title;
     if(d.kind==='station')return 'ПНЕВМОПОЧТА · '+(STATIONS[d.station]?STATIONS[d.station].name:'');
     if(d.kind==='postmaster')return 'ГОВОРИТЬ · ПОЧТМЕЙСТЕР';
+    if(d.kind==='broadcast')return 'ВЕЩАТЬ НА ВСЕ ЯРУСЫ';
     return d.label||'ОСМОТРЕТЬ';}
   use(game){
     const gs=game.gs,d=this.def,w=this.world;
@@ -45,6 +47,15 @@ class Interactable{
       if(!gs.flags['st_'+d.station]){gs.flag('st_'+d.station);game.audio.checkpoint();
         game.particles.burst(this.x,this.y-1.4,18,{kind:'spark',col:'#9fe0ff',spd:4,life:0.6,size:0.05,add:true,g:6});}
       game.travel.open(d.station);
+    }else if(d.kind==='broadcast'){
+      /* сказать ярусам правду можно, только когда её достаточно: цилиндров — не меньше BROADCAST_N */
+      if((gs.lore||0)<BROADCAST_N){game.audio.denied();
+        game.hud.say('МИКРОФОН ЖИВ. НО ЧТО СКАЗАТЬ? ЗАПИСЕЙ '+(gs.lore||0)+' ИЗ '+BROADCAST_N+' — ИМ НЕ ПОВЕРЯТ.','ВЕЩАТЕЛЬНЫЙ МАССИВ');return;}
+      game.cinematic.play({x:this.x,y:this.y,title:'ВЕЩАТЕЛЬНЫЙ МАССИВ',setFlags:['broadcast_done'],
+        lines:['КУРЬЕР СТАВИТ ЦИЛИНДРЫ В ПРИЁМНИК ПО ОДНОМУ. ИГЛА ИДЁТ ПО ДОРОЖКАМ.',
+          'ПО ВСЕМ ЯРУСАМ, В КАЖДОЙ КВАРТИРЕ, ИЗ КАЖДОГО ГРОМКОГОВОРИТЕЛЯ — ГОЛОСА ТЕХ, КТО ЗНАЛ.',
+          'ЗАВЕТ. ПРИКАЗ НАДСМОТРЩИКУ. УСТАВ ЦЕНЗУРЫ. ТЕЛЕМЕТРИЯ. ПОСЛЕДНЯЯ ЗАПИСЬ ОСНОВАТЕЛЯ.',
+          'ВНИЗУ, НА ЯРУСЕ −41, КТО-ТО ВЫКЛЮЧАЕТ НАСОС И ПРИСЛУШИВАЕТСЯ.']});
     }else if(d.kind==='postmaster'){
       const sc=postmasterScene(gs);
       game.cinematic.play({x:this.x,y:this.y,title:'ПОЧТМЕЙСТЕР',lines:sc.lines,upgrades:sc.upgrades,setFlags:sc.flags});
@@ -53,7 +64,9 @@ class Interactable{
       game.hud.say('СХЕМА СКОПИРОВАНА В ПЛАНШЕТ · ESC — КАРТА',d.title);
     }else if(d.kind==='gauge'){
       gs.flag(d.flag);game.audio.checkpoint();game.flash(0.25);
-      game.hud.say(d.label+' · ПОД ДАВЛЕНИЕМ','');
+      const all=gs.flags.gaugeA&&gs.flags.gaugeB&&gs.flags.gaugeC;
+      if(all&&!gs.flags.seal_gauges){gs.flag('seal_gauges');game.hud.say('ТРИ МАГИСТРАЛИ ПОД ДАВЛЕНИЕМ. ПОДЪЁМНИК ПРЕДПЕЧАТЬЯ ОЖИЛ.','');}
+      else game.hud.say(d.label+' · ПОД ДАВЛЕНИЕМ','');
       w.later(900,()=>w.reload());
     }else if(d.kind==='wheel'){
       gs.flag(d.flag);game.audio.wheel();w.wheelSeq=true;w.wheelT=0;
@@ -119,6 +132,9 @@ class Interactable{
       c.strokeStyle=rgba('#bfefff',0.4+0.3*p);c.lineWidth=0.05;
       c.beginPath();c.arc(this.x,this.y-0.6,0.7+p*0.1,0,TAU);c.stroke();
       game.renderer.glowAdd(this.x,this.y-0.6,1.0,'#69d68f',0.25+0.15*p);
+    }else if(d.kind==='broadcast'){
+      c.fillStyle=rgba('#69d68f',0.15+0.12*p);c.beginPath();c.arc(this.x,this.y-1.0,1.4,0,TAU);c.fill();
+      game.renderer.glowAdd(this.x,this.y-1.0,1.6,'#69d68f',0.3+0.2*p);
     }else if(d.kind==='talk'){
       /* «…» над головой: с ним можно поговорить */
       const hy=this.y-2.35+Math.sin(t*2)*0.05;

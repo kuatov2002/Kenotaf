@@ -36,7 +36,8 @@ const ZONES={
   sump:{name:'ОТСТОЙНИК',num:'ЗОНА I',ambRGB:[104,90,78],haze:'#5a4636',void:'#0a0806',fogA:0.09,grain:0.045},
   hives:{name:'ЖИЛЫЕ СОТЫ',num:'ЗОНА II',ambRGB:[100,80,74],haze:'#40282a',void:'#080606',fogA:0.1,grain:0.05},
   eden:{name:'САДЫ ЭДЕМА',num:'ЗОНА III',ambRGB:[206,208,184],haze:'#cfd6a2',void:'#2a2c22',fogA:0.12,grain:0.03},
-  seal:{name:'ПЕЧАТЬ',num:'ЗОНА IV',ambRGB:[124,128,138],haze:'#5b6068',void:'#07080a',fogA:0.08,grain:0.028},
+  seal:{name:'МЕХАНИЗМ ПЕЧАТИ',num:'ЗОНА IV',ambRGB:[124,128,138],haze:'#5b6068',void:'#07080a',fogA:0.08,grain:0.028},
+  archive:{name:'АРХИВ СОВЕТА',num:'ЗОНА V',ambRGB:[124,108,88],haze:'#3a2e22',void:'#060504',fogA:0.1,grain:0.035},
   surface:{name:'ПОВЕРХНОСТЬ',num:'СНАРУЖИ',ambRGB:[216,226,236],haze:'#cfe0ea',void:'#8fb0cc',fogA:0.06,grain:0.03}
 };
 /* Читаемость геймплейного слоя по зонам:
@@ -48,5 +49,6 @@ const READ={
   hives:{veil:'rgba(9,5,5,.34)',rim:'#ffcf94',rimA:0.78,out:'rgba(0,0,0,.72)',body:null,ent:'#ffe2b8'},
   eden:{veil:'rgba(236,233,214,.3)',rim:'#fff7d8',rimA:0.9,out:'rgba(46,40,22,.82)',body:'rgba(120,112,84,.22)',ent:'#2e2a1a'},
   seal:{veil:'rgba(5,6,8,.3)',rim:'#eef4ff',rimA:0.78,out:'rgba(0,0,0,.75)',body:null,ent:'#e6eef8'},
+  archive:{veil:'rgba(8,6,4,.3)',rim:'#ffe2b0',rimA:0.8,out:'rgba(0,0,0,.75)',body:null,ent:'#ffe2b8'},
   surface:{veil:null,rim:'#f6ffe2',rimA:0.6,out:'rgba(30,40,20,.6)',body:null,ent:'#1e2616'}
 };

@@ -17,7 +17,8 @@ const {serve,launch,openGame}=require('./lib');
         const flags={},bo={};for(const f of (fl||'').split('+'))if(f){if(f.indexOf('B_')===0)bo[f.slice(2)]=true;else flags[f]=true;}
         const kb=game.gs.bosses;game.gs.bosses=bo;
         game.state='play';
-        const res=LevelAudit.run(room,(ab||'').split(',').filter(Boolean),{flags,max:900,timeMs:60000,from:from||undefined});
+        const o={flags,max:900,timeMs:60000};if(from&&from[0]==='@'){const q=from.slice(1).split(',').map(Number);o.starts=[{x:q[0],y:q[1]}];}else if(from)o.from=from;
+        const res=LevelAudit.run(room,(ab||'').split(',').filter(Boolean),o);
         game.gs.bosses=kb;return res;},[room,ab,fl,from]);
       console.log('== '+r.room+(from?' from '+from:'')+' ['+r.abil+'] states:'+r.states+' left:'+r.left+' '+r.ms+'ms');
       console.log('  doors: '+r.doors.join(' | '));

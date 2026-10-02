@@ -14,7 +14,9 @@ const MUSIC={
   eden:{chords:[[48,55,59,64],[45,52,55,60],[41,48,52,57],[41,48,50,56]],dur:10,pad:1250,padG:0.0085,
     bells:[72,74,76,79,81,84],bellEvery:[3,6],bellG:0.0095,bed:{lp:300,g:0.016,lfo:0.08},air:0.005},
   seal:{chords:[[40,47,52,59],[41,48,53,57],[40,47,52,55],[38,45,50,57]],dur:14,pad:600,padG:0.008,
-    bells:[64,65,71,72,76],bellEvery:[6,12],bellG:0.01,bed:{lp:110,g:0.03,lfo:0.03},drone:[28,0.022],tick:1.0},
+    bells:[64,65,71,72,76],bellEvery:[6,12],bellG:0.01,bed:{lp:110,g:0.04,lfo:0.03},drone:[28,0.03],tick:0.5,clank:[6,13]},
+  archive:{chords:[[38,45,50,57],[36,43,48,55]],dur:20,pad:420,padG:0.004,
+    bells:[69,74,76],bellEvery:[14,26],bellG:0.006,bed:{lp:90,g:0.012,lfo:0.02},click:[5,14]},
   surface:{chords:[[48,55,60,64],[43,50,55,59],[45,52,57,60],[41,48,53,57]],dur:8,pad:1700,padG:0.0095,
     bells:[72,74,76,79,81],bellEvery:[2.5,5],bellG:0.0105,bed:{lp:800,g:0.018,lfo:0.12},air:0.01}
 };
@@ -286,6 +288,8 @@ class AudioSystem{
         const w=ctx.createGain();w.gain.value=1;o.connect(vg);vg.connect(w);w.connect(this.verb);
         o.start(t0);o.stop(t0+0.12);own(o,[vg,w]);later(rnd(M.drip[0],M.drip[1]),drip);};later(rnd(1,3),drip);}
     if(M.tick){let k=0;const tick=()=>{burst(k++%2?1050:1300,7,0.009,0.03,0.25);later(M.tick,tick);};later(0.5,tick);}
+    if(M.click){const click=()=>{burst(rnd(1800,2600),9,0.012,0.025,0.6);if(Math.random()<0.4)later(0.12,()=>burst(rnd(1600,2200),9,0.008,0.02,0.6));
+      later(rnd(M.click[0],M.click[1]),click);};later(rnd(2,5),click);}
     pad();later(rnd(1.5,3.5),bell);
     try{g.gain.setTargetAtTime(1,this.t(),1.3);}catch(e){g.gain.value=1;}
   }

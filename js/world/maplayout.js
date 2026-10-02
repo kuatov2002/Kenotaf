@@ -13,11 +13,12 @@ const MAPLAYOUT={
   /* ЗОНА III · САДЫ ЭДЕМА */
   z3_airlock:[392,290],z3_greenhouse:[424,262],z3_collector:[478,278],z3_dome:[478,240],z3_intake:[398,240],z3_orchard:[364,262],z3_apiary:[316,262],z3_roots:[360,300],z3_canal:[420,300],z3_herbarium:[490,302],z3_sunhall:[540,282],z3_shed:[596,290],z3_boss:[630,278],z3_quiet:[690,290],z3_vineyard:[470,214],z3_seedvault:[372,326],z3_hive:[300,244],
   /* ЗОНА IV · ПЕЧАТЬ */
-  z4_antechamber:[544,196],z4_exam_a:[544,180],z4_exam_b:[590,160],z4_exam_c:[590,198],
+  z4_antechamber:[544,196],z4_exam_a:[544,180],z4_exam_b:[590,160],z4_exam_c:[590,198],z4_gearworks:[640,186],z4_pendulum:[704,160],z4_escapement:[730,206],z4_clocktower:[790,150],z4_boss:[820,130],z4_quiet:[872,140],z4_gate:[900,108],z4_pressure:[642,212],z4_vault:[686,232],z4_bellows:[670,140],z4_counter:[740,166],z4_bell:[818,112],
+  z5_hall:[944,96],z5_busts:[994,100],z5_stacks:[1058,74],z5_reading:[1092,62],z5_council:[1150,56],z5_crypt:[1200,64],z5_lift:[1254,34],z5_boss:[1280,10],z5_broadcast:[944,60],z5_private:[1066,44],
   /* СНАРУЖИ */
-  z5_surface:[560,120]
+  z5_surface:[1290,-30]
 };
 /* тайники: на скопированной схеме зоны их нет, пока курьер сам туда не войдёт (у двери — обрубок с «?») */
-const MAPSECRET={z1_drain:1,z2_overgrown:1,z3_intake:1,z1_shrine:1,z1_cache:1,z2_printing:1,z2_nursery:1,z2_vault:1,z3_seedvault:1,z3_hive:1};
+const MAPSECRET={z1_drain:1,z2_overgrown:1,z3_intake:1,z1_shrine:1,z1_cache:1,z2_printing:1,z2_nursery:1,z2_vault:1,z3_seedvault:1,z3_hive:1,z4_vault:1,z4_bell:1,z5_private:1};
 /* цвет заливки комнаты на схеме по зоне */
-const MAPTINT={sump:'#5a4636',hives:'#5c3a34',eden:'#6f7a46',seal:'#4e5868',surface:'#6f8ea6'};
+const MAPTINT={sump:'#5a4636',hives:'#5c3a34',eden:'#6f7a46',seal:'#4e5868',archive:'#5a4a36',surface:'#6f8ea6'};
