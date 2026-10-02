@@ -28,7 +28,9 @@ async function launch(opts={}){
   /* Linux CI — свой Chromium; Windows без скачанных браузеров — установленный Edge */
   const exe=['/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
     'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe','C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find(p=>fs.existsSync(p));
-  const b=await chromium.launch(Object.assign({args:['--use-gl=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist'].concat(opts.args||[])},
+  /* gpu: настоящая видеокарта (D3D11/ANGLE) — для замеров кадра; по умолчанию программная отрисовка */
+  const gl=opts.gpu?['--use-angle=d3d11','--ignore-gpu-blocklist']:['--use-gl=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist'];
+  const b=await chromium.launch(Object.assign({args:gl.concat(opts.args||[])},
     exe?{executablePath:exe}:{}));
   const ctx=await b.newContext({viewport:{width:opts.w||1280,height:opts.h||720},ignoreHTTPSErrors:true});
   const page=await ctx.newPage();

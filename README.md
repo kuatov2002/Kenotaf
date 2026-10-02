@@ -66,7 +66,7 @@ node tools/combat.js       # 45 сценариев боя: окна прерыв
 node tools/progress.js     # решатель прогрессии: финал достижим, без любой способности — нет
 node tools/bosslab.js z5_boss 40 out.png --kill   # бой с боссом без ввода, фазы, смерть, кадр
 node tools/reach.js z4_exam_b:pulse,dash,vjump     # достижимость дверей и предметов в комнате
-node tools/perf.js         # время кадра 1920×1080 и утечки на переходах
+node tools/perf.js --gpu   # FPS настоящего цикла на 1920×1080 и утечки на переходах
 node tools/maplayout.js    # схема мира: пересечения комнат (--fix раздвигает)
 ```
 
