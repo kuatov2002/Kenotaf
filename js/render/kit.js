@@ -441,19 +441,35 @@ const Kit={
     c.strokeStyle='#2c2f34';c.lineWidth=r*0.1;c.beginPath();c.arc(0,0,r*0.94,0,TAU);c.stroke();
     c.fillStyle='#b08d3e';c.beginPath();c.arc(0,-r*0.55,r*0.16,0,TAU);c.fill();
     c.strokeStyle='#3a3d42';c.lineWidth=r*0.14;c.beginPath();c.arc(0,-r*0.55,r*0.26,PI*1.1,PI*1.9);c.stroke();c.restore();},
+  /* фонарь-колонка подкачки: литой столб, колпак с огнём наверху, бухта шланга, рама таблички
+     (ячейки и клавишу рисует LampSystem после света) */
   checkpointPost(c,x,y,h,lit){c.save();c.translate(x,y);
-    c.fillStyle='rgba(0,0,0,.45)';c.beginPath();c.ellipse(0.06,0.04,0.62,0.16,0,0,TAU);c.fill();
-    c.fillStyle='#3a3129';rr(c,-0.52,-0.22,1.04,0.26,0.05);c.fill();
-    const g=c.createLinearGradient(-0.3,0,0.3,0);
-    g.addColorStop(0,'#6d5416');g.addColorStop(.3,'#e8c96a');g.addColorStop(.55,'#c9a227');g.addColorStop(1,'#5c460f');
-    c.fillStyle=g;rr(c,-0.26,-h,0.52,h,0.08);c.fill();
-    c.strokeStyle='rgba(0,0,0,.35)';c.lineWidth=0.03;
-    for(let i=1;i<5;i++){c.beginPath();c.moveTo(-0.26,-h*i/5);c.lineTo(0.26,-h*i/5);c.stroke();}
-    c.fillStyle='#1b1712';rr(c,-0.17,-h*0.78,0.34,0.5,0.06);c.fill();
-    c.fillStyle=lit?'#ffcf7a':'#2f2a22';rr(c,-0.14,-h*0.75,0.28,0.44,0.05);c.fill();
-    c.fillStyle='rgba(255,255,255,.28)';c.fillRect(-0.11,-h*0.74,0.06,0.4);
-    this.bolt(c,-0.2,-h+0.14,0.05);this.bolt(c,0.2,-h+0.14,0.05);
-    this.valve(c,0,-h*0.28,0.17,0.5,'#a8842a');c.restore();},
+    c.fillStyle='rgba(0,0,0,.45)';c.beginPath();c.ellipse(0.06,0.04,0.9,0.18,0,0,TAU);c.fill();
+    /* постамент */
+    c.fillStyle='#2e2822';rr(c,-0.62,-0.3,1.24,0.32,0.05);c.fill();
+    c.fillStyle='#4a4036';rr(c,-0.5,-0.42,1.0,0.16,0.04);c.fill();
+    c.fillStyle='rgba(255,230,190,.14)';c.fillRect(-0.5,-0.42,1.0,0.03);
+    /* столб: чугун с латунными бандажами */
+    const g=c.createLinearGradient(-0.16,0,0.16,0);
+    g.addColorStop(0,'#1b1916');g.addColorStop(.35,'#5a524a');g.addColorStop(.6,'#3a342e');g.addColorStop(1,'#161412');
+    c.fillStyle=g;c.fillRect(-0.13,-2.25,0.26,1.85);
+    const bg=c.createLinearGradient(-0.18,0,0.18,0);
+    bg.addColorStop(0,'#6d5416');bg.addColorStop(.35,'#e8c96a');bg.addColorStop(1,'#5c460f');
+    for(const yy of [-0.62,-1.25,-2.22]){c.fillStyle=bg;c.fillRect(-0.18,yy,0.36,0.1);}
+    /* бухта шланга на крюке */
+    c.strokeStyle='#2b2620';c.lineWidth=0.08;
+    for(let i=0;i<3;i++){c.beginPath();c.ellipse(0.32,-0.98+i*0.05,0.2,0.26,0,0,TAU);c.stroke();}
+    c.fillStyle='#b08d3e';c.fillRect(0.12,-1.26,0.14,0.08);
+    /* колпак: клетка, стекло, огонь */
+    c.fillStyle='#2a241d';rr(c,-0.34,-2.36,0.68,0.14,0.04);c.fill();
+    c.fillStyle=lit?'rgba(255,214,140,.92)':'rgba(255,190,110,.45)';rr(c,-0.26,-3.0,0.52,0.64,0.12);c.fill();
+    c.fillStyle='rgba(255,255,255,.35)';c.fillRect(-0.18,-2.92,0.06,0.48);
+    c.strokeStyle='#2a241d';c.lineWidth=0.05;
+    for(const xx of [-0.27,0,0.27]){c.beginPath();c.moveTo(xx,-3.02);c.lineTo(xx,-2.34);c.stroke();}
+    c.beginPath();c.moveTo(-0.3,-2.68);c.lineTo(0.3,-2.68);c.stroke();
+    c.fillStyle='#2a241d';c.beginPath();c.moveTo(-0.38,-3.0);c.lineTo(0.38,-3.0);c.lineTo(0.16,-3.22);c.lineTo(-0.16,-3.22);c.closePath();c.fill();
+    c.fillStyle='#b08d3e';c.beginPath();c.arc(0,-3.28,0.07,0,TAU);c.fill();
+    c.restore();},
   loreCylinder(c,x,y){c.save();c.translate(x,y);
     c.fillStyle='rgba(0,0,0,.4)';rr(c,-0.24,-0.1,0.5,0.22,0.08);c.fill();
     const g=c.createLinearGradient(0,-0.16,0,0.16);

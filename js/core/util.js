@@ -1,6 +1,6 @@
 "use strict";
 /* ==========================================================================
-   КЕНОТАФ — vertical slice. Итерация: PHYSICS / INPUT / STABILITY PASS.
+   КЕНОТАФ. Итерация: PHYSICS / INPUT / STABILITY PASS.
    - Player visual anchor = physical BOTTOM (feet == collider bottom).
    - Input: pending action queue с timestamp + expiry; полная очистка на blur.
    - Jump flow: intent -> buffer -> integrate -> collide -> grounded -> consume.
@@ -11,7 +11,6 @@
    - World.later(): все отложенные колбэки привязаны к token + room id.
    - Hazard update order: machines/hazards -> player -> enemies -> events.
    - Boss: явный bossTrigger.
-   - Debug: физическая диагностика, PLAYER BOX, feet point, ground line, F2.
    - Perf: soft-sprite кэш частиц, кэш grain pattern.
    Итерация: READABILITY / ONBOARDING PASS (фидбэк плейтеста).
    - Геометрия читается всегда: кромки твёрдых поверхностей, игрок/враги/цели

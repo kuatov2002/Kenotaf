@@ -111,8 +111,12 @@ class SalvageSystem{
   constructor(game){this.game=game;}
   collect(def){const gs=this.game.gs;if(gs.flags[def.flag])return;
     gs.flag(def.flag);this.game.cinematic.play(def);}
-  lore(def){const gs=this.game.gs;
-    if(gs.loreIds[def.loreId]){this.game.hud.say('ЦИЛИНДР УЖЕ ИЗВЛЕЧЁН','');return;}
-    gs.loreIds[def.loreId]=true;gs.lore++;gs.save();
-    this.game.audio.lore();this.game.hud.showLore(def.text,def.title);}
+  /* цилиндр — фонограмма: игла, шорох и далёкий голос; текст — субтитрами (если включены) и в архиве */
+  lore(def){const g=this.game,gs=g.gs,L=LORE[def.loreId]||{};
+    if(gs.loreIds[def.loreId]){g.hud.say('ЦИЛИНДР УЖЕ ИЗВЛЕЧЁН','');return;}
+    gs.loreIds[def.loreId]=true;gs.lore=Object.keys(gs.loreIds).length;gs.save();
+    const text=def.text||L.text||'',title='ЦИЛИНДР №'+def.loreId+' · '+(L.title||def.title||'');
+    g.audio.lore();g.audio.phono(clamp(text.length*0.055,3,9));
+    if(Settings.get('subs'))g.hud.showLore(text,title);
+    else{g.hud.say(title,'ЗАПИСЬ — В АРХИВЕ (ESC)');g.hud.syncAbilities();}}
 }

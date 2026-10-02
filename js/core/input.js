@@ -13,7 +13,7 @@ class Input{
     this.k=Object.create(null);this.p=Object.create(null);this.r=Object.create(null);
     this.pending={};for(const a in KEYMAP)this.pending[a]={n:0,t:-1e9};
     this.ml=false;this.mr=false;this.enabled=true;this.EXPIRY=220;this.skip=false;
-    const pv=['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab','F1','F2','KeyE','KeyF',
+    const pv=['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab','KeyE','KeyF',
       'KeyJ','KeyK','KeyL','KeyX','KeyC','KeyZ','ShiftLeft','ShiftRight','KeyQ','KeyI'];
     addEventListener('keydown',e=>{
       if(pv.indexOf(e.code)>=0)e.preventDefault();
@@ -22,8 +22,6 @@ class Input{
       this.k[e.code]=true;this.p[e.code]=true;
       if(SKIP_KEYS.indexOf(e.code)>=0)this.skip=true;
       for(const a in KEYMAP)if(KEYMAP[a].indexOf(e.code)>=0)this.press(a);
-      if(e.code==='F1')game.debug.toggle();
-      if(e.code==='F2')game.debug.resetPlayer();
       if(e.code==='Escape')game.togglePause();
       if(e.code==='Tab'&&game.state==='pause'&&game.mapCv){game.map.whole=!game.map.whole;game.map.render(game.mapCv);}
       if(e.code==='KeyM'){game.audio.init();game.audio.toggleMute();}

@@ -47,6 +47,7 @@ class World{
     if(via){const td=pairDoor(this.room,via.from,via.door);
       if(td){const a=doorArrival(this.room,td);px=a.x;py=a.y;face=a.face;this.arrivedDoor=td;}}
     this.player=new Player(this,px,py);this.player.face=face;this.player.energy=this.player.maxEnergy();
+    this.entryT=0;this.playerActed=false;this.arrive={x:px+CFG.player.w/2,y:py+CFG.player.h/2};g.lamps.reset();
     if(prev){const p=this.player;p.vx=prev.vx;p.vy=prev.vy;p.face=prev.face;p.energy=prev.energy;p.invuln=prev.invuln;}
     /* точка отката при удушье в пыльце: вход в комнату — заведомо чистый воздух */
     if(!soft||!this.safeSpot)this.safeSpot={x:px,y:py};this.chokeT=0;this.exiting=false;
@@ -97,16 +98,12 @@ class World{
     g.tutorial.notify('break_'+pb.id);
   }
   /* отдых у фонаря-чекпоинта: куртка подкачана целиком, враги вернутся на посты, сохранение */
-  rest(cp){
-    const g=this.game,gs=g.gs,p=this.player;
-    this.game.checkpoints.activate(cp);
-    gs.hp=gs.maxHp();this.slain={};gs.save();g.hud.syncHp();
-    g.audio.heal();g.audio.checkpoint();g.flash(0.18,'#ffcf7a');
-    p.vx=0;p.restT=0.6;
-    g.particles.spawn({kind:'ring',x:cp.x,y:cp.y-cp.h*0.55,ringR:2.8,life:0.8,size:0.1,col:'#ffcf7a',add:true,a:0.8});
-    g.particles.burst(p.cx,p.cy,18,{kind:'dust',col:'#ffd79a',spd:1.4,life:1.2,size:0.05,add:true,drag:1.6,g:-1});
-    g.hud.say('КУРТКА ПОДКАЧАНА','ОТДЫХ · '+this.room.name);
-  }
+  rest(cp){this.game.lamps.rest(cp);}
+  /* передышка на входе: первую секунду никто не бьёт; механизмы у самой двери ждут первого
+     действия курьера (шаг, прыжок, удар) — нельзя получить урон, ещё не увидев комнату */
+  calm(e){if(this.entryT<1.1)return true;
+    if(!this.playerActed&&this.arrive&&Math.hypot(e.cx-this.arrive.x,e.cy-this.arrive.y)<7)return true;
+    return false;}
   addDebris(o){const d=new Debris(this,o);this.debris.push(d);
     /* не больше 28 обломков: старые мелкие исчезают первыми, корпуса держатся */
     if(this.debris.length>28){const i=this.debris.findIndex(q=>!q.corpse);this.debris.splice(i>=0?i:0,1);}
@@ -144,6 +141,10 @@ class World{
     this.updateHazards();
     this.updateWaves(dt);
     this.player.update(dt,g.input);
+    this.entryT+=dt;
+    if(!this.playerActed){const p=this.player,I=g.input;
+      if(I.move!==0||p.jumpBuf>0||!p.onGround||p.atkPhase||p.dashT>0||p.pulseT>0||p.crouch||p.healT>0)this.playerActed=true;}
+    g.lamps.update(dt);
     this.updatePollen(dt);
     for(let i=0;i<this.enemies.length;i++)this.enemies[i].update(dt);
     this.updateBoss(dt);
@@ -312,7 +313,7 @@ class World{
     const pr=p.rect(),inset=r=>({x:r.x+0.12,y:r.y+0.15,w:Math.max(0.1,r.w-0.24),h:Math.max(0.1,r.h-0.2)});
     for(let i=0;i<this.enemies.length;i++){
       const e=this.enemies[i];
-      if(e.dead||(e.safe&&e.safe()))continue;
+      if(e.dead||(e.safe&&e.safe())||this.calm(e))continue;
       if(aabb(inset(e.rect()),pr)){g.combat.contactDamage(p,e,1);return;}
     }
     const b=this.boss;
@@ -375,7 +376,6 @@ class World{
     }
     if(this.wheelSeq){
       this.wheelT+=dt;
-      g.camera.addShake(0.28);
       if(ms)for(let i=0;i<ms.length;i++)if(ms[i].kind==='sealwheel'){ms[i].turned=true;ms[i].a=(ms[i].a||0)+dt*0.7;}
       if(Math.random()<0.4)g.particles.spawn({kind:'dust',x:22+(Math.random()-0.5)*6,y:22,
         vy:-1.4,life:1.4,size:0.12,col:'#8a8d94',g:2});

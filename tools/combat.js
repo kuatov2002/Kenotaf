@@ -61,10 +61,10 @@ S.wall_pin=`${PRE(null,38.2)}
 
 S.turn_taking=`${PRE()}
   const a=LAB.e(LAB.spawn('repairer',36.2,11-1.55)),b=LAB.e(LAB.spawn('repairer',32.0,11-1.55));a.cd=0;b.cd=0;
-  game.debugOpts.invuln=true;let both=0,any=0;
+  game.world.player.invuln=1e9;let both=0,any=0;
   for(let i=0;i<1200;i++){LAB.step(1);const aa=a.state==='wind'||a.state==='strike',bb=b.state==='wind'||b.state==='strike';
     if(aa&&bb)both++;if(aa||bb)any++;}
-  game.debugOpts.invuln=false;
+  game.world.player.invuln=0;
   return {ok:both===0&&any>100,info:{both,any}};`;
 
 S.death_debris=`${PRE()}
@@ -99,9 +99,9 @@ const OV=(px)=>`LAB.setup('z1_boss',${px||8},22-1.68,['pulse','dash']);LAB.step(
   const b=game.world.boss;b.activated=true;b.woke=true;b.state='idle';b.st=0;b.cd=99;b.face=-1;LAB.step(2);const p=LAB.p();
   const brk=id=>{const n=b.node(id);b.breakNode(n,{dir:1,sx:n.wx,sy:n.wy});};
   /* прогон ИИ: считаем, какие атаки он выбирает */
-  const runAI=(sec,place)=>{const seen={};game.debugOpts.invuln=true;b.cd=0;
+  const runAI=(sec,place)=>{const seen={};game.world.player.invuln=1e9;b.cd=0;
     for(let i=0;i<sec*120;i++){if(place)place();LAB.step(1);seen[b.state]=(seen[b.state]||0)+1;}
-    game.debugOpts.invuln=false;return seen;};`;
+    game.world.player.invuln=0;return seen;};`;
 
 S.ov_interrupt=`${OV()}
   p.x=b.cx-4.4;p.face=1;LAB.step(4);b.begin('sweep');
@@ -215,7 +215,7 @@ S.pr_front_deflect=`${PR}
 
 S.pr_core=`${PR}
   const l0=b.node('core').locked;brk('armor');LAB.step(2);
-  game.debugOpts.invuln=true;b.cd=99;let warn=false;for(let i=0;i<480;i++){LAB.step(1);if(game.world.room.hazards.some(h=>h.ctl==='primarch'&&(h.warn||h.active)))warn=true;}game.debugOpts.invuln=false;
+  game.world.player.invuln=1e9;b.cd=99;let warn=false;for(let i=0;i<480;i++){LAB.step(1);if(game.world.room.hazards.some(h=>h.ctl==='primarch'&&(h.warn||h.active)))warn=true;}game.world.player.invuln=0;
   return {ok:l0&&!b.node('core').locked&&b.phase===2&&warn,info:{l0,locked:b.node('core').locked,phase:b.phase,warn}};`;
 
 S.pr_kill=`${PR}
@@ -225,10 +225,10 @@ S.pr_kill=`${PR}
 /* ---------- Архивариус (старый босс): импульс без урона не должен сломать его бой ---------- */
 S.archivist_reflect=`LAB.setup('z4_antechamber',22,24-1.68,['pulse','dash','claws','magnet','filter'],['gaugeA','gaugeB','gaugeC']);LAB.step(2);
   const b=game.world.boss;if(!b)return {ok:false,info:'no boss'};b.activated=true;b.shotT=0.05;const p=LAB.p();const hp0=b.hp;
-  game.debugOpts.invuln=true;let hit=false;
+  game.world.player.invuln=1e9;let hit=false;
   for(let i=0;i<600&&!hit;i++){LAB.step(1);const o=game.world.projectiles.find(q=>q.kind==='orb'&&!q.back);
     if(o&&Math.hypot(o.x-p.cx,o.y-p.cy)<2.6){p.face=o.x>p.cx?1:-1;LAB.step(1,[],{0:['pulse']});LAB.step(240);hit=b.hp<hp0;}}
-  game.debugOpts.invuln=false;
+  game.world.player.invuln=0;
   return {ok:hit,info:{hp0,hp:b.hp}};`;
 
 (async()=>{

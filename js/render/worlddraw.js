@@ -113,7 +113,6 @@ function drawWorldDyn(c,R,t,gs){
   if(R.checkpoint){
     const cp=R.checkpoint;cp.lit=cp.lit||(gs.cp.room===R.id);
     Kit.checkpointPost(c,cp.x,cp.y,cp.h,cp.lit);
-    if(cp.lit)game.renderer.glowAdd(cp.x,cp.y-cp.h*0.55,1.5,'#ffcf7a',0.55+0.08*Math.sin(t*2));
   }
   for(let i=0;i<R.doors.length;i++)drawDoor(c,R.doors[i],t,game.gates.doorLocked(R.doors[i]));
   if(game.world.bossDoorClosed&&R.bossDoor){
@@ -166,6 +165,7 @@ function drawWorldLive(c,R,t,gs){
       c.fillStyle=h.active?'#ffe9c0':(h.warn?'#ff5a3a':'#3a2a26');c.fillRect(h.x+h.w/2-0.12,h.y+h.h+0.12,0.24,0.14);
     }
   }
+  game.lamps.drawLive(c,R,t);
   for(let i=0;i<W.interactables.length;i++)W.interactables[i].draw(c,t,gs);
   if(R.weights&&W.boss&&!W.boss.dead){
     for(let i=0;i<R.weights.length;i++){

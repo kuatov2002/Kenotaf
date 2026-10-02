@@ -110,6 +110,27 @@ class AudioSystem{
     [0,150,300,480].forEach((d,i)=>setTimeout(()=>this.tone([392,523,659,784][i],0.6,'sine',0.04),d));
     this.nz(0.6,650,0.6,0.03,'lowpass');}
   lore(){this.tone(660,0.4,'sine',0.035,880);this.nz(0.12,1300,2,0.014);}
+  /* фонарь: шланг защёлкнулся; каждая ячейка — нота выше предыдущей */
+  lampHook(){this.nz(0.08,1800,2,0.03);this.tone(220,0.18,'triangle',0.04,180);this.nz(0.35,900,0.6,0.025);}
+  lampCell(i){const f=[523,587,659,784,880,988,1047,1175,1319][Math.min(8,i-1)]||1319;
+    this.tone(f,0.5,'sine',0.045,0,this.verb);this.tone(f*2,0.25,'sine',0.012);this.nz(0.12,2400,1.4,0.015);}
+  /* фонограф: восковой цилиндр — шорох иглы и далёкий неразборчивый голос (слоги — полосовой шум) */
+  phono(sec){if(!this.ready||this.muted)return;const ctx=this.ctx,t0=this.t()+0.05,dur=Math.min(12,sec||6);
+    const s=ctx.createBufferSource();s.buffer=this.noise;s.loop=true;
+    const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=2600;
+    const cg=ctx.createGain();cg.gain.setValueAtTime(0.0001,t0);cg.gain.linearRampToValueAtTime(0.012,t0+0.3);
+    cg.gain.setValueAtTime(0.012,t0+dur);cg.gain.linearRampToValueAtTime(0.0001,t0+dur+0.6);
+    s.connect(hp);hp.connect(cg);cg.connect(this.sfx);s.start(t0);s.stop(t0+dur+0.7);
+    const v=ctx.createBufferSource();v.buffer=this.noise;v.loop=true;
+    const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.Q.value=4;
+    const bp2=ctx.createBiquadFilter();bp2.type='bandpass';bp2.Q.value=6;bp2.frequency.value=1700;
+    const vg=ctx.createGain();vg.gain.value=0.0001;
+    v.connect(bp);bp.connect(vg);v.connect(bp2);bp2.connect(vg);vg.connect(this.sfx);v.start(t0);v.stop(t0+dur+0.7);
+    let tt=t0+0.4;while(tt<t0+dur){const syl=0.09+Math.random()*0.14;
+      bp.frequency.setValueAtTime(380+Math.random()*700,tt);
+      vg.gain.setTargetAtTime(0.03+Math.random()*0.02,tt,0.02);vg.gain.setTargetAtTime(0.0001,tt+syl,0.03);
+      tt+=syl+0.04+(Math.random()<0.18?0.25:0.03);}
+    for(let i=0;i<Math.floor(dur*3);i++)setTimeout(()=>this.nz(0.012,4000+Math.random()*3000,3,0.02,'highpass'),Math.random()*dur*1000);}
   /* ---------- бой «ломать, а не убивать»: звук по материалу ----------
      латунь звенит долго (колокол), сталь лязгает коротко, ржавчина/чугун — глухой хруст,
      стекло — дребезг высоких частот. k — сила 0..1 */

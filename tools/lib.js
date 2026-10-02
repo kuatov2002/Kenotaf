@@ -5,9 +5,9 @@ const http=require('http'),fs=require('fs'),path=require('path');
 const ROOT=path.resolve(__dirname,'..');
 
 function loadPlaywright(){
-  const tries=['playwright','/opt/node22/lib/node_modules/playwright'];
+  const tries=[process.env.PLAYWRIGHT_PATH,'playwright','playwright-core','/opt/node22/lib/node_modules/playwright'].filter(Boolean);
   for(const t of tries){try{return require(t);}catch(e){}}
-  throw new Error('playwright не найден: npm i -g playwright');
+  throw new Error('playwright не найден: npm i -g playwright (или PLAYWRIGHT_PATH=<путь к playwright-core>)');
 }
 const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8',
   '.png':'image/png','.json':'application/json'};
@@ -25,7 +25,9 @@ function serve(){
 }
 async function launch(opts={}){
   const {chromium}=loadPlaywright();
-  const exe=['/opt/pw-browsers/chromium-1194/chrome-linux/chrome'].find(p=>fs.existsSync(p));
+  /* Linux CI — свой Chromium; Windows без скачанных браузеров — установленный Edge */
+  const exe=['/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+    'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe','C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find(p=>fs.existsSync(p));
   const b=await chromium.launch(Object.assign({args:['--use-gl=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']},
     exe?{executablePath:exe}:{}));
   const ctx=await b.newContext({viewport:{width:opts.w||1280,height:opts.h||720},ignoreHTTPSErrors:true});

@@ -16,6 +16,7 @@ const PAR=4;   /* параллельных вкладок */
 async function makeWorkers(url,n){
   const ws=[];
   for(let i=0;i<n;i++){const L=await launch({w:960,h:540});await openGame(L.page,url);
+    await L.page.addScriptTag({path:path.join(__dirname,'audit.js')});
     await L.page.addScriptTag({path:path.join(__dirname,'progress-page.js')});ws.push(L);}
   return ws;
 }

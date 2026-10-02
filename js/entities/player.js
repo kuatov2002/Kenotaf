@@ -477,7 +477,7 @@ class Player extends Body{
   /* срыв в пропасть с точкой возврата: −1 давление-ячейка, курьер у края (как в GDD: не смерть) */
   pitFall(h){
     const g=this.world.game;
-    if(!g.debugOpts.invuln){g.gs.hp--;g.hud.syncHp();}
+    g.gs.hp--;g.hud.syncHp();
     g.audio.hurt();g.flash(0.55,'#000');g.camera.addShake(0.5);
     if(g.gs.hp<=0){this.kill();return;}
     this.crouch=false;this.h=CFG.player.h;
@@ -492,7 +492,7 @@ class Player extends Body{
   choke(spot){
     const g=this.world.game;
     if(this.dead||g.state!=='play')return;
-    if(!g.debugOpts.invuln){g.gs.hp--;g.hud.syncHp();}
+    g.gs.hp--;g.hud.syncHp();
     g.audio.hurt();g.audio.nz(0.5,900,0.7,0.06,'bandpass');g.flash(0.45,'#7a8a2a');g.camera.addShake(0.45);
     g.particles.burst(this.cx,this.y+0.4,18,{kind:'dust',col:'#dfe88a',spd:3,life:0.8,size:0.07,add:true,drag:1.4});
     if(g.gs.hp<=0){this.kill();return;}
@@ -516,7 +516,7 @@ class Player extends Body{
     if(!this.dead&&g.state==='play'&&(this.dashT>0||this.evIF>0)){
       if(!this.pfDone&&this.evAge<=CFG.combat.perfectWin)this.perfectEvade(srcX);
       return false;}
-    if(this.invuln>0||this.dead||g.debugOpts.invuln||g.state!=='play')return false;
+    if(this.invuln>0||this.dead||g.state!=='play')return false;
     g.gs.hp--;this.invuln=CFG.player.invuln;this.hurtT=0.34;this.healT=0;
     this.atkPhase=null;this.chargeT=0;this.charged=false;this.hurtDir=this.cx<srcX?-1:1;
     this.vx=this.hurtDir*CFG.player.knock*1.15;

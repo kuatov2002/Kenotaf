@@ -13,6 +13,7 @@ class Combat{
   requestToken(e){
     const W=this.game.world;
     if(e.isBoss||e===this.holder)return true;
+    if(W.calm(e))return false;
     const h=this.holder;
     if(h&&!h.dead&&h.token&&W.enemies.indexOf(h)>=0)return false;
     if(W.time<this.nextGrant)return false;

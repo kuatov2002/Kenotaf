@@ -59,7 +59,7 @@ class Interactable{
       gs.flag(d.flag);game.audio.wheel();w.wheelSeq=true;w.wheelT=0;
       game.hud.say('КОЛЕСО ИДЁТ. СВИНЕЦ. СТАЛЬ. БЕТОН.','ПЕЧАТЬ СНИМАЕТСЯ');
     }else if(d.kind==='lore'){
-      game.salvage.lore({loreId:d.loreId,text:d.text,title:d.title});
+      game.salvage.lore({loreId:d.loreId});
       w.interactables=w.interactables.filter(i=>i!==this);
     }else if(d.kind==='talk'){
       if(!gs.flags[d.flag])game.salvage.collect(d);

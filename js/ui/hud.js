@@ -38,6 +38,12 @@ class HUD{
     for(const k in this.abEls)this.abEls[k].classList.toggle('on',!!gs.has(k));
     this.el.lore.textContent=gs.lore;}
   energy(v){this.el.en.style.width=clamp(v,0,100)+'%';}
+  /* подкачка у фонаря: ячейка вспыхивает по очереди, вся полоса тёплая, пока шланг подцеплен */
+  cellRefill(i){const c=this.cells[i];if(!c)return;c.classList.remove('refill');void c.offsetWidth;c.classList.add('refill');}
+  lampRest(on){this.el.hp.classList.toggle('resting',!!on);}
+  /* сохранение: латунная шестерня в углу на пару секунд — без текста поверх игры */
+  saved(){const el=this._sv||(this._sv=document.getElementById('saved'));if(!el)return;
+    el.classList.remove('on');void el.offsetWidth;el.classList.add('on');clearTimeout(this._svT);this._svT=setTimeout(()=>el.classList.remove('on'),2200);}
   prompt(text){
     if(!text){if(this._p!==null){this.el.prompt.classList.remove('on');this._p=null;}return;}
     if(this._p!==text){this.el.promptT.textContent=text;this._p=text;}
@@ -79,6 +85,8 @@ class HUD{
     if(this._obIdle>150&&!this._obShown){this._obShown=true;el.classList.add('on');this._obT=7;}
     if(this._obT>0){this._obT-=dt;if(this._obT<=0)el.classList.remove('on');}
     const g=this.game;
+    /* ранен — пустые ячейки тлеют: их можно наполнить */
+    {const hurt=g.gs.hp<g.gs.maxHp()&&g.state==='play';if(this._hurt!==hurt){this._hurt=hurt;this.el.hp.classList.toggle('hurt',hurt);}}
     if(g.world&&g.world.player&&!g.world.player.dead){
       this.energy(g.world.player.energy/g.world.player.maxEnergy()*100);
       if(this._hp!==g.gs.hp){this._hp=g.gs.hp;this.syncHp();}
@@ -96,7 +104,8 @@ class HUD{
     }
     let pr=null;
     if(g.world&&!g.cinematic.active){
-      if(g.world.nearRest)pr='ОТДОХНУТЬ · ПОДКАЧАТЬ КУРТКУ';
+      /* у фонаря подсказка — на нём самом (выбитая клавиша, мигающие ячейки), не текстом */
+      if(g.world.nearRest)pr=null;
       else if(g.world.nearInter)pr=g.world.nearInter.prompt();
       else if(g.world.nearDoor){
         const nd=g.world.nearDoor,d=nd.d;

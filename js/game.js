@@ -16,6 +16,7 @@ class Game{
     this.fx=new CombatFX(this);
     this.gates=new GateSystem(this);
     this.checkpoints=new CheckpointSystem(this);
+    this.lamps=new LampSystem(this);
     this.salvage=new SalvageSystem(this);
     this.abilities=new AbilitySystem(this);
     this.cinematic=new Cinematic(this);
@@ -23,8 +24,6 @@ class Game{
     this.map=new WorldMap(this);
     this.travel=new TravelMenu(this);
     this.menuNav=new MenuNav(this);
-    this.debug=new DebugUI(this);
-    this.debugOpts={invuln:false,collision:false,gates:false,bounds:false,collider:false};
     this.state='menu';this.timeScale=1;this.hitstopT=0;this.acc=0;this.last=0;this.fps=60;this.slowT=0;this.slowK=1;
     this.transitionT=-1;this.transitionCb=null;this.vw=0;this.vh=0;this.ppm=40;this.bakePpm=40;
     this.menuT=0;this.menuRoom=null;this.menuPar=null;
@@ -33,6 +32,7 @@ class Game{
     this.bindUI();
     const sv=SaveSystem.read();
     if(sv)this.gs.deserialize(sv);
+    if(Settings.get('fullscreen'))Settings.set('fullscreen',false);   /* полноэкранный режим браузер даёт только по жесту игрока */
     this.buildMenuScene();
     requestAnimationFrame(ts=>this.frame(ts));
   }
@@ -45,39 +45,36 @@ class Game{
   }
   bindUI(){
     const $=id=>document.getElementById(id);
-    $('btnStart').onclick=()=>{this.audio.init();SaveSystem.wipe();this.gs.reset();this.hud.syncAbilities();
-      this.playIntro(()=>this.begin('z1_start',3.2,9.3));};
+    this.settingsUI=new SettingsUI(this);this.archiveUI=new ArchiveUI(this);
+    const startNew=()=>{this.audio.init();SaveSystem.wipe();this.gs.reset();this.hud.syncAbilities();this.hud.buildHp();
+      $('confirm').classList.add('hidden');this.playIntro(()=>this.begin('z1_start',3.2,9.3));};
+    $('btnStart').onclick=()=>{if(SaveSystem.read()){$('menu').classList.add('hidden');$('confirm').classList.remove('hidden');}else startNew();};
+    $('btnNewYes').onclick=startNew;
+    $('btnNewNo').onclick=()=>{$('confirm').classList.add('hidden');$('menu').classList.remove('hidden');};
     $('btnContinue').onclick=()=>{this.audio.init();
-      const sv=SaveSystem.read();if(sv)this.gs.deserialize(sv);
-      this.hud.syncAbilities();this.begin(this.gs.cp.room,this.gs.cp.x,this.gs.cp.y);};
+      const sv=SaveSystem.read();if(!sv)return;this.gs.reset();this.gs.deserialize(sv);this.gs.hp=this.gs.maxHp();
+      this.hud.syncAbilities();this.hud.buildHp();this.begin(this.gs.cp.room,this.gs.cp.x,this.gs.cp.y);};
     $('intro').onclick=()=>{if(this.state==='intro'&&this.introT>0.3)this.introNext();};
-    $('btnCtrls').onclick=()=>{$('menu').classList.add('hidden');$('controls').classList.remove('hidden');};
+    $('btnCtrls').onclick=()=>{buildControls(SaveSystem.read()?this.gs:null);$('menu').classList.add('hidden');$('controls').classList.remove('hidden');};
     $('btnBack').onclick=()=>{$('controls').classList.add('hidden');$('menu').classList.remove('hidden');};
+    $('btnSettings').onclick=()=>this.settingsUI.open('menu');
+    $('btnPauseSet').onclick=()=>this.settingsUI.open('pause');
+    $('btnArchive').onclick=()=>this.archiveUI.open();
     $('btnResume').onclick=()=>this.togglePause();
-    $('btnToMenu').onclick=()=>this.toMenuState();
-    $('btnWipe').onclick=()=>{SaveSystem.wipe();this.gs.reset();this.hud.syncAbilities();this.toMenuState();};
+    $('btnToMenu').onclick=()=>{this.gs.save();this.toMenuState();};
     $('btnPause').onclick=()=>this.togglePause();
     $('btnMute').onclick=()=>{this.audio.init();this.audio.toggleMute();};
     $('btnContinue').classList.toggle('dim',!SaveSystem.read());
-    /* громкость: общая / музыка / эффекты — в паузе и на экране управления */
-    const rows=[['master','ОБЩАЯ'],['music','МУЗЫКА'],['sfx','ЭФФЕКТЫ']];
-    document.querySelectorAll('[data-snd]').forEach(box=>{
-      box.innerHTML='';
-      for(const [k,lbl] of rows){
-        const l=document.createElement('label');l.textContent=lbl;
-        const r=document.createElement('input');r.type='range';r.min='0';r.max='100';r.step='1';
-        r.value=String(Math.round(this.audio.vol[k]*100));r.dataset.k=k;
-        const v=document.createElement('span');v.textContent=r.value;
-        r.oninput=()=>{this.audio.init();this.audio.setVol(k,(+r.value)/100);
-          document.querySelectorAll('[data-snd] input[data-k="'+k+'"]').forEach(o=>{if(o!==r)o.value=r.value;});
-          document.querySelectorAll('[data-snd] span[data-k="'+k+'"]').forEach(o=>o.textContent=r.value);};
-        v.dataset.k=k;box.append(l,r,v);}
-    });
+    $('loreT').textContent=LORE_TOTAL;
+    /* сохранение не теряется при закрытии вкладки: мир и так пишется флагами сразу, здесь — страховка */
+    const flush=()=>{if(this.state==='play'||this.state==='pause'||this.state==='travel')this.gs.save();};
+    addEventListener('pagehide',flush);addEventListener('beforeunload',flush);
+    document.addEventListener('visibilitychange',()=>{if(document.hidden){flush();if(this.state==='play')this.togglePause();}});
   }
   toMenuState(){
     this.cinematic.abort();
     this.state='menu';this.timeScale=1;
-    document.getElementById('pause').classList.add('hidden');
+    for(const id of ['pause','settings','archive','controls','confirm'])document.getElementById(id).classList.add('hidden');
     document.getElementById('menu').classList.remove('hidden');
     /* концовка ставила inline opacity:1 — без сброса чёрный экран оставался поверх меню */
     const ec=document.getElementById('endcard');ec.classList.remove('on');ec.style.opacity='';
@@ -120,6 +117,13 @@ class Game{
   togglePause(){
     if(this.state==='travel'){this.travel.close();return;}
     if(this.state==='intro'){this.introEnd();return;}
+    if(this.state==='pause'&&(this.settingsUI.from||!document.getElementById('archive').classList.contains('hidden'))){
+      if(this.settingsUI.from)this.settingsUI.close();else this.archiveUI.close();return;}
+    if(this.state==='menu'){const $=id=>document.getElementById(id);
+      if(this.settingsUI.from){this.settingsUI.close();return;}
+      if(!$('controls').classList.contains('hidden')){$('btnBack').click();return;}
+      if(!$('confirm').classList.contains('hidden')){$('btnNewNo').click();return;}
+      return;}
     if(this.state==='play'){
       this.state='pause';
       document.getElementById('pause').classList.remove('hidden');
@@ -145,7 +149,8 @@ class Game{
     });
   }
   transition(cb){if(this.transitionT>=0)return;this.transitionT=0;this.transitionCb=cb;}
-  flash(a,col){const f=document.getElementById('flash');
+  /* вспышки щадят глаза: не ярче 0.35, если это не сцена (force) */
+  flash(a,col,force){if(!force)a=Math.min(a,0.35);const f=document.getElementById('flash');
     f.style.background=col||'#fff';f.style.transition='none';f.style.opacity=a;
     void f.offsetWidth;f.style.transition='opacity .55s ease';f.style.opacity=0;}
   hitstop(t){this.hitstopT=Math.max(this.hitstopT,t);}
@@ -180,10 +185,11 @@ class Game{
     this.audio.sky();
   }
   resize(){
-    const dpr=Math.min(window.devicePixelRatio||1,1.3);
-    let h=Math.round(Math.min(innerHeight*dpr,1150));
+    /* внутреннее разрешение: «авто» — по окну, но не выше 1080 строк; иначе — выбранное */
+    const dpr=Math.min(window.devicePixelRatio||1,1.5),ro=RES_OPTS.find(r=>r.k===Settings.get('res'));
+    let h=ro&&ro.h?ro.h:Math.round(Math.min(innerHeight*dpr,1080));
     let w=Math.round(h*(innerWidth/Math.max(1,innerHeight)));
-    h=clamp(h,420,1150);w=clamp(w,600,2600);
+    h=clamp(h,420,1080);w=clamp(w,600,2600);
     this.canvas.width=w;this.canvas.height=h;
     this.vw=w;this.vh=h;
     this.ppm=h/CFG.VIEW_H;
@@ -258,7 +264,6 @@ class Game{
     }
     /* схема в паузе живая: пульсирует точка курьера */
     if(this.state==='pause'&&this.mapCv&&(this._mapT=(this._mapT||0)+dt)>0.05){this._mapT=0;this.map.render(this.mapCv);}
-    this.debug.update(dt);
     this.render(dt);
     this.input.endFrame();
   }
@@ -315,7 +320,6 @@ class Game{
     this.renderer.atmosphere(c,zone,t);
     this.renderer.bloomPass(c);
     this.renderer.post(c,zone);
-    if(!inMenu)this.renderer.debugDraw(c,cam,zoom,room);
     c.setTransform(1,0,0,1,0,0);
     if(!inMenu&&this.world.inPollen&&this.state==='play'){
       /* в пыльце края экрана зеленеют тем сильнее, чем меньше заряд фильтра */
