@@ -47,7 +47,7 @@ const ZONES={
 const READ={
   sump:{veil:'rgba(7,6,5,.34)',rim:'#ffd79c',rimA:0.78,out:'rgba(0,0,0,.72)',body:null,ent:'#ffe2b8'},
   hives:{veil:'rgba(9,5,5,.34)',rim:'#ffcf94',rimA:0.78,out:'rgba(0,0,0,.72)',body:null,ent:'#ffe2b8'},
-  eden:{veil:'rgba(236,233,214,.3)',rim:'#fff7d8',rimA:0.9,out:'rgba(46,40,22,.82)',body:'rgba(120,112,84,.22)',ent:'#2e2a1a'},
+  eden:{veil:'rgba(236,233,214,.14)',rim:'#fff7d8',rimA:0.9,out:'rgba(46,40,22,.82)',body:'rgba(120,112,84,.22)',ent:'#2e2a1a'},
   seal:{veil:'rgba(5,6,8,.3)',rim:'#eef4ff',rimA:0.78,out:'rgba(0,0,0,.75)',body:null,ent:'#e6eef8'},
   archive:{veil:'rgba(8,6,4,.3)',rim:'#ffe2b0',rimA:0.8,out:'rgba(0,0,0,.75)',body:null,ent:'#ffe2b8'},
   surface:{veil:null,rim:'#f6ffe2',rimA:0.6,out:'rgba(30,40,20,.6)',body:null,ent:'#1e2616'}

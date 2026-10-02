@@ -17,7 +17,7 @@ class ParallaxSystem{
       catch(e){console.error('layer '+key,e);
         /* геометрия не имеет права пропасть из-за ошибки в декоре */
         if(key==='game')try{drawSolids(c,room,room.zone);}catch(e2){}}
-      out[key]={cv:cv,f:f};
+      out[key]={cv:cv,f:f,rw:room.w,rh:room.h};
     }
     this.layers=out;
   }
@@ -89,7 +89,12 @@ class WorldRenderer{
   drawLayerTo(ctx,L,cam,zoom,f){
     const g=this.game,s=g.ppm*zoom,sc=s/g.bakePpm;
     const cx=cam.x+cam.sx*f,cy=cam.y+cam.sy*f;
-    ctx.drawImage(L.cv,(-cx*f)*s+g.vw/2,(-cy*f)*s+g.vh/2,L.cv.width*sc,L.cv.height*sc);
+    let x0=(-cx*f)*s+g.vw/2,y0=(-cy*f)*s+g.vh/2;
+    /* параллакс (f≠1) привязан к центру комнаты: камера у края — слой всё равно закрывает кадр
+       (раньше дальние слои начинались с середины экрана, левая/верхняя часть оставалась пустой) */
+    if(f!==1&&L.rw){const lw=L.cv.width/g.bakePpm,lh=L.cv.height/g.bakePpm;
+      x0=g.vw/2+(-lw/2-(cx-L.rw/2)*f)*s;y0=g.vh/2+(-lh/2-(cy-L.rh/2)*f)*s;}
+    ctx.drawImage(L.cv,x0,y0,L.cv.width*sc,L.cv.height*sc);
   }
   lighting(c,cam,zoom,room,zone,t){
     const g=this.game,L=this.light,l=this.lctx,sc=L.width/g.vw,s=g.ppm*zoom;

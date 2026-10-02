@@ -18,7 +18,7 @@ const {serve,launch,openGame}=require('./lib');
       const S=document.createElement('canvas');S.width=cols*tw;S.height=rows*(th+22);const sc=S.getContext('2d');
       sc.fillStyle='#0b0b0c';sc.fillRect(0,0,S.width,S.height);sc.font='600 14px Oswald';sc.textBaseline='top';
       for(let i=0;i<ids.length;i++){const id=ids[i];
-        const R0=new Room(ROOMDEFS[id],g.gs),sp=R0.checkpoint?[R0.checkpoint.x+1,R0.checkpoint.y-1.72]:[R0.doors[0].x+(R0.doors[0].x<1?1.6:-1.2),R0.doors[0].y+R0.doors[0].h-1.72];
+        const R0=new Room(ROOMDEFS[id],g.gs),D=R0.doors[0],sp=R0.checkpoint?[R0.checkpoint.x+1,R0.checkpoint.y-1.72]:D?[D.x+(D.x<1?1.6:-1.2),D.y+D.h-1.72]:[3,R0.h-7];
         W.load(id,sp[0],sp[1]);W.entryT=0;
         for(let k=0;k<20;k++)W.update(1/120);
         const z=Math.min(CFG.VIEW_H/W.room.h,(g.vw/g.ppm)/W.room.w)*0.98;
