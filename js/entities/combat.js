@@ -2,34 +2,59 @@
 /* ============================== COMBAT ============================== */
 class Combat{
   constructor(game){this.game=game;}
-  melee(p){
-    const w=this.game.world,g=this.game,dir=p.face;
-    const hb={x:p.cx+(dir>0?0.1:-1.7),y:p.y+0.1,w:1.7,h:p.h-0.15};
-    let hitAny=false;
+  /* удар ключом: sd — 'side' | 'up' | 'down' (вниз — только в воздухе).
+     Попадание по врагу копит РЕМОНТ; удар вниз по врагу / шипам / клапану-отбойнику / ящику — отскок;
+     удар вбок по чему-то твёрдому — отдача назад; гайки и осколки ключом отбиваются. */
+  melee(p,sd){
+    sd=sd||'side';
+    const w=this.game.world,g=this.game,C=CFG.player,f=p.face,R=w.room;
+    const hb=sd==='up'?{x:p.cx-0.85,y:p.y-1.55,w:1.7,h:1.75}
+      :sd==='down'?{x:p.cx-0.8,y:p.bottom-0.25,w:1.6,h:1.8}
+      :{x:p.cx+(f>0?0.1:-1.7),y:p.y+0.1,w:1.7,h:p.h-0.15};
+    const kx=sd==='side'?f*7:0,ky=sd==='up'?-6:sd==='down'?4:-3.4;
+    let hitAny=false,pogo=false;
     for(const e of w.enemies){
       if(e.dead)continue;
-      if(aabb(hb,e)){e.hurt(CFG.player.attackDmg,dir*7,-3.4);hitAny=true;
-        if(e.type==='censor'&&dir*e.face<0&&Math.random()<0.35)e.popTank();}
+      if(aabb(hb,e)){e.hurt(C.attackDmg,kx,ky);hitAny=true;this.gainWeld(C.weldHit);if(sd==='down')pogo=true;
+        if(e.type==='censor'&&sd==='side'&&f*e.face<0&&Math.random()<0.35)e.popTank();}
     }
-    if(w.boss&&!w.boss.dead&&w.boss.activated&&aabb(hb,w.boss)){
-      if(!(w.boss.onMelee&&w.boss.onMelee(p)))w.boss.hurt(CFG.player.attackDmg,dir*3,-1);hitAny=true;}
+    const b=w.boss;
+    if(b&&!b.dead&&b.activated&&aabb(hb,b)){
+      if(!(b.onMelee&&b.onMelee(p)))b.hurt(C.attackDmg,kx*0.4,-1);hitAny=true;this.gainWeld(C.weldHit);if(sd==='down')pogo=true;}
     for(const pb of w.pushables){
       if(pb.pushed&&pb.kind!=='counterweight')continue;
       if(!aabb(hb,pb.rect()))continue;
-      if(pb.strike(dir)){hitAny=true;continue;}
+      if(sd==='down')pogo=true;
+      if(pb.strike(sd==='side'?f:(sd==='down'?2:-2))){hitAny=true;continue;}
       hitAny=true;g.audio.hitMetal();
-      g.particles.burst(pb.x+pb.w/2,clamp(p.cy,pb.y,pb.y+pb.h),10,{kind:'spark',col:'#ffd27a',spd:5,life:0.35,size:0.05,add:true});
+      g.particles.burst(clamp(p.cx,pb.x,pb.x+pb.w),clamp(p.cy,pb.y,pb.y+pb.h),10,{kind:'spark',col:'#ffd27a',spd:5,life:0.35,size:0.05,add:true});
     }
-    if(hitAny){g.audio.hit();g.hitstop(CFG.hsMelee);g.camera.addShake(0.3);g.camera.impulse(dir*0.16,0);}
-    g.particles.spawn({kind:'shock',x:p.cx+dir*0.8,y:p.cy,ringR:1.6,life:0.22,size:0.06,col:'#ffe6a3',add:true,a:0.55});
+    if(sd==='down'){
+      /* клапаны-отбойники и шипы: от них отскакивают, их не ломают */
+      for(const q of (R.pogos||[])){const nx=clamp(q.x,hb.x,hb.x+hb.w),ny=clamp(q.y,hb.y,hb.y+hb.h);
+        if(Math.hypot(nx-q.x,ny-q.y)<(q.r||0.45)){pogo=true;q.hitT=0.25;g.audio.hitMetal();
+          g.particles.burst(q.x,q.y-0.3,12,{kind:'spark',col:'#ffe6a3',spd:5,life:0.35,size:0.05,add:true,g:12});}}
+      for(const h of (R.hazards||[]))if((h.kind==='spikes'||h.spiky)&&aabb(hb,{x:h.x,y:h.y-0.2,w:h.w,h:0.8}))pogo=true;
+    }
+    /* гайки и осколки отбиваются ключом (не волны, не орбы Архивариуса — те только импульсом) */
+    for(const pr of w.projectiles){
+      if(pr.back||pr.dead||pr.kind==='wave'||pr.kind==='orb')continue;
+      if(aabb(hb,{x:pr.x-pr.r,y:pr.y-pr.r,w:pr.r*2,h:pr.r*2})){pr.life=0;pr.dead=true;hitAny=true;g.audio.hitMetal();
+        g.particles.burst(pr.x,pr.y,12,{kind:'spark',col:'#ffe6a3',spd:6,life:0.4,size:0.05,add:true,g:12});}
+    }
+    if(pogo)p.pogo();
+    else if(hitAny&&sd==='side')p.vx-=f*(p.onGround?C.recoilG:C.recoilA);
+    if(hitAny){g.audio.hit();g.hitstop(CFG.hsMelee);g.camera.addShake(0.3);
+      g.camera.impulse(sd==='side'?f*0.16:0,sd==='up'?-0.12:sd==='down'?0.12:0);}
   }
+  gainWeld(n){const gs=this.game.gs;gs.weld=Math.min(gs.weldMax(),(gs.weld||0)+n);}
   pulse(p){
     const w=this.game.world,g=this.game,C=CFG.player,dir=p.face;
     const hb={x:p.cx+(dir>0?0:-C.pulseRange),y:p.cy-C.pulseRange*0.55,w:C.pulseRange,h:C.pulseRange*1.1};
     let hitAny=false;
     for(const e of w.enemies){
       if(e.dead)continue;
-      if(aabb(hb,e)){e.hurt(C.pulseDmg,dir*13,-5);hitAny=true;
+      if(aabb(hb,e)){e.hurt(C.pulseDmg,dir*13,-5);hitAny=true;this.gainWeld(C.weldPulse);
         if(e.type==='censor'&&!e.tankBroken)e.popTank();}
     }
     if(w.boss&&!w.boss.dead&&w.boss.activated&&aabb(hb,w.boss)){

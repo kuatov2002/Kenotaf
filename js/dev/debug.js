@@ -30,7 +30,7 @@ class DebugUI{
     const $=id=>document.getElementById(id);
     $('dbgGo').onclick=()=>{g.transition(()=>g.world.load($('dbgRoom').value,3,3));};
     $('dbgAb').onclick=()=>{for(const k in ABILITIES)gs.abilities[k]=true;gs.save();g.hud.syncAbilities();g.world.reload();};
-    $('dbgHp').onclick=()=>{gs.hp=CFG.player.hp;g.hud.syncHp();};
+    $('dbgHp').onclick=()=>{gs.hp=gs.maxHp();gs.weld=gs.weldMax();g.hud.syncHp();};
     $('dbgInv').onclick=()=>{o.invuln=!o.invuln;this.build();};
     $('dbgCol').onclick=()=>{o.collision=!o.collision;this.build();};
     $('dbgPl').onclick=()=>{o.collider=!o.collider;this.build();};

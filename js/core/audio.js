@@ -86,6 +86,14 @@ class AudioSystem{
     f.frequency.setValueAtTime(300,this.t());f.frequency.exponentialRampToValueAtTime(1300,this.t()+0.24);
     s.connect(f);this.env(f,0.01,0.26,0.06);s.start();s.stop(this.t()+0.35);}
   melee(){this.nz(0.12,1000,0.8,0.04);this.tone(280,0.08,'triangle',0.02,140);}
+  /* взмах ключом: свист воздуха, вверх — выше, вниз — ниже */
+  slash(dir){const f=dir==='up'?1350:dir==='down'?700:1000;
+    this.nz(0.11,f,0.9,0.045);this.tone(dir==='up'?360:dir==='down'?220:280,0.08,'triangle',0.02,dir==='up'?520:140);}
+  pogo(){const r=0.95+Math.random()*0.1;this.tone(880*r,0.18,'sine',0.035,1320*r);this.tone(440*r,0.12,'triangle',0.02,660*r);}
+  weld(){if(!this.ready||this.muted)return;this.nz(0.85,2600,0.6,0.03);this.nz(0.85,5200,1.2,0.012);
+    for(let i=0;i<6;i++)setTimeout(()=>this.nz(0.05,3000+Math.random()*2000,2,0.02),i*120+Math.random()*60);}
+  heal(){this.tone(523,0.4,'sine',0.04,659,this.verb);setTimeout(()=>this.tone(784,0.5,'sine',0.032,0,this.verb),90);
+    this.nz(0.2,1400,1.4,0.02);}
   hit(){this.tone(150,0.14,'triangle',0.1,60);this.nz(0.1,760,0.9,0.07);}
   hitMetal(){const r=0.94+Math.random()*0.12;
     this.tone(520*r,0.32,'sine',0.03,470*r);this.tone(1270*r,0.2,'sine',0.011,1180*r);

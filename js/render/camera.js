@@ -10,7 +10,8 @@ class Camera{
   update(dt,player,room,vw,vh,ppm){
     const spd=player?Math.abs(player.vx):0,face=player?player.face:1;
     const tlx=face*(1.15+clamp(spd*0.10,0,1.5));
-    const tly=player?clamp(player.vy*0.045,-1.2,1.7):0;
+    /* взгляд вверх/вниз (стоишь и держишь ↑ или сидишь) — камера заглядывает на 3.4 м */
+    const tly=player?clamp(player.vy*0.045,-1.2,1.7)+(player.lookV||0)*3.4:0;
     this.lookX=damp(this.lookX,(player&&player.onGround&&spd<0.6)?face*0.9:tlx,4.5,dt);
     this.lookY=damp(this.lookY,tly,4.0,dt);
     let tx,ty;

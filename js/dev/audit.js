@@ -25,19 +25,27 @@ const LevelAudit={
     W.pushables=R.pushables.map(d=>new Pushable(d,W));
     const hz=R.hazards.filter(h=>h.kind!=='steam'||opts.steam);R.hazards=[];
     const has=a=>abil.indexOf(a)>=0;
+    /* без фильтра облако пыльцы непроходимо (как в игре: удушье и откат к краю облака);
+       продувочная колонна (R.air) защищает и без фильтра */
+    const pollen=has('filter')?[]:(R.pollen||[]),air=R.air||[];
     const T={doors:R.doors.map(d=>({id:d.label||d.to,to:d.to,r:d,hit:false,stand:false})),
       inters:W.interactables.map(it=>({id:it.def.label||it.def.title||it.def.kind,it:it,hit:false})),
-      push:W.pushables.filter(p=>!p.pushed).map(pb=>({id:pb.id,pb:pb,hit:false})),ceil:0};
+      push:W.pushables.filter(p=>!p.pushed).map(pb=>({id:pb.id,pb:pb,hit:false})),ceil:0,
+      targets:(opts.targets||[]).map(q=>({id:q.id,r:q,hit:false}))};
     const mark=p=>{
       const pr=p.rect();
       for(const t of T.doors){if(aabb(pr,t.r)){t.hit=true;if(p.onGround)t.stand=true;}}
       for(const t of T.inters){const r=t.it.rect();if(dist(p.cx,p.cy,r.x+r.w/2,r.y+r.h/2)<2.6)t.hit=true;}
       for(const t of T.push){const b=t.pb;const nx=clamp(p.cx,b.x,b.x+b.w),ny=clamp(p.cy,b.y,b.y+b.h);
         if(Math.hypot(nx-p.cx,ny-p.cy)<3.2)t.hit=true;}
+      for(const t of T.targets)if(aabb(pr,t.r))t.hit=true;
       if(p.onCeil)T.ceil++;
     };
+    const choke=p=>{if(!pollen.length)return false;
+      const hd={x:p.cx-0.1,y:p.y+0.2,w:0.2,h:0.5};
+      return !air.some(a=>aabb(hd,a))&&pollen.some(z=>aabb(hd,z));};
     const FI={h:{},p:{},consume(a){if(this.p[a]){this.p[a]=0;return true;}return false;},
-      get move(){return (this.h.R?1:0)-(this.h.L?1:0);},get dn(){return !!this.h.D;},get jumpHeld(){return !!this.h.J;}};
+      get move(){return (this.h.R?1:0)-(this.h.L?1:0);},get dn(){return !!this.h.D;},get up(){return !!this.h.U;},healHeld:false,get jumpHeld(){return !!this.h.J;}};
     const sim=(sx,sy,pol)=>{
       const p=new Player(W,sx,sy);W.player=p;R.playerRef=p;FI.h={};FI.p={};
       for(let i=0;i<10;i++)p.update(DT,FI);
@@ -49,6 +57,7 @@ const LevelAudit={
         for(let k=0;k<2;k++){p.update(DT,FI);
           if(p.y>R.h+1||p.x<-3||p.x>R.w+3)return null;
           for(let i=0;i<hz.length;i++)if(aabb(p,hz[i]))return null;
+          if(choke(p))return null;
           mark(p);}
         if(s.done&&p.onGround&&!p.onCeil&&!p.crouch&&Math.abs(p.vx)<0.05)return {x:p.x,y:p.y};
       }
@@ -106,6 +115,10 @@ const LevelAudit={
     return {room:roomId,abil:abil.join('+')||'-',states:n,left:Q.length,ms:Math.round(performance.now()-t0),
       doors:T.doors.map(t=>t.id+(t.stand?' ✓':t.hit?' ~':' ✗')),
       inters:T.inters.map(t=>t.id+(t.hit?' ✓':' ✗')),
-      push:T.push.map(t=>t.id+(t.hit?' ✓':' ✗')),ceil:T.ceil>0};
+      push:T.push.map(t=>t.id+(t.hit?' ✓':' ✗')),ceil:T.ceil>0,
+      /* для решателя мира (tools/progress.js): индексы как в R.doors / R.interactables / R.pushables */
+      raw:{doors:T.doors.map(t=>t.hit),inters:T.inters.map(t=>t.hit),
+        push:T.push.map(t=>({id:t.id,hit:t.hit})),targets:T.targets.map(t=>({id:t.id,hit:t.hit})),
+        spots:[...seen].length}};
   }
 };

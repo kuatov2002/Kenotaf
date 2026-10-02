@@ -12,7 +12,10 @@ const CFG={
     dashSpeed:26,dashTime:0.22,dashCd:0.42,dashEnd:0.46,
     attackTime:0.26,attackCd:0.30,attackDmg:34,
     pulseCost:30,pulseCd:0.62,pulseRange:3.8,pulseDmg:26,pulseRing:3.7,
-    energy:100,energyRegen:26,energyDelay:0.45,hp:5,invuln:1.15,knock:11},
+    energy:100,energyRegen:26,energyDelay:0.45,hp:5,invuln:1.15,knock:11,
+    /* бой HK: удар вниз в воздухе = отскок; отдача при попадании; РЕМОНТ копится ударами, тратится на ячейку */
+    pogoV:16.4,recoilG:3.4,recoilA:4.4,slashT:0.16,
+    weldMax:100,weldHit:17,weldPulse:8,healCost:50,healTime:0.85},
   hsMelee:0.055,hsPulse:0.075,hsHeavy:0.13,hsDash:0.02,
   noiseRun:13,noisePulse:22,colStep:0.18,probeEps:0.1
 };

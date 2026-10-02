@@ -17,7 +17,7 @@ class HUD{
     this.capT0=0;this.cardT=0;this._p=null;this._hp=-1;this.buildHp();this.buildAb();
   }
   buildHp(){this.el.hp.innerHTML='';this.cells=[];
-    for(let i=0;i<CFG.player.hp;i++){const d=document.createElement('div');d.className='cell';d.innerHTML='<i></i>';
+    for(let i=0;i<this.game.gs.maxHp();i++){const d=document.createElement('div');d.className='cell';d.innerHTML='<i></i>';
       this.el.hp.appendChild(d);this.cells.push(d);}}
   buildAb(){
     const icons={
@@ -32,7 +32,8 @@ class HUD{
       d.innerHTML=icons[k]+'<span>'+ABILITIES[k].short+'</span>';d.title=ABILITIES[k].name;
       this.el.ab.appendChild(d);this.abEls[k]=d;}
   }
-  syncHp(){const hp=this.game.gs.hp;for(let i=0;i<this.cells.length;i++)this.cells[i].classList.toggle('off',i>=hp);}
+  syncHp(){const gs=this.game.gs,hp=gs.hp;if(this.cells.length!==gs.maxHp())this.buildHp();
+    for(let i=0;i<this.cells.length;i++)this.cells[i].classList.toggle('off',i>=hp);}
   syncAbilities(){const gs=this.game.gs;
     for(const k in this.abEls)this.abEls[k].classList.toggle('on',!!gs.has(k));
     this.el.lore.textContent=gs.lore;}
@@ -83,6 +84,9 @@ class HUD{
       if(this._hp!==g.gs.hp){this._hp=g.gs.hp;this.syncHp();}
     }
     if(g.world&&!g.world.boss)this.bossOff();
+    {const gs=g.gs,wl=this._wl||(this._wl=document.getElementById('weldLine')),wf=this._wf||(this._wf=document.getElementById('weldFill'));
+      const k=clamp((gs.weld||0)/gs.weldMax(),0,1);if(this._wk!==k){this._wk=k;wf.style.width=(k*100)+'%';}
+      wl.classList.toggle('ready',(gs.weld||0)>=CFG.player.healCost&&gs.hp<gs.maxHp());}
     if(g.world&&g.world.room){
       const hasF=g.gs.has('filter'),fl=this._flt||(this._flt=document.getElementById('fltLine'));
       fl.classList.toggle('hidden',!hasF);
@@ -96,6 +100,7 @@ class HUD{
       else if(g.world.nearDoor){
         const nd=g.world.nearDoor,d=nd.d;
         if(nd.locked)pr=(d.reqMsg||d.msg||'ЗАБЛОКИРОВАНО');
+        else if(d.latch&&d.latchHere&&!g.gs.flags[d.latch])pr='ОТОДВИНУТЬ ЗАСОВ · '+(d.label||'');
         else if(d.down)pr='ЛЮК · '+(d.label||'');
         else if(d.elevator)pr='ЛИФТ · '+(d.label||'');
         else pr='ВОЙТИ · '+(d.label||'');

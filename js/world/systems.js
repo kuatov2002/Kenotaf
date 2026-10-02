@@ -66,13 +66,19 @@ class AbilitySystem{
 }
 class GateSystem{
   constructor(game){this.game=game;}
+  /* засов (latch): шорткат открывается только с той стороны, где висит засов (latchHere) —
+     с другой стороны дверь видна запертой, пока её не откроют изнутри */
   doorLocked(d){const gs=this.game.gs;
     if(d.locked||!d.to)return true;
+    if(d.latch&&!d.latchHere&&!gs.flags[d.latch])return true;
     if(d.reqAbility&&!gs.has(d.reqAbility))return true;
     if(d.req==='filter')return !gs.has('filter');
     if(d.reqFlag)return !gs.flags[d.reqFlag];
     return false;}
   tryDoor(d){const g=this.game;
+    if(d.latch&&!g.gs.flags[d.latch]){
+      if(!d.latchHere){g.hud.say(d.msg||'ЗАПЕРТО С ТОЙ СТОРОНЫ.','');g.audio.hitMetal();return false;}
+      g.gs.flag(d.latch);g.audio.lever();g.camera.addShake(0.35);}
     if(d.locked||!d.to){g.hud.say(d.msg||d.reqMsg||'ПРОХОД ЗАКРЫТ.','');g.audio.hitMetal();return false;}
     if(d.reqAbility&&!g.gs.has(d.reqAbility)){g.hud.say(d.reqMsg||'ПРОХОД ЗАКРЫТ.','');g.audio.hitMetal();return false;}
     if(d.req==='filter'&&!g.gs.has('filter')){

@@ -213,6 +213,7 @@ class Censor extends Enemy{
   constructor(world,def,x,y){
     super(world,Object.assign({w:1.25,h:2.05,hp:130,dmg:1,aggro:10,blood:'#8a6d3b'},def),x,y);
     this.stun=0;this.walk=0;this.tankBroken=false;}
+  safe(){return this.stun>0;}
   hurt(dmg,kx,ky){
     if(this.stun<=0&&!this.tankBroken){
       dmg*=0.45;

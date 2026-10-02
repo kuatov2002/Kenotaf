@@ -43,6 +43,10 @@ class World{
       if(td){const a=doorArrival(this.room,td);px=a.x;py=a.y;face=a.face;this.arrivedDoor=td;}}
     this.player=new Player(this,px,py);this.player.face=face;this.player.energy=this.player.maxEnergy();
     if(prev){const p=this.player;p.vx=prev.vx;p.vy=prev.vy;p.face=prev.face;p.energy=prev.energy;p.invuln=prev.invuln;}
+    /* точка отката при удушье в пыльце: вход в комнату — заведомо чистый воздух */
+    if(!soft||!this.safeSpot)this.safeSpot={x:px,y:py};this.chokeT=0;
+    /* новая комната / респаун — фильтр продут: задохнуться у самой двери было бы нечестно */
+    if(!soft)this.filter=this.filterCap();
     this.room.playerRef=this.player;
     for(let i=0;i<this.room.pushables.length;i++)this.pushables.push(new Pushable(this.room.pushables[i],this));
     for(let i=0;i<this.room.interactables.length;i++)this.interactables.push(new Interactable(this.room.interactables[i],this));
@@ -83,7 +87,7 @@ class World{
     g.particles.burst(pb.x+pb.w/2,pb.y+pb.h*0.6,12,{kind:'smoke',col:'#5a4c40',spd:2.4,life:1.6,size:0.5,grow:1.0,drag:1.4,a:0.5});
     g.tutorial.notify('break_'+pb.id);
   }
-  respawn(){const g=this.game;g.gs.hp=CFG.player.hp;
+  respawn(){const g=this.game;g.gs.hp=g.gs.maxHp();
     this.load(g.gs.cp.room,g.gs.cp.x,g.gs.cp.y);g.hud.syncHp();}
   spawnWave(i){
     const R=this.room,wv=R.waves[i];if(!wv)return;
@@ -132,8 +136,9 @@ class World{
     g.particles.update(dt);
     this.runTimers();
   }
-  /* пыльца Эдема: в облаке фильтр MK-II тратится, пустой (или его нет) — удушье.
-     Вентколонна (R.air) продувает фильтр почти мгновенно, снаружи он восстанавливается */
+  /* пыльца: в облаке фильтр MK-II тратится; пустой (или его нет) — удушье: −1 ячейка и откат
+     на последний пол в чистом воздухе (как кислота без защиты). Облако — непроходимая стена,
+     пока нет фильтра, и ресурс по времени, когда он есть. Вентколонна (R.air) продувает фильтр. */
   filterCap(){return this.game.gs.flags.filter_cap?160:100;}
   updatePollen(dt){
     const R=this.room,p=this.player,g=this.game,gs=g.gs,cap=this.filterCap();
@@ -143,13 +148,23 @@ class World{
     const inAir=(R.air||[]).some(a=>aabb(head,a));
     const inP=!inAir&&(R.pollen||[]).some(z=>aabb(head,z));
     this.inPollen=inP;this.inAir=inAir;
-    if(inAir)this.filter=Math.min(cap,this.filter+cap*1.6*dt);
+    /* безопасная точка: твёрдый пол, всё тело с запасом вне облака */
+    if(p.onGround&&!p.onCeil&&p.dashT<=0&&!inP){
+      const body={x:p.x-0.4,y:p.y-0.4,w:p.w+0.8,h:p.h+0.8};
+      if(!(R.pollen||[]).some(z=>aabb(body,z)))this.safeSpot={x:p.x,y:p.bottom-CFG.player.h};
+    }
+    if(inAir){this.filter=Math.min(cap,this.filter+cap*1.6*dt);this.chokeT=0;}
     else if(inP){
       this.filter=gs.has('filter')?Math.max(0,this.filter-13*dt):0;
-      if(this.filter<=0){this.toxT=(this.toxT||0)-dt;if(this.toxT<=0){this.toxT=0.9;p.toxic();}}
-      else if(this.filter<cap*0.28){this.beepT=(this.beepT||0)-dt;if(this.beepT<=0){this.beepT=0.8;g.audio.denied();}}
+      if(this.filter<=0){
+        this.chokeT=(this.chokeT||0)+dt;
+        if(Math.random()<dt*14)g.particles.spawn({kind:'dust',x:p.cx+p.face*0.2,y:p.y+0.35,vx:p.face*(1+Math.random()*2),
+          vy:-0.5-Math.random(),life:0.6,size:0.06,col:'#dfe88a',drag:1.2,a:0.8,add:true});
+        if(this.chokeT>0.25){this.chokeT=0;p.choke(this.safeSpot);}
+      }else{this.chokeT=0;
+        if(this.filter<cap*0.28){this.beepT=(this.beepT||0)-dt;if(this.beepT<=0){this.beepT=0.8;g.audio.denied();}}}
       if(gs.has('filter')&&Math.random()<dt*1.5)g.audio.nz(0.25,1600,0.6,0.012);
-    }else{this.filter=Math.min(cap,this.filter+40*dt);this.toxT=0.5;}
+    }else{this.filter=Math.min(cap,this.filter+40*dt);this.chokeT=0;}
   }
   updateHazards(){
     const hz=this.room.hazards;if(!hz)return;
@@ -248,13 +263,18 @@ class World{
     }
     if(dirty)this.projectiles=this.projectiles.filter(p=>!p.dead);
   }
+  /* касание врага ранит (рывок неуязвим и проходит насквозь; оглушённые и вскрытые — безопасны) */
   updateContact(){
     const p=this.player,g=this.game;
+    if(!p||p.dead||p.invuln>0||p.dashT>0)return;
+    const pr=p.rect(),inset=r=>({x:r.x+0.12,y:r.y+0.15,w:Math.max(0.1,r.w-0.24),h:Math.max(0.1,r.h-0.2)});
     for(let i=0;i<this.enemies.length;i++){
       const e=this.enemies[i];
-      if(e.dead||e.type!=='gardener')continue;
-      if(aabb(e.rect(),p.rect()))g.combat.contactDamage(p,e,1);
+      if(e.dead||(e.safe&&e.safe()))continue;
+      if(aabb(inset(e.rect()),pr)){g.combat.contactDamage(p,e,1);return;}
     }
+    const b=this.boss;
+    if(b&&b.activated&&!b.dead&&!(b.safe&&b.safe())&&aabb(inset(b.rect()),pr))g.combat.damagePlayer(1,b.cx);
   }
   updateWeights(dt){
     const R=this.room,g=this.game;
@@ -294,6 +314,7 @@ class World{
   }
   updateMachines(dt){
     const R=this.room,g=this.game,ms=R.machines;
+    if(R.pogos)for(const q of R.pogos)if(q.hitT>0)q.hitT-=dt;
     if(ms)for(let i=0;i<ms.length;i++){
       const m=ms[i];
       if(m.kind==='flywheel')m.a=(m.a||0)+m.spd*dt;

@@ -11,6 +11,20 @@ function drawDoor(c,d,t,locked){
   c.fillStyle='#3a4046';c.fillRect(x-0.24,y-0.24,w+0.48,0.24);
   c.fillRect(x-0.24,y,0.24,h);c.fillRect(x+w,y,0.24,h);
   for(let i=0;i<4;i++){Kit.bolt(c,x-0.12,y+0.3+i*(h-0.6)/3,0.06);Kit.bolt(c,x+w+0.12,y+0.3+i*(h-0.6)/3,0.06);}
+  if(d.latch&&!d.latchHere&&locked){
+    /* засов с той стороны: глухая стальная створка с поперечным брусом — «откроют изнутри» */
+    Kit.plate(c,x,y,w,h,'steel',880+(x|0),{rust:0.5,bolts:true});
+    c.fillStyle='#2b3035';c.fillRect(x-0.3,y+h*0.45,w+0.6,0.32);
+    c.fillStyle='rgba(255,255,255,.12)';c.fillRect(x-0.3,y+h*0.45,w+0.6,0.06);
+    Kit.bolt(c,x-0.15,y+h*0.45+0.16,0.08);Kit.bolt(c,x+w+0.15,y+h*0.45+0.16,0.08);
+    return;}
+  if(d.latch&&d.latchHere&&!game.gs.flags[d.latch]){
+    /* засов на этой стороне: латунный брус и рукоять — E откроет шорткат */
+    const p=0.5+0.5*Math.sin(t*3);
+    c.fillStyle='#8a6d2a';c.fillRect(x-0.3,y+h*0.45,w+0.6,0.3);
+    c.fillStyle='#e8c96a';c.fillRect(x+w/2-0.1,y+h*0.45-0.3,0.2,0.9);
+    game.renderer.glowAdd(x+w/2,y+h*0.5,1.0,'#e8c96a',0.2+0.15*p);
+    return;}
   if(locked){const p=0.5+0.5*Math.sin(t*4);
     c.fillStyle=rgba('#c8452f',0.3+0.28*p);c.fillRect(x,y,w,h);
     Kit.hazardTape(c,x-0.24,y+h,w+0.48,0.26);
@@ -210,6 +224,24 @@ function drawWorldLive(c,R,t,gs){
     c.restore();
     game.renderer.glowAdd(pr.x,pr.y,pr.kind==='orb'?1.1:0.6,pr.kind==='orb'?'#bfe3ff':'#ff9c4a',pr.kind==='orb'?0.6:0.35);
   }
+}
+/* клапан-отбойник: латунная головка на трубе. Ударом вниз от неё отскакивают (как от шипов),
+   поэтому её язык — тот же латунный, что у всего, с чем курьер взаимодействует */
+function drawPogo(c,q,t){
+  const r=q.r||0.45,len=q.len===undefined?1.6:q.len,hit=q.hitT>0?q.hitT/0.25:0;
+  if(len>0){c.fillStyle='#2b3035';c.fillRect(q.x-0.12,q.y,0.24,len);
+    c.fillStyle='rgba(255,255,255,.12)';c.fillRect(q.x-0.12,q.y,0.05,len);
+    c.fillStyle='#4a5158';rr(c,q.x-0.22,q.y+len-0.16,0.44,0.16,0.04);c.fill();}
+  const y=q.y-hit*0.12;
+  const g=c.createLinearGradient(q.x-r,y-r,q.x+r,y+r*0.4);
+  g.addColorStop(0,'#fff0c0');g.addColorStop(0.35,'#e8c96a');g.addColorStop(1,'#6d5416');
+  c.fillStyle=g;c.beginPath();c.ellipse(q.x,y,r,r*0.62,0,PI,TAU);c.closePath();c.fill();
+  c.fillStyle='#8a6d2a';rr(c,q.x-r,y-0.04,r*2,0.16,0.05);c.fill();
+  for(let i=0;i<4;i++)Kit.bolt(c,q.x-r*0.7+i*r*0.47,y+0.04,0.035);
+  const p=0.5+0.5*Math.sin(t*3+q.x);
+  c.strokeStyle=rgba('#ffe6a3',0.35+0.35*p+0.3*hit);c.lineWidth=0.05;
+  c.beginPath();c.ellipse(q.x,y-r*0.25,r*1.25,r*0.5,0,PI*1.1,PI*1.9);c.stroke();
+  game.renderer.glowAdd(q.x,y-0.2,0.9,'#e8c96a',0.18+0.12*p+0.4*hit);
 }
 function drawLightShafts(c,R,t){
   if(R.zone!=='eden'&&R.zone!=='sump')return;

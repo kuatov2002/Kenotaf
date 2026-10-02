@@ -285,7 +285,10 @@ class WorldRenderer{
     if(p&&p.bottom!==undefined){
       this.worldTransform(c,cam,cam.zoom);p.drawFx(c,t);
       this.outlined(c,p.spriteBounds(),x=>p.draw(x,t),rgba(Z.ent,0.72),1.8);
+      this.worldTransform(c,cam,cam.zoom);p.drawSlash(c,t);
     }
+    /* клапаны-отбойники: латунные головки, от которых отскакивают ударом вниз */
+    if(room.pogos)for(const q of room.pogos){this.worldTransform(c,cam,cam.zoom);drawPogo(c,q,t);}
   }
   atmosphere(c,zone,t){
     const g=this.game;

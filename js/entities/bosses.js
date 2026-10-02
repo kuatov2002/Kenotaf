@@ -52,6 +52,7 @@ class Overseer extends Boss{
     super(world,{type:'overseer',w:5.2,h:3.6,hp:100,dmg:1,aggro:40,blood:'#4a3a30',phaseAt:[0.6]},x,y);
     this.name='НАДСМОТРЩИК';this.tread=0;this.weightHits=0;this.chargeDir=1;}
   vuln(){return this.phase===1&&(this.state==='stuck'||this.state==='stunWall');}
+  safe(){return this.vuln()||this.state==='stuck'||this.state==='recover';}
   armor(){return this.phase>=2?0.02:(this.vuln()?1:0.12);}
   nudge(){return this.phase>=2?'НАД АРЕНОЙ ВИСЯТ ГРУЗЫ.':'КРЮКИ ТЯЖЕЛЫ. ПРОМАХНЁТСЯ — ЗАСТРЯНЕТ.';}
   armorMsg(){return this.phase>=2?'БРОНЯ СОМКНУЛАСЬ. ТОЛЬКО ГРУЗ: С ПЛАТФОРМЫ ИМПУЛЬСОМ ПО ГРУЗУ НАД НИМ.'
@@ -215,6 +216,7 @@ class Primarch extends Boss{
     g.particles.burst(this.cx,this.cy,36,{kind:'steam',col:'#efe8dc',spd:9,life:0.9,size:0.5,grow:1.4,drag:1.6});
     if(Math.abs(p.cx-this.cx)<4.4&&Math.abs(p.cy-this.cy)<3.4){p.vx=Math.sign(p.cx-this.cx||1)*15;p.vy=-9;}}
   armor(){return this.state==='stun'?0.85:0.1;}
+  safe(){return this.state==='stun';}
   armorMsg(){return 'ЛОБОВАЯ БРОНЯ. ЗАЙДИ СО СПИНЫ — С КОЛОННЫ ЧЕРЕЗ НЕГО ИЛИ РЫВКОМ СКВОЗЬ — И ИМПУЛЬСОМ ПО БАЛЛОНУ.';}
   threat(){return ['slamWind','breathWind','breath','chargeWind','charge'].indexOf(this.state)>=0;}
   behind(px){return Math.sign(px-this.cx)===-this.face;}
@@ -350,6 +352,7 @@ class Archivist extends Boss{
     super(world,{type:'archivist',w:4.4,h:4.6,hp:6,dmg:1,aggro:99,blood:'#5c6067',phaseAt:[0.67,0.34]},x,y);
     this.name='АРХИВАРИУС';this.camZoom=0.72;this.shotT=2.4;this.jt=0;this.trig=[];this.hitT=0;this.face=1;}
   physics(){}
+  safe(){return true;}
   armor(){return 0;}
   nudge(){return 'ОСКОЛКИ ЛЕТЯТ ИЗ ЯДРА — ЗНАЧИТ, ЯДРО ОТКРЫТО.';}
   armorMsg(){return 'ЯДРО ЗА СВИНЦОВЫМ СТЕКЛОМ. ОТБЕЙ ОСКОЛОК ИМПУЛЬСОМ ОБРАТНО — В ЯДРО.';}

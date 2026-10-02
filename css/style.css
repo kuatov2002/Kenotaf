@@ -24,6 +24,12 @@ canvas#game{position:absolute;inset:0;width:100%;height:100%;display:block;backg
 .gaugebox b{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 12px,rgba(0,0,0,.55) 12px 13px)}
 .lbl{font-size:10px;letter-spacing:.22em;color:#8d8577;text-transform:uppercase}
 .gaugebox.flt i{background:linear-gradient(90deg,#6f8a3a,#e0ea8c);box-shadow:0 0 12px rgba(200,220,120,.5)}
+/* РЕМОНТ: две порции по половине шкалы; полная порция — шкала теплеет и пульсирует */
+.gaugebox.weld{width:96px}
+.gaugebox.weld i{background:linear-gradient(90deg,#8a3b16,#ff9c4a);box-shadow:0 0 10px rgba(255,140,60,.35);transition:width .12s linear}
+.gaugebox.weld b{background:linear-gradient(90deg,transparent calc(50% - 1px),rgba(0,0,0,.85) calc(50% - 1px),rgba(0,0,0,.85) calc(50% + 1px),transparent calc(50% + 1px))}
+.gaugeline.ready .gaugebox.weld{border-color:rgba(255,190,110,.75);animation:weldready 1.2s ease-in-out infinite}
+@keyframes weldready{50%{box-shadow:0 0 14px rgba(255,160,70,.55)}}
 .gaugeline.low .gaugebox{animation:lowblink .45s infinite alternate;border-color:#c8452f}
 @keyframes lowblink{from{box-shadow:0 0 0 rgba(200,69,47,0)}to{box-shadow:0 0 14px rgba(255,90,60,.8)}}
 .abilities{display:flex;gap:6px;margin-top:4px}

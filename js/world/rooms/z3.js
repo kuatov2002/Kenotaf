@@ -1,37 +1,57 @@
 "use strict";
 /* ============================== ROOMS · Z3 ============================== */
 Object.assign(ROOMDEFS,{
-z3_airlock:gs=>({id:'z3_airlock',zone:'seal',name:'ШЛЮЗ-ТАМБУР',w:24,h:14,
+z3_airlock:gs=>({id:'z3_airlock',zone:'seal',name:'ШЛЮЗ-ТАМБУР',w:30,h:14,
   art:{bg:Art.bgSeal,mid:Art.midSeal,game:Art.gameSeal},
   build(R){
-    R.solids=[S(-2,-2,28,2.4,'lead'),S(-2,0,2,14,'lead'),S(24,0,2,14,'lead'),S(0,11,24,3,'lead')];
-    if(!gs.has('filter'))R.solids.push(S(11,2.4,1.2,8.6,'lead'));
+    /* Внутренняя мембрана дезактивации сорвана: камера между двумя рамами полна пыльцы.
+       Без фильтра — удушье и откат (облако 14 м, ни прыжком, ни рывком не проскочить).
+       Причину видно без слов: облако, сорванная створка, садовник с треснувшим фильтром. */
+    R.solids=[S(-2,-2,34,2.4,'lead'),S(-2,0,2,14,'lead'),S(30,0,2,14,'lead'),S(0,11,30,3,'lead')];
+    R.pollen=[{x:8,y:0.4,w:14,h:10.6}];
     R.doors=[{x:0.0,y:8.9,w:1.2,h:2.1,to:'z2_boss',tx:35.8,ty:15.6,label:'ТУРБИННЫЕ ЯРУСЫ',elevator:true},
-      {x:22.8,y:8.9,w:1.2,h:2.1,to:'z3_greenhouse',tx:1.8,ty:27.6,label:'ОРАНЖЕРЕИ',
-        req:gs.has('filter')?null:'filter',reqMsg:'ФИЛЬТР ОТСУТСТВУЕТ'}];
+      {x:28.8,y:8.9,w:1.2,h:2.1,to:'z3_greenhouse',tx:1.8,ty:27.6,label:'ОРАНЖЕРЕИ'}];
     R.checkpoint={x:3,y:11,h:1.7,lit:gs.cp.room==='z3_airlock'};
-    R.lights=[lit(4,3.4,7,'#e8e8e8',0.9),lit(12,3.4,7,'#cfe0a0',0.7),lit(20,3.4,7,'#cfe0a0',0.8),
-      lit(1.4,9.6,3,'#e8e8e8',0.5),lit(12,8,5,'#b8c46a',0.5),lit(23,9.6,3,'#cfe0a0',0.6)];
-    R.emitters=[{type:'dust',rate:8},{type:'pollen',x:18,y:6,rate:6}];
-    R.extraTop=(c,L,r)=>{
-      if(!gs.has('filter')){
-        Kit.plate(c,10.6,2.4,2.0,8.6,'lead',701,{bolts:true});
-        c.fillStyle='rgba(180,200,140,.32)';rr(c,11.0,3.4,1.2,3.4,0.1);c.fill();
-        c.strokeStyle='#8a8d94';c.lineWidth=0.1;c.strokeRect(11.0,3.4,1.2,3.4);
-        Kit.hazardTape(c,10.6,10.4,2.0,0.4);
-      }else Kit.plate(c,10.6,2.4,2.0,2.0,'lead',701,{bolts:true});};
+    R.lights=[lit(4,3.4,7,'#e8e8e8',0.9),lit(15,3.4,8,'#cfe0a0',0.75),lit(26,3.4,7,'#e8e8e8',0.8),
+      lit(1.4,9.6,3,'#e8e8e8',0.5),lit(15,9,7,'#b8c46a',0.6,{flicker:0.6}),lit(29,9.6,3,'#cfe0a0',0.6)];
+    R.emitters=[{type:'dust',rate:8},{type:'pollen',x:15,y:6,rate:16,sw:12},{type:'pollen',x:15,y:9.5,rate:10,sw:12}];
+    const frame=(c,x,seed)=>{Kit.plate(c,x-0.45,0.4,0.9,2.4,'lead',seed,{bolts:true});
+      Kit.plate(c,x-0.45,10.2,0.9,0.8,'lead',seed+1,{bolts:true});
+      c.fillStyle='#2c2e33';c.fillRect(x-0.35,2.8,0.7,0.14);c.fillRect(x-0.35,10.06,0.7,0.14);};
     R.extraGame=(c,L,r)=>{
-      if(!gs.has('filter'))Kit.stencil(c,6.0,7.6,'ПЫЛЬЦЕВАЯ ВЗВЕСЬ · НЕТ ФИЛЬТРА — НЕТ ВХОДА',0.3,'rgba(200,69,47,.7)',0.7);
-      else Kit.stencil(c,9.2,5.6,'ДВЕРЬ ОТКРЫТА · ЦИКЛ ЗАВЕРШЁН',0.3,'rgba(150,200,150,.6)',0.6);
-      for(let i=0;i<6;i++){const x=2+i*3.4;
+      for(let i=0;i<8;i++){const x=2+i*3.6;
         c.fillStyle='#8a8d94';c.fillRect(x-0.08,2.4,0.16,0.5);
         c.fillStyle='#b9bcc2';c.beginPath();c.arc(x,3.0,0.18,0,TAU);c.fill();
         for(let k=0;k<5;k++){c.fillStyle='#5c6067';c.beginPath();c.arc(x-0.14+k*0.07,3.06,0.02,0,TAU);c.fill();}}
-      for(let i=0;i<3;i++)Kit.lightStrip(c,2+i*8,2.5,5,0.16);
-      Kit.sign(c,2.4,6.0,4.0,0.8,'ДЕЗАКТИВАЦИЯ','#e8e8e8','#22242a',702);
-      Kit.sign(c,17,6.0,4.4,0.8,'САДЫ ЭДЕМА · ЯРУС +6','#b8c46a','#22242a',703);
-      for(let i=0;i<6;i++)Kit.bolt(c,2+i*3.8,10.6,0.09);
-      Kit.pipe(c,[[0,1.6],[24,1.6]],0.18,'lead',{seed:704,rustN:0});
+      for(let i=0;i<3;i++)Kit.lightStrip(c,2+i*10,2.5,5,0.16);
+      Kit.sign(c,1.6,5.6,4.0,0.8,'ДЕЗАКТИВАЦИЯ','#e8e8e8','#22242a',702);
+      Kit.sign(c,23.4,5.6,4.4,0.8,'САДЫ ЭДЕМА · ЯРУС +6','#b8c46a','#22242a',703);
+      /* знак биоугрозы: респиратор-пиктограмма у входа в камеру, без слов */
+      c.save();c.translate(6.2,7.6);
+      c.fillStyle='#d9c24a';c.beginPath();c.moveTo(0,-0.75);c.lineTo(0.78,0.6);c.lineTo(-0.78,0.6);c.closePath();c.fill();
+      c.fillStyle='#22242a';c.beginPath();c.moveTo(0,-0.55);c.lineTo(0.6,0.48);c.lineTo(-0.6,0.48);c.closePath();c.fill();
+      c.fillStyle='#d9c24a';rr(c,-0.26,-0.08,0.52,0.36,0.14);c.fill();
+      c.fillStyle='#22242a';c.beginPath();c.arc(-0.1,0.1,0.06,0,TAU);c.arc(0.1,0.1,0.06,0,TAU);c.fill();
+      c.fillStyle='#d9c24a';c.fillRect(-0.32,0.02,0.08,0.18);c.fillRect(0.24,0.02,0.08,0.18);
+      c.restore();
+      for(let i=0;i<8;i++)Kit.bolt(c,2+i*3.8,10.6,0.09);
+      Kit.pipe(c,[[0,1.6],[30,1.6]],0.18,'lead',{seed:704,rustN:0});
+      /* садовник дошёл до середины камеры: треснувший фильтр рядом, пыльца на плаще */
+      Kit.gardener(c,15.6,11,0,-1,0,{});
+      c.save();c.translate(17.0,10.72);c.rotate(0.5);
+      c.fillStyle='#5c646b';rr(c,-0.22,-0.32,0.44,0.64,0.18);c.fill();
+      c.fillStyle='#22262a';c.fillRect(-0.24,-0.06,0.48,0.08);
+      c.strokeStyle='#dfe88a';c.lineWidth=0.04;c.beginPath();c.moveTo(-0.1,-0.3);c.lineTo(0.02,-0.08);c.lineTo(-0.06,0.1);c.lineTo(0.08,0.3);c.stroke();
+      c.restore();
+      for(let i=0;i<40;i++){c.fillStyle='rgba(223,232,138,'+(0.2+r()*0.4)+')';
+        c.beginPath();c.arc(14+r()*4,10.6+r()*0.4,0.03+r()*0.05,0,TAU);c.fill();}
+    };
+    R.extraTop=(c,L,r)=>{
+      frame(c,8,705);frame(c,22,707);
+      /* левая створка сорвана с верхней петли и висит, правая лежит на полу */
+      c.save();c.translate(8.3,2.95);c.rotate(0.42);Kit.plate(c,-0.2,0,0.5,6.4,'lead',709,{bolts:true});
+      Kit.hazardTape(c,-0.2,5.9,0.5,0.4);c.restore();
+      c.save();c.translate(19.2,10.62);c.rotate(-0.04);Kit.plate(c,-2.6,0,5.2,0.38,'lead',710,{bolts:true});c.restore();
     };
   }}),
 z3_greenhouse:gs=>({id:'z3_greenhouse',zone:'eden',name:'ОРАНЖЕРЕИ-ТЕРРАСЫ',w:52,h:34,
@@ -51,7 +71,7 @@ z3_greenhouse:gs=>({id:'z3_greenhouse',zone:'eden',name:'ОРАНЖЕРЕИ-ТЕ
     R.pollen=[{x:40,y:23.4,w:12,h:6.6}];
     R.doors=[{x:0.0,y:27.9,w:1.2,h:2.1,to:'z3_airlock',label:'ТАМБУР'},
       {x:50.8,y:27.9,w:1.2,h:2.1,to:'z3_collector',link:'col_low',label:'КОЛЛЕКТОР'},
-      {x:50.6,y:19.5,w:1.4,h:2.1,to:'z3_collector',link:'col_short',label:'СОЛЯРИЙ'},
+      {x:50.6,y:19.5,w:1.4,h:2.1,to:'z3_collector',link:'col_short',label:'СОЛЯРИЙ',latch:'col_latch',msg:'ЗАСОВ — С ТОЙ СТОРОНЫ.'},
       {x:49.6,y:10.3,w:2.4,h:2.1,to:'z3_dome',label:'КУПОЛЬНЫЙ ПОДЪЁМ'}];
     R.signs=[{x:22.2,y:10.6,keys:['SPACE'],text:'ДЕРЖАТЬ',need:'magnet'},
       {x:22.2,y:10.6,keys:[],text:'ТРАВЕРСА · ДОПУСК: МАГНИТНЫЕ ПОДКОВЫ',needNot:'magnet'}];
@@ -108,7 +128,7 @@ z3_collector:gs=>({id:'z3_collector',zone:'eden',name:'ЗАТОПЛЕННЫЙ К
     R.air=[{x:25,y:1,w:2.4,h:15}];
     R.amb=[96,108,92];
     R.doors=[{x:0.0,y:13.9,w:1.2,h:2.1,to:'z3_greenhouse',link:'col_low',label:'ОРАНЖЕРЕИ'},
-      {x:58.6,y:13.9,w:1.4,h:2.1,to:'z3_greenhouse',link:'col_short',label:'ОРАНЖЕРЕИ · ТЕРРАСА'}];
+      {x:58.6,y:13.9,w:1.4,h:2.1,to:'z3_greenhouse',link:'col_short',label:'ОРАНЖЕРЕИ · ТЕРРАСА',latch:'col_latch',latchHere:true}];
     R.signs=[{x:26.2,y:7.4,keys:[],text:'ВЕНТКОЛОННА · ПРОДУВКА ФИЛЬТРОВ'}];
     R.pushables=[{x:50,y:14.7,w:4.2,h:1.3,id:'beam',kind:'beam',pushed:beam}];
     R.interactables=[];

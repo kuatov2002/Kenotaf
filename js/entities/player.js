@@ -16,6 +16,7 @@ class Player extends Body{
     this.onCeil=false;this.gravDir=1;this.ceiling=null;this.magPull=null;this.gripDir=0;
     this.wallT=0;this.wallDir=0;this.wallLock=0;this.landT=0;this.jumpStretch=0;this.stepT=0;this.grabbed=0;
     this.scarf=[];for(let i=0;i<6;i++)this.scarf.push({x:x,y:y,vx:0,vy:0});
+    this.healT=0;this.slashT=0;this.slashDir='side';this.slashFace=1;this.pogoT=0;this.lookT=0;this.lookV=0;
   }
   maxEnergy(){return this.world.game.gs.flags.energy_cap?150:CFG.player.energy;}
   setH(nh){
@@ -63,6 +64,8 @@ class Player extends Body{
     if(this.energyDelay>0)this.energyDelay-=dt;
     else this.energy=Math.min(this.maxEnergy(),this.energy+C.energyRegen*dt);
     if(this.jumpBuf>0)this.jumpBuf-=dt;
+    if(this.slashT>0)this.slashT-=dt;
+    if(this.pogoT>0)this.pogoT-=dt;
     const canAct=this.hurtT<=0&&g.state==='play';
 
     /* 1. INPUT -> INTENT */
@@ -71,7 +74,13 @@ class Player extends Body{
     const atkReq=inp.consume('attack')&&canAct;
     const pulseReq=inp.consume('pulse')&&canAct;
     const holdDn=inp.dn;
-    const mv=this.wallLock>0?0:inp.move;
+    /* РЕМОНТ: держать Q/I стоя на месте — сварка шва на куртке, ячейка за порцию РЕМОНТА */
+    const healing=this.updateHeal(dt,inp,canAct&&!dashReq&&this.jumpBuf<=0);
+    const mv=(this.wallLock>0||healing)?0:inp.move;
+    /* взгляд вверх/вниз: стоишь и держишь ↑ (или сидишь) — камера заглядывает туда */
+    const still=this.onGround&&Math.abs(this.vx)<0.4&&!healing;
+    this.lookT=still&&(inp.up||this.crouch)?(this.lookT||0)+dt:0;
+    this.lookV=this.lookT>0.42?(inp.up?-1:1):0;
 
     if(this.onCeil){this.magnetUpdate(dt,inp,mv);return;}
 
@@ -229,13 +238,14 @@ class Player extends Body{
       }
     }
 
-    /* combat */
-    if(atkReq&&this.atkCd<=0&&!sliding){
-      this.atkT=C.attackTime;this.atkCd=C.attackCd;
-      g.audio.melee();this.noiseLevel=Math.max(this.noiseLevel,0.5);
-      g.combat.melee(this);
+    /* combat: направление удара — ↑ вверх, ↓ в воздухе вниз (отскок от того, что ударил), иначе вбок */
+    if(atkReq&&this.atkCd<=0&&!sliding&&!healing){
+      const dir=inp.up?'up':(!this.onGround&&holdDn?'down':'side');
+      this.atkT=C.attackTime;this.atkCd=C.attackCd;this.slashT=C.slashT;this.slashDir=dir;this.slashFace=this.face;
+      g.audio.slash(dir);this.noiseLevel=Math.max(this.noiseLevel,0.5);
+      g.combat.melee(this,dir);
     }
-    if(pulseReq&&gs.has('pulse')&&this.pulseCd<=0){
+    if(pulseReq&&gs.has('pulse')&&this.pulseCd<=0&&!healing){
       if(this.energy>=C.pulseCost){
         this.energy-=C.pulseCost;this.energyDelay=C.energyDelay;
         this.pulseCd=C.pulseCd;this.pulseT=0.28;
@@ -277,6 +287,31 @@ class Player extends Body{
     else if(!this.onGround)this.state=(this.vy*this.gravDir<0)?'jump':'fall';
     else if(Math.abs(this.vx)>0.6)this.state='run';
     else this.state='idle';
+  }
+  /* сварка шва: стоя, не в рывке, есть порция РЕМОНТА и есть что латать. Урон прерывает (порция не тратится) */
+  updateHeal(dt,inp,ok){
+    const g=this.world.game,gs=g.gs,C=CFG.player;
+    const can=ok&&inp.healHeld&&this.onGround&&!this.onCeil&&this.dashT<=0&&this.slideT<=0&&
+      gs.weld>=C.healCost&&gs.hp<gs.maxHp();
+    if(!can){this.healT=0;return false;}
+    if(this.healT===0)g.audio.weld();
+    this.healT=(this.healT||0)+dt;
+    this.vx=damp(this.vx,0,14,dt);
+    if(Math.random()<dt*40)g.particles.spawn({kind:'spark',x:this.cx+this.face*0.32+(Math.random()-0.5)*0.2,y:this.bottom-this.h*0.62+(Math.random()-0.5)*0.3,
+      vx:(Math.random()-0.5)*5,vy:-1-Math.random()*4,life:0.3,size:0.04,col:Math.random()<0.5?'#ffe6a3':'#9fe0ff',add:true,g:14});
+    if(this.healT>=C.healTime){
+      this.healT=0;gs.weld-=C.healCost;gs.hp=Math.min(gs.maxHp(),gs.hp+1);g.hud.syncHp();
+      g.audio.heal();g.camera.addShake(0.15);
+      g.particles.spawn({kind:'ring',x:this.cx,y:this.cy,ringR:2.2,life:0.45,size:0.1,col:'#ffcf7a',add:true,a:0.8});
+      g.particles.burst(this.cx,this.cy,16,{kind:'spark',col:'#ffe6a3',spd:4,life:0.5,size:0.05,add:true,g:6});}
+    return true;
+  }
+  /* отскок от удара вниз: фиксированная высота, освежает рывок в воздухе */
+  pogo(){
+    const g=this.world.game,C=CFG.player;
+    this.vy=-C.pogoV*this.gravDir;this.jumpCutDone=true;this.coyote=0;this.airDash=1;this.pogoT=0.18;
+    this.dashT=0;g.audio.pogo();g.camera.addShake(0.12);
+    g.particles.burst(this.cx,this.bottom+0.2,10,{kind:'spark',col:'#ffe6a3',spd:4,life:0.3,size:0.05,add:true,g:10,ang:PI/2,spread:PI*0.9});
   }
   magnetUpdate(dt,inp,mv){
     const w=this.world,g=w.game,C=CFG.player,m=this.ceiling;
@@ -381,13 +416,20 @@ class Player extends Body{
     this.x=bk.x;this.y=bk.y;this.vx=0;this.vy=0;this.dashT=0;this.slideT=0;
     this.invuln=Math.max(this.invuln,1.0);this.coyote=0;this.jumpBuf=0;
   }
-  /* удушье в пыльце: без отбрасывания, короткая неуязвимость */
-  toxic(){
+  /* удушье в пыльце: кашель, −1 ячейка, откат на последний пол в чистом воздухе.
+     Облако без фильтра — стена, которую видно до того, как появится чем её пройти */
+  choke(spot){
     const g=this.world.game;
-    if(this.invuln>0||this.dead||g.debugOpts.invuln||g.state!=='play')return;
-    g.gs.hp--;this.invuln=0.35;g.audio.hurt();g.flash(0.3,'#7a8a2a');g.hud.syncHp();
-    g.hud.say('ФИЛЬТР ПУСТ.','');
-    if(g.gs.hp<=0)this.kill();
+    if(this.dead||g.state!=='play')return;
+    if(!g.debugOpts.invuln){g.gs.hp--;g.hud.syncHp();}
+    g.audio.hurt();g.audio.nz(0.5,900,0.7,0.06,'bandpass');g.flash(0.45,'#7a8a2a');g.camera.addShake(0.45);
+    g.particles.burst(this.cx,this.y+0.4,18,{kind:'dust',col:'#dfe88a',spd:3,life:0.8,size:0.07,add:true,drag:1.4});
+    if(g.gs.hp<=0){this.kill();return;}
+    if(this.onCeil)this.detach(false);
+    this.crouch=false;this.h=CFG.player.h;
+    if(spot){this.x=spot.x;this.y=spot.y;}
+    this.vx=0;this.vy=0;this.dashT=0;this.slideT=0;this.coyote=0;this.jumpBuf=0;
+    this.invuln=Math.max(this.invuln,1.0);this.hurtT=0.3;
   }
   kill(){
     if(this.dead)return;
@@ -400,7 +442,7 @@ class Player extends Body{
     const g=this.world.game;
     /* рывок = уклонение: на время рывка курьер неуязвим (сквозь пар, таран, осколки) */
     if(this.invuln>0||this.dead||this.dashT>0||g.debugOpts.invuln||g.state!=='play')return false;
-    g.gs.hp--;this.invuln=CFG.player.invuln;this.hurtT=0.34;
+    g.gs.hp--;this.invuln=CFG.player.invuln;this.hurtT=0.34;this.healT=0;
     this.vx=(this.cx<srcX?-1:1)*CFG.player.knock;
     this.vy=this.gravDir>0?-6:6;
     if(this.onCeil)this.detach(true);
@@ -504,7 +546,9 @@ class Player extends Body{
       if(this.pulseT>0){c.save();c.globalCompositeOperation='lighter';
         c.fillStyle=rgba('#cfe6ee',this.pulseT*2);c.beginPath();c.arc(0.5,hipY-0.12,0.2,0,TAU);c.fill();c.restore();}
     }
-    const armA=st==='attack'?(-1.2+(1-this.atkT/CFG.player.attackTime)*2.6):(st==='run'?Math.sin(legPh+PI)*0.5:-0.15);
+    const ak=1-this.atkT/CFG.player.attackTime;
+    const armA=this.healT>0?(1.15+Math.sin(t*40)*0.06):st==='attack'?(this.slashDir==='up'?lerp(-2.5,-0.9,ak):this.slashDir==='down'?lerp(0.3,2.1,ak):(-1.2+ak*2.6))
+      :(st==='run'?Math.sin(legPh+PI)*0.5:-0.15);
     c.save();c.translate(0.1,shY+0.1);c.rotate(armA);
     c.strokeStyle='#4a3d2e';c.lineWidth=0.12;c.beginPath();c.moveTo(0,0);c.lineTo(0.3,0.16);c.stroke();
     c.fillStyle='#c9a227';c.beginPath();c.arc(0.33,0.18,0.07,0,TAU);c.fill();
@@ -544,6 +588,40 @@ class Player extends Body{
   /* габарит спрайта для контурного рендера (шарф, антенна, перевёрнутая поза на своде) */
   spriteBounds(){return {x:this.cx-1.7,y:this.y-0.9,w:3.4,h:this.h+1.8};}
   /* эффекты поверх: следы рывка, кольца шума, свет фонаря */
+  /* дуга удара: толстый полумесяц перед курьером + шлейф; вспыхивает целиком и гаснет за ~0.16 с */
+  drawSlash(c,t){
+    if(this.healT>0){
+      /* сварка шва: голубое пятно дуги у груди, вокруг — сходящееся кольцо */
+      const k=clamp(this.healT/CFG.player.healTime,0,1),hx=this.cx+this.face*0.3,hy=this.bottom-this.h*0.6;
+      c.save();c.globalCompositeOperation='lighter';
+      const fl=0.6+0.4*Math.sin(t*90);
+      const g=c.createRadialGradient(hx,hy,0,hx,hy,0.5);g.addColorStop(0,'rgba(220,245,255,'+(0.9*fl)+')');g.addColorStop(1,'rgba(120,200,255,0)');
+      c.fillStyle=g;c.beginPath();c.arc(hx,hy,0.5,0,TAU);c.fill();
+      c.strokeStyle='rgba(255,207,122,'+(0.25+0.5*k)+')';c.lineWidth=0.06;
+      c.beginPath();c.arc(this.cx,this.cy,2.2-1.5*k,0,TAU);c.stroke();
+      c.restore();
+      this.world.game.renderer.glowAdd(hx,hy,1.2,'#9fe0ff',0.5*fl);
+    }
+    if(this.slashT<=0)return;
+    const T=CFG.player.slashT,u=this.slashT/T,a=clamp(u*1.5,0,1),grow=clamp((1-u)*4,0.6,1);
+    const dir=this.slashDir,f=this.slashFace;
+    const rot=dir==='up'?-PI/2:dir==='down'?PI/2:(f>0?0:PI);
+    const ox=this.cx,oy=dir==='down'?this.bottom-0.3:dir==='up'?this.y+0.5:this.y+this.h*0.45;
+    const R=1.72*grow,r=1.16*grow,sw=1.18;
+    const crescent=(ang,al,col)=>{c.save();c.rotate(ang);
+      const g=c.createRadialGradient(0.25,0,r*0.75,0.25,0,R);
+      g.addColorStop(0,'rgba('+col+',0)');g.addColorStop(0.45,'rgba('+col+','+(0.55*al)+')');g.addColorStop(1,'rgba(255,255,255,'+al+')');
+      c.fillStyle=g;c.beginPath();c.arc(0,0,R,-sw,sw);c.arc(0.58,0,r,sw*0.92,-sw*0.92,true);c.closePath();c.fill();c.restore();};
+    c.save();c.translate(ox,oy);c.rotate(rot);
+    if(dir==='side'&&f<0)c.scale(1,-1);
+    c.globalCompositeOperation='lighter';
+    crescent(-0.35,0.28*a,'255,190,110');   /* шлейф: остаток взмаха чуть позади */
+    crescent(0,0.95*a,'255,226,170');
+    c.strokeStyle='rgba(255,255,255,'+(0.85*a)+')';c.lineWidth=0.06;c.beginPath();c.arc(0,0,R,-sw*0.95,sw*0.95);c.stroke();
+    c.restore();
+    const hx=dir==='side'?this.cx+f*1.3:this.cx,hy=dir==='up'?this.y-0.9:dir==='down'?this.bottom+0.9:this.y+this.h*0.45;
+    this.world.game.renderer.glowAdd(hx,hy,1.6,'#ffe6a3',0.45*a);
+  }
   drawFx(c,t){
     const g=this.world.game,h=this.h;
     if(!this.onCeil&&this.wasGrounded){
