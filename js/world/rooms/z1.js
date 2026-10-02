@@ -522,7 +522,7 @@ z1_boss:gs=>({id:'z1_boss',zone:'sump',name:'АРЕНА НАДСМОТРЩИКА
       Kit.plate(c,10.4,17.4,3.6,0.4,'steel',212,{rust:0.7});Kit.plate(c,22,17.4,3.6,0.4,'steel',213,{rust:0.7});
       for(const x of (dead?[27.5,31]:[5,8.5,27.5,31]))Kit.pipe(c,[[x,20.0],[x,22]],0.08,'steel',{seed:x|0,rustN:0});
       for(const x of [10.8,13.6,22.4,25.2])Kit.pipe(c,[[x,17.4],[x,19.6]],0.07,'steel',{seed:x|0,rustN:0});
-      Kit.sign(c,15.9,9.4,4.2,0.9,'ЗОНА РАБОТЫ КРАНА','#c8452f','#f0e2cf',21);
+      Kit.sign(c,15.9,15.0,4.2,0.9,'ЗОНА РАБОТЫ КРАНА','#c8452f','#f0e2cf',21);
       Kit.lampCage(c,8,5,0.4);Kit.lampCage(c,28,5,0.4);
       for(let i=0;i<5;i++)Kit.oilStain(c,3+r()*30,21.94,1.4+r()*1.8,rng(301+i));
       if(!dead)Kit.rubble(c,15,21.0,3,1.0,rng(302));
