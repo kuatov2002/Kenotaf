@@ -11,12 +11,6 @@
      баллон → взрыв пара (оглушение, урон корпусу, толкает курьера, бьёт соседей); факел слабеет.
    Прерывание: импульс в момент, когда кольцо сомкнулось на горелке — факел захлёбывается,
    рука дёргается назад, 1.5 с механизм открыт. Прижатие спиной к стене рвёт баллон. */
-function ik2(hx,hy,fx,fy,l1,l2,bend){
-  let dx=fx-hx,dy=fy-hy,d=Math.hypot(dx,dy)||1e-4;const mx=l1+l2-1e-3;
-  if(d>mx){dx*=mx/d;dy*=mx/d;d=mx;}
-  const a=Math.atan2(dy,dx),b=Math.acos(clamp((l1*l1+d*d-l2*l2)/(2*l1*d),-1,1)),k=a+bend*b;
-  return {kx:hx+Math.cos(k)*l1,ky:hy+Math.sin(k)*l1,fx:hx+dx,fy:hy+dy};
-}
 class Repairer extends Mech{
   constructor(world,def,x,y){
     super(world,Object.assign({w:0.95,h:1.55,hp:66,dmg:1,aggro:11,mass:1,bodyMat:'iron',blood:'#6b4a3a'},def),x,y);

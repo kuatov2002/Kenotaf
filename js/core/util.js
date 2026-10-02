@@ -50,3 +50,13 @@ function losCheck(w,x1,y1,x2,y2){const n=Math.ceil(dist(x1,y1,x2,y2)/0.6);
   for(let i=1;i<n;i++){const t=i/n,x=lerp(x1,x2,t),y=lerp(y1,y2,t);
     for(const s of w.room.solids)if(!s.ow&&x>s.x&&x<s.x+s.w&&y>s.y&&y<s.y+s.h)return false;}
   return true;}
+/* двухзвенный IK: от корня (hx,hy) к цели (fx,fy), звенья l1,l2; bend ±1 — сторона сгиба.
+   Возвращает сустав (kx,ky) и достижимую цель (fx,fy) */
+function ik2(hx,hy,fx,fy,l1,l2,bend){
+  let dx=fx-hx,dy=fy-hy,d=Math.hypot(dx,dy)||1e-4;const mx=l1+l2-1e-3;
+  if(d>mx){dx*=mx/d;dy*=mx/d;d=mx;}
+  const a=Math.atan2(dy,dx),b=Math.acos(clamp((l1*l1+d*d-l2*l2)/(2*l1*d),-1,1)),k=a+bend*b;
+  return {kx:hx+Math.cos(k)*l1,ky:hy+Math.sin(k)*l1,fx:hx+dx,fy:hy+dy};
+}
+/* кратчайшая разность углов */
+function angDiff(a,b){let d=(b-a)%TAU;if(d>PI)d-=TAU;if(d<-PI)d+=TAU;return d;}
