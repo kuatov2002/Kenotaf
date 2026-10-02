@@ -34,5 +34,6 @@ const RB={
   /* подзона: язык зоны + её вариант (свет, дымка, фон, декор) */
   art(zone,sub,o){o=o||{};const Z={sump:['Sump'],hives:['Hives'],eden:['Eden'],seal:['Seal'],archive:['Archive'],surface:['Surface']}[zone][0];
     return {far:SUBART[sub]&&SUBART[sub].far||null,bg:SUBART[sub]&&SUBART[sub].bg||Art['bg'+Z],mid:SUBART[sub]&&SUBART[sub].mid||Art['mid'+Z],
-      game:Art['game'+Z],fgd:o.fgd===false?null:(SUBART[sub]&&SUBART[sub].fgd)||Art['fgd'+Z]||null};}
+      game:Art['game'+Z],fgd:o.fgd===false?null:(SUBART[sub]&&SUBART[sub].fgd)||Art['fgd'+Z]||null,
+      emit:SUBART[sub]&&SUBART[sub].emit||null,emitF:SUBART[sub]&&SUBART[sub].emitF||0.34};}
 };

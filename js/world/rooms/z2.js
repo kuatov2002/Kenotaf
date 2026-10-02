@@ -9,6 +9,7 @@ z2_escalator:gs=>({id:'z2_escalator',zone:'hives',name:'МЁРТВЫЙ ЭСКА�
     for(let i=1;i<=31;i++)R.solids.push(S(6+(i-1)*0.9375,23-0.5*i,0.94,0.5,'steel',{step:true}));
     R.solids.push(S(35.06,7.0,8.94,0.6,'concrete'));
     R.doors=[{x:0.0,y:20.9,w:1.2,h:2.1,to:'z1_sluice',label:'ШЛЮЗ',elevator:true},
+      {x:4.2,y:20.9,w:1.4,h:2.1,to:'z2_market',label:'РЫНОК'},
       {x:42.4,y:4.9,w:1.4,h:2.1,to:'z2_atrium',label:'СОТЫ-АТРИУМ'}];
     R.checkpoint={x:3,y:23,h:1.7,lit:gs.cp.room==='z2_escalator'};
     R.enemies=gs.flags.esc_clear?[]:[{type:'aristocrat',x:38,y:4.65,patrol:[36,42]}];
@@ -51,7 +52,7 @@ z2_atrium:gs=>({id:'z2_atrium',zone:'hives',name:'СОТЫ-АТРИУМ',w:36,h:
       P(4.6,32.8,3.0,0.34),P(0.6,30.6,3.0,0.34),P(4.6,28.4,3.0,0.34),
       P(0.6,23.8,3.0,0.34),P(4.6,21.6,3.0,0.34),P(0.6,19.4,3.0,0.34)];
     R.doors=[{x:0.0,y:32.9,w:1.2,h:2.1,to:'z2_escalator',label:'ЭСКАЛАТОР'},
-      {x:10.4,y:32.9,w:1.4,h:2.1,to:'z2_apartment',link:'apt_low',label:'КВАРТИРЫ'},
+      {x:10.4,y:32.9,w:1.4,h:2.1,to:'z2_laundry',link:'laundry_sc',label:'ПРАЧЕЧНАЯ',latch:'laundry_latch',msg:'ПРОХОД ЗАВАЛЕН. ЗА ЗАВАЛОМ — ЗАСОВ.'},
       {x:34.6,y:23.9,w:1.4,h:2.1,to:'z2_stairwell',label:'ЛЕСТНИЧНАЯ КЛЕТЬ'},
       {x:34.6,y:14.9,w:1.4,h:2.1,to:'z2_apartment',link:'apt_up',label:'КВАРТИРЫ · ВЕРХ'},
       {x:0.2,y:14.9,w:1.3,h:2.1,to:'z2_post',label:'ГЛАВПОЧТАМТ'},
@@ -112,7 +113,7 @@ z2_apartment:gs=>({id:'z2_apartment',zone:'hives',name:'ОБРУШЕННАЯ К�
       S(19.6,0.6,5.8,11.6,'concrete'),
       /* «камин»: рифлёные грани смотрят внутрь, 3.2 между стенами */
       S(38,2.2,1.2,9.2,'concrete',{grip:'r'}),S(42.4,4.4,3.6,9.0,'concrete',{grip:'l'})];
-    R.doors=[{x:0.0,y:11.3,w:1.2,h:2.1,to:'z2_atrium',link:'apt_low',label:'АТРИУМ'},
+    R.doors=[{x:0.0,y:11.3,w:1.2,h:2.1,to:'z2_laundry',label:'ПРАЧЕЧНАЯ'},
       {x:44.6,y:2.3,w:1.4,h:2.1,to:'z2_atrium',link:'apt_up',label:'АТРИУМ · ВЕРХ'}];
     R.checkpoint={x:2.6,y:13.4,h:1.7,lit:gs.cp.room==='z2_apartment'};
     R.interactables=[];
@@ -173,8 +174,8 @@ z2_stairwell:gs=>({id:'z2_stairwell',zone:'hives',name:'ЛЕСТНИЧНАЯ К�
     R.solids=[S(-2,-3,24,3,'concrete'),S(-2,0,2,42,'concrete'),S(20,0,2,42,'concrete'),S(0,39,20,3,'concrete'),
       S(7,15,1.2,21.4,'concrete',{grip:'r'}),S(11.4,15,1.2,24,'concrete',{grip:'l'}),
       P(10.4,30,1.0,0.4,'concrete'),P(8.2,23,1.0,0.4,'concrete'),
-      P(2,15,18,0.5,'concrete')];
-    R.doors=[{x:0.0,y:36.9,w:1.2,h:2.1,to:'z2_atrium',label:'АТРИУМ'},
+      P(0,15,20,0.5,'concrete')];
+    R.doors=[{x:0.0,y:36.9,w:1.2,h:2.1,to:'z2_atrium',label:'АТРИУМ'},RB.L(15,'z2_roofs','КРЫШИ СОТ'),
       {x:18.6,y:12.9,w:1.4,h:2.1,to:'z2_turbine',label:'ТУРБИННЫЙ ЗАЛ'}];
     R.signs=[{x:4.2,y:30.4,keys:[],text:'КОЛОДЕЦ · ТОЛЬКО ДЛЯ МОНТАЖНИКОВ'}];
     R.checkpoint={x:2.4,y:39,h:1.7,lit:gs.cp.room==='z2_stairwell'};
@@ -213,7 +214,7 @@ z2_turbine:gs=>({id:'z2_turbine',zone:'hives',name:'ТУРБИННЫЙ ЗАЛ',w
       S(40.6,1,1.2,17.2,'concrete',{grip:'r'}),S(45,4.6,1.2,13.6,'concrete',{grip:'l'}),
       P(41.8,12.8,1.0,0.4,'concrete'),S(46.2,4.6,7.8,0.6,'steel')];
     R.hazards=[{x:8.4,y:4.4,w:2.0,h:16.6,kind:'steam',per:3.0,off:0,on:0.9}];
-    R.doors=[{x:0.0,y:18.9,w:1.2,h:2.1,to:'z2_stairwell',label:'КЛЕТЬ'},
+    R.doors=[{x:0.0,y:18.9,w:1.2,h:2.1,to:'z2_stairwell',label:'КЛЕТЬ'},RB.R(R,4.6,'z2_censor','ЦЕНЗОРСКАЯ'),
       {x:52.6,y:18.9,w:1.4,h:2.1,to:'z2_boss',label:'ЗАЛ ПРИМАРХА',reqFlag:'turbines_on',
         reqMsg:'ГЕРМОДВЕРЬ · ДАВЛЕНИЕ НА НУЛЕ'}];
     R.interactables=[];
@@ -283,8 +284,8 @@ z2_boss:gs=>({id:'z2_boss',zone:'hives',name:'ЗАЛ ЦЕНЗОРА-ПРИМАР
     R.bossTrigger={x:5,y:10,w:30,h:8};
     R.bossDoor={x:0.0,y:15.9,w:1.4,h:2.1,active:!dead};
     R.doors=[{x:0.0,y:15.9,w:1.2,h:2.1,to:'z2_turbine',label:'ТУРБИНЫ'},
-      {x:38.4,y:15.6,w:1.6,h:2.4,to:'z3_airlock',label:'САДЫ ЭДЕМА',elevator:true,
-        reqFlag:'boss2_dead',reqMsg:'ЛИФТ ОБЕСТОЧЕН. ПРИМАРХ ДЕРЖИТ ДАВЛЕНИЕ НА СЕБЕ.'}];
+      {x:38.8,y:15.9,w:1.2,h:2.1,to:'z2_quiet',label:'КАБИНЕТ ПРИМАРХА',
+        reqFlag:'boss2_dead',reqMsg:'ЗАПЕРТО. ПРИМАРХ ДЕРЖИТ ДАВЛЕНИЕ НА СЕБЕ.'}];
     R.lights=[lit(6,5,10,'#d9a441',0.85),lit(20,4,11,'#d9a441',0.9),lit(34,5,10,'#d9a441',0.85),
       lit(11,14,4,'#ff9c4a',0.5,{flicker:1.2}),lit(29,14,4,'#ff9c4a',0.5,{flicker:0.9}),
       lit(1.4,16.6,3,'#d9a441',0.5),lit(39,16.6,3,'#d9a441',0.5),lit(20,17,8,'#ffcf8a',0.45)];
@@ -295,8 +296,6 @@ z2_boss:gs=>({id:'z2_boss',zone:'hives',name:'ЗАЛ ЦЕНЗОРА-ПРИМАР
       lines:['СМОТРОВОЙ КУПОЛ ТРЕСНУЛ. ШЛЕМ СНИМАЕТСЯ, КАК КРЫШКА.',
              'ПОД НИМ — ФИЛЬТР ЗАМКНУТОГО ЦИКЛА. ЕЩЁ ТЁПЛЫЙ.',
              'РЕЗИНА САДИТСЯ НА ГОРЛОВИНУ КУРТКИ. ПЫЛЬЦА ТЕПЕРЬ НЕ СТРАШНА.']});
-    if(dead&&!gs.loreIds[8])R.interactables.push({kind:'lore',loreId:8,x:31,y:18,title:'ЦИЛИНДР №8 · УСТАВ ЦЕНЗУРЫ',
-      text:'«§1. КАПСУЛЫ «ОТ ПЕЧАТИ» ИЗЫМАТЬ НЕВСКРЫТЫМИ. §2. ПОЛУЧАТЕЛЕЙ — ВНИЗ. §3. СЛОВО «НЕБО» ИЗЪЯТЬ.»'});
     R.extraTop=(c,L,r)=>{for(const x of [10,19,28]){Kit.column(c,x+1,15.6,2.4,1.0,{gold:true});
       c.fillStyle='#2a2420';c.fillRect(x+0.2,17.7,1.6,0.3);}};
     R.extraGame=(c,L,r)=>{

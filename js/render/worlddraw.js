@@ -347,6 +347,12 @@ function drawAnchor(c,a,t,has,aim){
   else game.renderer.glowAdd(x,y,0.6,'#e8c96a',has?0.18:0.08);
 }
 function drawLightShafts(c,R,t){
+  const SS=R.sub&&typeof SUBSHAFT!=='undefined'&&SUBSHAFT[R.sub];
+  if(SS){c.save();c.globalCompositeOperation='lighter';
+    for(let i=0;i<SS.n;i++){const x=(R.w/(SS.n+1))*(i+1)+Math.sin(t*0.13+i)*1.4,w0=SS.w;
+      const g=c.createLinearGradient(x,0,x+w0*0.6,R.h);g.addColorStop(0,'rgba('+SS.col+','+SS.a+')');g.addColorStop(1,'rgba('+SS.col+',0)');
+      c.fillStyle=g;c.beginPath();c.moveTo(x-w0*0.4,0);c.lineTo(x+w0*0.4,0);c.lineTo(x+w0*1.5,R.h);c.lineTo(x-w0*0.6,R.h);c.closePath();c.fill();}
+    c.restore();return;}
   if(R.zone!=='eden'&&R.zone!=='sump')return;
   c.save();c.globalCompositeOperation='lighter';
   const n=R.zone==='eden'?5:3;

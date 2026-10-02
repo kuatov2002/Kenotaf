@@ -305,6 +305,8 @@ class Game{
     this.particles.render(c,'norm');
     c.setTransform(1,0,0,1,0,0);
     this.renderer.lighting(c,cam,zoom,room,zone,t);
+    if(par.layers.emit){c.save();c.globalCompositeOperation='lighter';c.globalAlpha=0.85;
+      this.renderer.drawLayerTo(c,par.layers.emit,cam,zoom,par.layers.emit.f);c.restore();}
     if(!inMenu){
       /* после света: цели, угрозы, кромки, таблички, персонажи с контуром */
       this.renderer.worldTransform(c,cam,zoom);

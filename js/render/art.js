@@ -4,40 +4,83 @@ const Art={};
 /* облик комнаты: зона + поправки подзоны (свет, дымка, пустота) */
 function zoneLook(R){if(R._zl)return R._zl;const SB=R.sub&&SUBART[R.sub];
   return R._zl=Object.assign({},ZONES[R.zone]||ZONES.sump,SB&&SB.zone||{},R.look||{});}
+/* Твёрдая геометрия — главный «рисунок» уровня. Тело блока тёмное и глубокое (внутрь темнеет),
+   открытые грани — светлый карниз с крепежом (по нему ходят), низ — тёмная кромка с подтёками,
+   крупные массы несут структуру зоны: клёпаные листы, кирпич, тёсаный камень, свинцовые панели,
+   книжные полки. Стиль — по зоне, материал блока (s.mat) задаёт карниз и фактуру. */
+const SOLIDSTYLE={
+  sump:{body:'#231c17',tex:'rust',texA:0.3,cap:'#5e5146',capHi:'rgba(230,214,190,.35)',capH:0.32,detail:'plates',dark:0.42},
+  hives:{body:'#211715',tex:'concrete',texA:0.32,cap:'#5a463c',capHi:'rgba(240,210,180,.3)',capH:0.3,detail:'bricks',dark:0.42},
+  eden:{body:'#8e897a',tex:'marble',texA:0.45,cap:'#d8d2c0',capHi:'rgba(255,252,236,.6)',capH:0.34,detail:'ashlar',dark:0.3},
+  seal:{body:'#1e2125',tex:'lead',texA:0.4,cap:'#4e5257',capHi:'rgba(230,236,244,.32)',capH:0.26,detail:'panels',dark:0.45},
+  archive:{body:'#1a1410',tex:'ply',texA:0.3,cap:'#5a4430',capHi:'rgba(255,220,170,.28)',capH:0.3,detail:'shelves',dark:0.45},
+  surface:{body:'#4a4a40',tex:'concrete',texA:0.4,cap:'#6f6a5a',capHi:'rgba(255,255,240,.4)',capH:0.3,detail:'blocks',dark:0.25}
+};
+const CAPMAT={steel:'#5d646b',rust:'#6b5040',concrete:'#5e5a52',marble:'#d6d0be',lead:'#50555c',ply:'#6a5540',carpet:'#5a3a32',brass:'#8a6d2a',iron:'#4d4943'};
 function drawSolids(c,R,zoneKey){
-  const r=rng(R.id+'solids');
-  const body=READ[zoneKey]&&READ[zoneKey].body;
+  const r=rng(R.id+'solids'),ST=SOLIDSTYLE[zoneKey]||SOLIDSTYLE.sump;
+  const E=buildEdges({solids:R.solids.filter(s=>!s.dyn)});
   for(let si=0;si<R.solids.length;si++){
     const s=R.solids[si];if(s.hidden||s.dyn)continue;
-    const mat=s.mat||(zoneKey==='eden'?'marble':zoneKey==='seal'?'lead':zoneKey==='hives'?'concrete':'rust');
     if(s.ow){
-      c.fillStyle='rgba(0,0,0,.55)';c.fillRect(s.x,s.y+0.05,s.w,s.h+0.12);
+      /* настил: решётка, под ней — кронштейны; светлая кромка */
+      c.fillStyle='rgba(0,0,0,.5)';c.fillRect(s.x,s.y+0.08,s.w,s.h+0.14);
       c.fillStyle=PAT(c,zoneKey==='eden'?'marble':'grate');c.fillRect(s.x,s.y,s.w,s.h+0.12);
-      c.fillStyle='rgba(255,255,255,.18)';c.fillRect(s.x,s.y,s.w,0.05);
-      c.fillStyle='rgba(0,0,0,.5)';c.fillRect(s.x,s.y+s.h+0.07,s.w,0.06);
-      for(let x=s.x+0.4;x<s.x+s.w;x+=1.8){
-        c.fillStyle='#2c3237';c.fillRect(x-0.06,s.y+s.h,0.12,0.5);
-        c.fillStyle='rgba(255,255,255,.06)';c.fillRect(x-0.06,s.y+s.h,0.03,0.5);}
+      c.fillStyle='rgba(255,255,255,.2)';c.fillRect(s.x,s.y,s.w,0.05);
+      c.fillStyle='rgba(0,0,0,.55)';c.fillRect(s.x,s.y+s.h+0.07,s.w,0.07);
+      for(let x=s.x+0.35;x<s.x+s.w;x+=1.6){c.fillStyle='#262a2e';
+        c.beginPath();c.moveTo(x-0.07,s.y+s.h);c.lineTo(x+0.07,s.y+s.h);c.lineTo(x+0.32,s.y+s.h+0.55);c.lineTo(x+0.18,s.y+s.h+0.55);c.closePath();c.fill();}
+      continue;}
+    const x=s.x,y=s.y,w=s.w,h=s.h,big=w>1.4&&h>1.4;
+    c.fillStyle='rgba(0,0,0,.5)';c.fillRect(x+0.08,y+0.1,w,h);
+    c.fillStyle=ST.body;c.fillRect(x,y,w,h);
+    c.save();c.globalAlpha=ST.texA;c.fillStyle=PAT(c,s.mat||ST.tex);c.fillRect(x,y,w,h);c.restore();
+    c.save();c.beginPath();c.rect(x,y,w,h);c.clip();
+    /* структура массы */
+    if(big){
+      if(ST.detail==='plates'){c.strokeStyle='rgba(0,0,0,.4)';c.lineWidth=0.05;c.beginPath();
+        for(let xx=x+1.8+r()*0.6;xx<x+w-0.2;xx+=2.0+r()*0.8){c.moveTo(xx,y);c.lineTo(xx,y+h);}
+        for(let yy=y+1.6;yy<y+h;yy+=1.6){c.moveTo(x,yy);c.lineTo(x+w,yy);}c.stroke();
+        c.fillStyle='rgba(255,230,200,.06)';for(let yy=y+1.65;yy<y+h;yy+=1.6)c.fillRect(x,yy,w,0.03);
+        for(let xx=x+0.3;xx<x+w;xx+=0.7)for(let yy=y+1.75;yy<y+h;yy+=1.6)if(r()<0.6)Kit.bolt(c,xx,yy,0.04);}
+      else if(ST.detail==='bricks'){for(let yy=y+0.4,row=0;yy<y+Math.min(h,3);yy+=0.45,row++){c.fillStyle='rgba(0,0,0,.28)';c.fillRect(x,yy,w,0.05);
+        for(let xx=x+(row%2)*0.5;xx<x+w;xx+=1.0)c.fillRect(xx,yy,0.05,0.45);}}
+      else if(ST.detail==='ashlar'){c.strokeStyle='rgba(90,84,70,.45)';c.lineWidth=0.045;
+        for(let yy=y+0.7,row=0;yy<y+h;yy+=0.7,row++){c.beginPath();c.moveTo(x,yy);c.lineTo(x+w,yy);c.stroke();
+          for(let xx=x+(row%2)*0.75;xx<x+w;xx+=1.5){c.beginPath();c.moveTo(xx,yy-0.7);c.lineTo(xx,yy);c.stroke();}}}
+      else if(ST.detail==='panels'){for(let xx=x+0.4;xx<x+w-1.2;xx+=1.8)for(let yy=y+0.6;yy<y+h-1.0;yy+=1.6){
+        c.strokeStyle='rgba(0,0,0,.45)';c.lineWidth=0.05;c.strokeRect(xx,yy,1.4,1.2);c.strokeStyle='rgba(220,226,236,.07)';c.strokeRect(xx+0.05,yy+0.05,1.4,1.2);
+        Kit.bolt(c,xx+0.15,yy+0.15,0.035);Kit.bolt(c,xx+1.25,yy+1.05,0.035);}}
+      else if(ST.detail==='shelves'){for(let yy=y+0.5;yy<y+h-0.4;yy+=0.9){c.fillStyle='rgba(0,0,0,.45)';c.fillRect(x+0.2,yy,w-0.4,0.7);
+        for(let xx=x+0.25;xx<x+w-0.35;xx+=0.1+r()*0.08){const bh=0.45+r()*0.22;c.fillStyle=['#4a2a1c','#2a3a2a','#3a2a3a','#5a4a2a','#2a2a3a'][(r()*5)|0];c.fillRect(xx,yy+0.7-bh,0.09,bh);}
+        c.fillStyle='rgba(255,220,170,.12)';c.fillRect(x+0.2,yy+0.7,w-0.4,0.05);}}
+      else if(ST.detail==='blocks'){c.strokeStyle='rgba(0,0,0,.3)';c.lineWidth=0.05;for(let yy=y+1;yy<y+h;yy+=1){c.beginPath();c.moveTo(x,yy);c.lineTo(x+w,yy);c.stroke();}}
+      /* глубина: к центру массы темнее (ступенчатая внутренняя тень) */
+      const steps=[[0.35,0.16],[0.9,0.16],[1.8,0.16],[3.2,0.14]];
+      for(const [ins,a] of steps){if(w<ins*2+0.2||h<ins*2+0.2)break;c.fillStyle='rgba(0,0,0,'+(a*ST.dark/0.42)+')';c.fillRect(x+ins,y+ins,w-ins*2,h-ins*2);}
+      if(zoneKey!=='eden'&&zoneKey!=='seal'&&zoneKey!=='archive')Kit.grunge(c,x,y,w,h,r,0.4,'#1a120c');
     }else{
-      c.fillStyle='rgba(0,0,0,.5)';c.fillRect(s.x+0.07,s.y+0.09,s.w,s.h);
-      c.fillStyle=PAT(c,mat);c.fillRect(s.x,s.y,s.w,s.h);
-      if(body){c.fillStyle=body;c.fillRect(s.x,s.y,s.w,s.h);}
-      const top=zoneKey==='eden'?'rgba(255,252,235,.62)':zoneKey==='seal'?'rgba(230,236,244,.42)':'rgba(214,224,234,.36)';
-      c.fillStyle=top;c.fillRect(s.x,s.y,s.w,0.06);
-      c.fillStyle='rgba(255,214,150,.13)';c.fillRect(s.x,s.y+0.06,s.w,0.05);
-      c.fillStyle='rgba(0,0,0,.34)';c.fillRect(s.x,s.y+s.h-0.07,s.w,0.07);
-      if(s.h>0.6){
-        const stepX=s.w>4?2.2:1.4;
-        c.strokeStyle='rgba(0,0,0,.26)';c.lineWidth=0.035;
-        for(let x=s.x+stepX;x<s.x+s.w-0.1;x+=stepX){c.beginPath();c.moveTo(x,s.y+0.06);c.lineTo(x,s.y+s.h);c.stroke();}
-        if(s.h>2)for(let y=s.y+2;y<s.y+s.h;y+=2){c.beginPath();c.moveTo(s.x,y);c.lineTo(s.x+s.w,y);c.stroke();}
-        for(let x=s.x+0.22;x<s.x+s.w-0.1;x+=0.62)Kit.bolt(c,x,s.y+0.17,0.045);
-        c.fillStyle='rgba(18,14,10,.3)';
-        for(let x=s.x;x<s.x+s.w;x+=0.5){const hh=r()*0.5+0.1;c.fillRect(x,s.y+s.h-hh,0.5,hh);}
-        if(zoneKey!=='seal'&&zoneKey!=='eden')Kit.grunge(c,s.x,s.y,s.w,s.h,r,0.5,'#2a1c14');
-      }
+      c.fillStyle='rgba(0,0,0,.22)';c.fillRect(x,y+h*0.5,w,h*0.5);
     }
+    c.restore();
   }
+  /* карнизы открытых верхних граней: «по этому ходят» */
+  for(const e of E.top){const x0=e[0],x1=e[1],y=e[2],w=x1-x0;if(w<0.1)continue;
+    const src=R.solids.find(s=>!s.ow&&!s.hidden&&!s.dyn&&Math.abs(s.y-y)<0.01&&s.x<=x0+0.01&&s.x+s.w>=x1-0.01);
+    const capH=Math.min(ST.capH,src?src.h*0.5:ST.capH),col=(src&&CAPMAT[src.mat])||ST.cap;
+    c.fillStyle=col;c.fillRect(x0,y,w,capH);
+    c.fillStyle=ST.capHi;c.fillRect(x0,y,w,0.06);
+    c.fillStyle='rgba(0,0,0,.45)';c.fillRect(x0,y+capH-0.05,w,0.05);
+    c.fillStyle='rgba(0,0,0,.18)';c.fillRect(x0,y+capH,w,0.12);
+    if(capH>0.2)for(let xx=x0+0.25;xx<x1-0.1;xx+=0.75)Kit.bolt(c,xx,y+capH*0.55,0.035);}
+  /* нижние кромки свода: тень и подтёки */
+  for(const l of E.line){if(l[1]!==l[3])continue;const y=l[1],x0=Math.min(l[0],l[2]),x1=Math.max(l[0],l[2]);
+    c.fillStyle='rgba(0,0,0,.4)';c.fillRect(x0,y-0.14,x1-x0,0.14);
+    for(let xx=x0+0.3;xx<x1;xx+=0.5+r()*1.5){if(r()<0.5)continue;const len=0.15+r()*0.6,g=c.createLinearGradient(0,y,0,y+len);
+      g.addColorStop(0,'rgba(20,16,12,.5)');g.addColorStop(1,'rgba(20,16,12,0)');c.fillStyle=g;c.fillRect(xx,y,0.06,len);}}
+  /* боковые грани: тонкая светлая фаска */
+  for(const l of E.line){if(l[0]!==l[2])continue;const x=l[0],y0=Math.min(l[1],l[3]),y1=Math.max(l[1],l[3]);
+    c.fillStyle='rgba(255,240,220,.07)';c.fillRect(x-0.04,y0,0.08,y1-y0);}
 }
 /* Задняя стена приглушается вуалью ДО реквизита комнаты и твёрдой геометрии:
    стена уходит назад, блоки, по которым бегает игрок, читаются первыми.

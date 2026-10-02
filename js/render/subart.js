@@ -158,3 +158,232 @@ SUBART.boiler={zone:{ambRGB:[130,100,84],haze:'#4a2a22',void:'#0a0605'},
     for(let i=0;i<L.w/16;i++)Kit.sign(c,r()*(L.w-3),2+r()*3,2.8,0.7,['ДАВЛЕНИЕ · ВЫСОКОЕ','КОТЁЛ ПОД НАДЗОРОМ','ПРЕДЕЛ — 41 АТМ'][(r()*3)|0],'#c9a227','#191612',(i*13)|0);},
   fgd(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<3;i++){const y=r()*L.h*0.4;Kit.pipe(c,[[0,y],[L.w,y+(r()-0.5)*2]],0.5,'steel',{seed:i+70});}}
 };
+
+/* ---------- II · ЖИЛЫЕ СОТЫ ---------- */
+SA.awning=(c,x,y,w,h,c1,c2)=>{const n=Math.max(2,Math.round(w/0.5));for(let i=0;i<n;i++){c.fillStyle=i%2?c1:c2;
+  c.beginPath();c.moveTo(x+i*w/n,y);c.lineTo(x+(i+1)*w/n,y);c.lineTo(x+(i+1)*w/n,y+h);c.quadraticCurveTo(x+(i+0.5)*w/n,y+h+0.18,x+i*w/n,y+h);c.closePath();c.fill();}
+  c.fillStyle='rgba(0,0,0,.25)';c.fillRect(x,y,w,0.08);};
+SA.garland=(c,x0,y0,x1,y1,sag,col,r)=>{c.strokeStyle='#1c1412';c.lineWidth=0.04;c.beginPath();c.moveTo(x0,y0);c.quadraticCurveTo((x0+x1)/2,(y0+y1)/2+sag,x1,y1);c.stroke();
+  for(let k=1;k<9;k++){const t=k/9,x=lerp(x0,x1,t),y=lerp(y0,y1,t)+sag*4*t*(1-t)*0.5+0.12;SA.glow(c,x,y,0.5,col,0.35);c.fillStyle=col;c.beginPath();c.arc(x,y,0.07,0,TAU);c.fill();}};
+/* соты-фасады: ячейки квартир, редкие тёплые окна */
+SA.honeycomb=(c,x,y,w,h,s,body,win,r,lit)=>{for(let row=0,yy=y;yy<y+h;yy+=s*0.86,row++)for(let xx=x+(row%2)*s*0.5;xx<x+w;xx+=s){
+  c.fillStyle=body;c.beginPath();for(let k=0;k<6;k++){const a=PI/6+k*PI/3;c.lineTo(xx+Math.cos(a)*s*0.5,yy+Math.sin(a)*s*0.5);}c.closePath();c.fill();
+  if(r()<(lit||0.18)){c.fillStyle=win;c.fillRect(xx-s*0.14,yy-s*0.12,s*0.28,s*0.22);}else{c.fillStyle='rgba(0,0,0,.4)';c.fillRect(xx-s*0.14,yy-s*0.12,s*0.28,s*0.22);}}};
+/* РЫНОК: полосатые навесы, гирлянды ламп, ящики пайков, доска «НОРМА» */
+SUBART.market={zone:{ambRGB:[150,110,84],haze:'#5a3426',void:'#0b0605',fogA:0.1},
+  far(c,L,R,r){SA.vgrad(c,L,[[0,'#140c0a'],[0.6,'#2a1612'],[1,'#3a1d14']]);
+    SA.honeycomb(c,0,0,L.w,L.h*0.7,2.4,'#1e1210','rgba(255,190,110,.55)',r,0.25);
+    for(let i=0;i<5;i++)SA.garland(c,r()*L.w*0.5,L.h*(0.2+r()*0.3),L.w*(0.5+r()*0.5),L.h*(0.2+r()*0.3),2+r()*2,'#ffcf7a',r);
+    c.fillStyle='#120a08';c.fillRect(0,L.h*0.72,L.w,L.h*0.28);},
+  bg(c,L,R,r){SA.vgrad(c,L,[[0,'#1a100d'],[1,'#22140f']]);
+    for(let x=1;x<L.w;x+=6+r()*3){const w=4+r()*1.5,y=L.h*(0.5+r()*0.1);c.fillStyle='#2a1a15';c.fillRect(x,y,w,L.h-y);
+      SA.awning(c,x-0.3,y-0.6,w+0.6,0.7,'#7a2a1c','#b08d3e');
+      c.fillStyle='rgba(255,180,100,.18)';c.fillRect(x+0.4,y+0.6,w-0.8,1.2);
+      for(let k=0;k<4;k++){c.fillStyle=['#5c4433','#4a3a2c','#6a5540'][k%3];c.fillRect(x+0.3+k*1.0,L.h-1.4-r()*0.6,0.9,1.2);}}
+    for(let i=0;i<3;i++)SA.garland(c,0,L.h*(0.25+i*0.1),L.w,L.h*(0.3+i*0.08),1.5,'#ffcf7a',r);},
+  mid(c,L,R,r){for(let i=0;i<Math.max(1,L.w/16);i++){const x=3+i*16+r()*5,y=L.h*0.4;
+      Kit.plate(c,x,y,3.4,2.2,'ply',(i*7)|0,{rust:0.2});c.fillStyle='#14100c';c.fillRect(x+0.2,y+0.2,3.0,1.8);
+      c.fillStyle='rgba(236,234,222,.6)';c.font='500 0.3px Oswald';
+      ['НОРМА · ХЛЕБ 200','НОРМА · СВЕЧИ 2','НОРМА · СВЕТ 14 Ч'].forEach((s,k)=>c.fillText(s,x+0.35,y+0.6+k*0.5));}
+    for(let i=0;i<6;i++)Kit.clothesline(c,r()*L.w,L.h*0.2+r()*4,r()*L.w,L.h*0.2+r()*4,(i*3)|0);},
+  wall(c,L,R,r){c.fillStyle='rgba(40,26,22,.92)';c.fillRect(0,0,L.w,L.h);
+    c.save();c.globalAlpha=0.4;c.fillStyle=PAT(c,'wallpaper');c.fillRect(0,0,L.w,L.h);c.restore();
+    for(let x=1;x<L.w;x+=8+r()*4){const w=5+r()*1.5,y=L.h-5.2;
+      c.fillStyle='rgba(20,12,10,.6)';c.fillRect(x,y,w,5.2);SA.awning(c,x-0.3,y-0.5,w+0.6,0.6,'#8a2e1e','#c9a227');
+      for(let k=0;k<Math.floor(w/1.1);k++)Kit.crate(c,x+0.2+k*1.1,L.h-1.4,1.0,0.9,{seed:(x*3+k)|0});}
+    for(let i=0;i<L.w/10;i++)Kit.poster(c,r()*(L.w-2),2+r()*4,1.2,1.6,(i*17)|0);
+    for(let i=0;i<4;i++)SA.garland(c,r()*L.w*0.4,1.5+r(),L.w*(0.6+r()*0.4),1.5+r(),1.2,'#ffcf7a',r);},
+  fgd(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<3;i++){const x=r()*L.w;SA.awning(c,x,0,4,0.9,'#2a0c08','#3a2a10');}
+    for(let i=0;i<2;i++)Kit.clothesline(c,r()*L.w,1,r()*L.w,2,(i*5)|0);}
+};
+/* ШКОЛА: высокие окна с нарисованным небом, закрашенным серым; парты; доска «НЕБО = ПОТОЛОК» */
+SUBART.school={zone:{ambRGB:[138,140,124],haze:'#3e4438',void:'#0a0b09',fogA:0.08},
+  far(c,L,R,r){SA.vgrad(c,L,[[0,'#151713'],[1,'#1d201a']]);
+    for(let x=2;x<L.w;x+=7){c.fillStyle='#0c0d0b';rr(c,x,L.h*0.15,4,L.h*0.55,1.8);c.fill();
+      const g=c.createLinearGradient(0,L.h*0.15,0,L.h*0.7);g.addColorStop(0,'#3e5a72');g.addColorStop(1,'#5f7a8c');c.fillStyle=g;rr(c,x+0.3,L.h*0.15+0.3,3.4,L.h*0.55-0.6,1.6);c.fill();
+      c.fillStyle='rgba(90,92,86,.85)';c.fillRect(x+0.3,L.h*0.28+r()*L.h*0.1,3.4,L.h*0.5);}},
+  bg(c,L,R,r){SA.vgrad(c,L,[[0,'#20231d'],[1,'#191b16']]);
+    SA.tiles(c,0,L.h*0.55,L.w,L.h*0.45,1.2,'#2c302a','rgba(0,0,0,.4)',r);
+    for(let x=3;x<L.w;x+=8+r()*3){c.fillStyle='#14160f';c.fillRect(x,L.h*0.2,5,2.8);c.strokeStyle='#5a4a30';c.lineWidth=0.15;c.strokeRect(x,L.h*0.2,5,2.8);
+      c.strokeStyle='rgba(220,220,210,.35)';c.lineWidth=0.05;c.beginPath();c.arc(x+1.2,L.h*0.2+1.2,0.5,0,TAU);c.moveTo(x+0.4,L.h*0.2+1.2);c.lineTo(x+2,L.h*0.2+1.2);c.stroke();}},
+  mid(c,L,R,r){for(let i=0;i<L.w/3;i++){const x=r()*L.w,y=L.h-1.2;c.fillStyle='#2a2218';c.fillRect(x,y,1.4,0.12);c.fillRect(x+0.1,y,0.08,0.8);c.fillRect(x+1.2,y,0.08,0.8);}},
+  wall(c,L,R,r){c.fillStyle='rgba(54,58,50,.94)';c.fillRect(0,0,L.w,L.h);
+    c.fillStyle='rgba(30,34,28,.9)';c.fillRect(0,L.h*0.58,L.w,L.h*0.42);c.fillStyle='rgba(201,162,39,.25)';c.fillRect(0,L.h*0.58,L.w,0.06);
+    for(let x=2;x<L.w;x+=11+r()*4){const y=L.h*0.3;c.fillStyle='#16201a';c.fillRect(x,y,4.6,2.4);c.strokeStyle='#6a5a3a';c.lineWidth=0.12;c.strokeRect(x,y,4.6,2.4);
+      c.fillStyle='rgba(230,230,220,.75)';c.font='500 0.34px Oswald';c.fillText(['НЕБО = ПОТОЛОК','ПЕЧАТЬ ХРАНИТ НАС','214 ЛЕТ ТИШИНЫ','ЯРУС — ДОМ'][(r()*4)|0],x+0.3,y+1.1);
+      c.font='400 0.24px Oswald';c.fillText('УРОК '+((r()*9|0)+1),x+0.3,y+1.7);}
+    /* детские рисунки: солнце, дерево — перечёркнуты красным карандашом */
+    for(let i=0;i<L.w/4;i++){const x=1+r()*(L.w-2),y=L.h*(0.12+r()*0.12);c.fillStyle='#d8d0bc';c.save();c.translate(x,y);c.rotate((r()-0.5)*0.2);
+      c.fillRect(-0.4,-0.3,0.8,0.6);c.fillStyle='#d8a020';c.beginPath();c.arc(-0.15,-0.1,0.12,0,TAU);c.fill();
+      c.strokeStyle='#4a8a3a';c.lineWidth=0.05;c.beginPath();c.moveTo(0.15,0.25);c.lineTo(0.15,0.0);c.stroke();c.fillStyle='#4a8a3a';c.beginPath();c.arc(0.15,-0.03,0.12,0,TAU);c.fill();
+      if(r()<0.7){c.strokeStyle='#b0301e';c.lineWidth=0.05;c.beginPath();c.moveTo(-0.35,-0.25);c.lineTo(0.35,0.25);c.moveTo(0.35,-0.25);c.lineTo(-0.35,0.25);c.stroke();}c.restore();}},
+  fgd(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<3;i++){const x=r()*L.w;c.fillStyle='#0a0a08';c.fillRect(x,L.h-2.2,1.6,0.14);c.fillRect(x+0.1,L.h-2.2,0.1,2.2);c.fillRect(x+1.4,L.h-2.2,0.1,2.2);}}
+};
+/* ЧАСОВНЯ ОСНОВАТЕЛЕЙ: стрельчатые своды, витраж с Печатью-солнцем, свечи, семь ликов */
+SUBART.chapel={zone:{ambRGB:[96,84,90],haze:'#3a2a32',void:'#070506',fogA:0.12},
+  far(c,L,R,r){SA.vgrad(c,L,[[0,'#0c080a'],[1,'#1a1014']]);
+    const cx=L.w/2,cy=L.h*0.36,rad=Math.min(L.w,L.h)*0.28;
+    for(let i=0;i<12;i++){const a0=i/12*TAU,a1=(i+1)/12*TAU;c.fillStyle=i%2?'rgba(201,162,39,.55)':'rgba(70,140,150,.5)';
+      c.beginPath();c.moveTo(cx,cy);c.arc(cx,cy,rad,a0,a1);c.closePath();c.fill();}
+    c.strokeStyle='#0c080a';c.lineWidth=0.3;for(let i=0;i<12;i++){const a=i/12*TAU;c.beginPath();c.moveTo(cx,cy);c.lineTo(cx+Math.cos(a)*rad,cy+Math.sin(a)*rad);c.stroke();}
+    c.beginPath();c.arc(cx,cy,rad,0,TAU);c.stroke();c.fillStyle='#e8c96a';c.beginPath();c.arc(cx,cy,rad*0.22,0,TAU);c.fill();
+    SA.glow(c,cx,cy,rad*1.8,'#e8c96a',0.25);
+    for(let k=0;k<2;k++){const g=c.createLinearGradient(cx,cy,cx+(k?6:-6),L.h);g.addColorStop(0,'rgba(232,201,106,.18)');g.addColorStop(1,'rgba(232,201,106,0)');
+      c.fillStyle=g;c.beginPath();c.moveTo(cx-1,cy);c.lineTo(cx+1,cy);c.lineTo(cx+(k?9:-5),L.h);c.lineTo(cx+(k?5:-9),L.h);c.closePath();c.fill();}},
+  bg(c,L,R,r){SA.vgrad(c,L,[[0,'#120c0e'],[1,'#1a1215']]);
+    for(let x=0;x<L.w;x+=6){c.fillStyle='#0e0a0b';c.beginPath();c.moveTo(x,L.h);c.lineTo(x,L.h*0.35);c.quadraticCurveTo(x+3,L.h*0.05,x+6,L.h*0.35);c.lineTo(x+6,L.h);c.lineTo(x+5.2,L.h);c.lineTo(x+5.2,L.h*0.38);c.quadraticCurveTo(x+3,L.h*0.14,x+0.8,L.h*0.38);c.lineTo(x+0.8,L.h);c.closePath();c.fill();}},
+  mid(c,L,R,r){for(let i=0;i<7;i++){const x=L.w*(0.1+i*0.13),y=L.h*0.3;c.fillStyle='#1a1214';rr(c,x-0.7,y,1.4,2.0,0.6);c.fill();
+      c.fillStyle='#a8842a';c.beginPath();c.arc(x,y+0.7,0.38,0,TAU);c.fill();c.fillStyle='#1a1214';c.fillRect(x-0.2,y+0.6,0.12,0.06);c.fillRect(x+0.08,y+0.6,0.12,0.06);
+      SA.glow(c,x,y+0.7,1.0,'#e8c96a',0.15);}},
+  wall(c,L,R,r){c.fillStyle='rgba(32,24,28,.95)';c.fillRect(0,0,L.w,L.h);
+    for(let x=0;x<L.w;x+=3.2){c.fillStyle='rgba(0,0,0,.35)';c.fillRect(x,0,0.3,L.h);}
+    for(let i=0;i<L.w/5;i++){const x=1+r()*(L.w-2),y=L.h-0.6;for(let k=0;k<6;k++){const cx=x+k*0.18;c.fillStyle='#e8e0c8';c.fillRect(cx,y-0.3-((k*7)%3)*0.1,0.07,0.3+((k*7)%3)*0.1);
+      SA.glow(c,cx+0.035,y-0.42,0.35,'#ffcf7a',0.4);}}
+    for(let i=0;i<L.w/12;i++)Kit.stencil(c,r()*(L.w-6),2+r()*3,['БЛАГОСЛОВЕН ПОТОЛОК','ПЕЧАТЬ ХРАНИТ','НЕ СПРАШИВАЙ'][(r()*3)|0],0.42,'rgba(232,201,106,.35)',0.4);},
+  fgd(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<2;i++){const x=r()*L.w;c.fillStyle='#060405';c.fillRect(x,0,1.2,L.h);}}
+};
+/* ЦЕНЗОРСКАЯ: картотеки до потолка, пневмотрубы, сугробы проштампованной бумаги, зелёные лампы */
+SUBART.offices={zone:{ambRGB:[96,112,100],haze:'#2a3a30',void:'#060807',fogA:0.08},
+  far(c,L,R,r){SA.vgrad(c,L,[[0,'#0b0f0c'],[1,'#141a16']]);
+    for(let x=0;x<L.w;x+=2.2){const h=L.h*(0.5+r()*0.4);c.fillStyle='#101511';c.fillRect(x,L.h-h,2,h);
+      for(let y=L.h-h+0.3;y<L.h;y+=0.6){c.fillStyle='rgba(180,200,180,.08)';c.fillRect(x+0.2,y,1.6,0.04);c.fillStyle='rgba(201,162,39,.25)';c.fillRect(x+0.9,y+0.2,0.2,0.06);}}},
+  bg(c,L,R,r){SA.vgrad(c,L,[[0,'#121813'],[1,'#0e130f']]);
+    for(let i=0;i<L.w/2;i++){const x=r()*L.w;Kit.pipe(c,[[x,0],[x,L.h*(0.3+r()*0.6)]],0.18,'steel',{seed:(i*5)|0,rustN:0});}
+    for(let x=1;x<L.w;x+=3){c.fillStyle='#1a221c';c.fillRect(x,L.h*0.45,2.4,L.h*0.55);for(let y=L.h*0.47;y<L.h;y+=0.7){c.fillStyle='#232e26';c.fillRect(x+0.15,y,2.1,0.55);c.fillStyle='#8a6d2a';c.fillRect(x+1.05,y+0.22,0.3,0.08);}}},
+  mid(c,L,R,r){for(let i=0;i<Math.max(2,L.w/9);i++){const x=r()*L.w,y=L.h-1.1;c.fillStyle='#2a2218';c.fillRect(x,y,2.2,0.14);c.fillRect(x+0.1,y,0.1,1.1);c.fillRect(x+2.0,y,0.1,1.1);
+      c.fillStyle='#2f6b44';c.beginPath();c.moveTo(x+0.6,y-0.5);c.lineTo(x+1.2,y-0.5);c.lineTo(x+1.1,y-0.7);c.lineTo(x+0.7,y-0.7);c.closePath();c.fill();SA.glow(c,x+0.9,y-0.4,1.2,'#9fe6a0',0.25);}},
+  wall(c,L,R,r){c.fillStyle='rgba(30,38,32,.94)';c.fillRect(0,0,L.w,L.h);
+    for(let x=0;x<L.w;x+=2.6){c.fillStyle='rgba(24,32,26,.9)';c.fillRect(x+0.1,L.h*0.35,2.4,L.h*0.65);
+      for(let y=L.h*0.37;y<L.h-0.2;y+=0.62){c.fillStyle='rgba(40,52,44,.9)';c.fillRect(x+0.2,y,2.2,0.52);c.fillStyle='#a8842a';c.fillRect(x+1.1,y+0.22,0.3,0.07);}}
+    for(let i=0;i<L.w/6;i++){Kit.stencil(c,r()*(L.w-4),1.5+r()*L.h*0.25,['ИЗЪЯТО','НЕ ВСКРЫВАТЬ','§1','НЕБО — ИЗЪЯТЬ','АРХИВ ЦЕНЗУРЫ'][(r()*5)|0],0.42,'rgba(200,69,47,.4)',0.4);}
+    for(let i=0;i<L.w*1.5;i++){c.fillStyle=r()<0.5?'rgba(216,205,182,.55)':'rgba(190,180,160,.45)';c.save();c.translate(r()*L.w,L.h-0.15-r()*0.6);c.rotate((r()-0.5)*1.2);c.fillRect(-0.15,-0.1,0.3,0.2);c.restore();}},
+  fgd(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<3;i++){const x=r()*L.w;Kit.pipe(c,[[x,0],[x,L.h]],0.35,'steel',{seed:(i*9)|0});}}
+};
+/* КРЫШИ СОТ: обрывы сот-фасадов к пропасти, дымоходы, антенны, бельё; «небо» — тёмный свод с огнями */
+SUBART.roofs={zone:{ambRGB:[92,84,108],haze:'#2e2638',void:'#06050a',fogA:0.13},
+  far(c,L,R,r){SA.vgrad(c,L,[[0,'#07060c'],[0.5,'#120e1a'],[1,'#1e1622']]);
+    for(let i=0;i<120;i++){c.fillStyle='rgba(255,220,170,'+(r()*0.5)+')';c.fillRect(r()*L.w,r()*L.h*0.4,0.06,0.06);}
+    for(let k=0;k<3;k++){const base=L.h*(0.45+k*0.16);for(let x=-2;x<L.w;x+=5+r()*6){const w=4+r()*5,h=L.h-base+r()*4;
+      SA.honeycomb(c,x,base-r()*3,w,h,1.4+k*0.4,shade('#1e1620',k*0.06),'rgba(255,190,110,'+(0.5-k*0.1)+')',r,0.2);}}},
+  bg(c,L,R,r){for(let i=0;i<L.w/6;i++){const x=r()*L.w,h=4+r()*8;c.fillStyle='#120e14';c.fillRect(x,L.h-h,1.2,h);c.fillStyle='rgba(255,160,90,.3)';c.fillRect(x+0.3,L.h-h+0.4,0.6,0.3);
+      c.strokeStyle='#1a141c';c.lineWidth=0.08;c.beginPath();c.moveTo(x+0.6,L.h-h);c.lineTo(x+0.6,L.h-h-2-r()*2);c.stroke();}},
+  mid(c,L,R,r){for(let i=0;i<6;i++)Kit.clothesline(c,r()*L.w,L.h*(0.3+r()*0.3),r()*L.w,L.h*(0.3+r()*0.3),(i*7)|0);},
+  wall(c,L,R,r){c.clearRect(0,0,L.w,L.h);
+    /* игровой слой открыт — дальние соты видны насквозь; только кладка стен у твёрдых блоков */
+    for(const s of R.solids){if(s.ow||s.hidden||s.w>L.w)continue;SA.honeycomb(c,s.x,s.y,s.w,s.h,1.0,'rgba(48,34,40,.95)','rgba(255,190,110,.6)',r,0.12);}},
+  fgd(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<3;i++){const x=r()*L.w,h=3+r()*4;c.fillStyle='#050406';c.fillRect(x,L.h-h,1.6,h);}
+    for(let i=0;i<2;i++)Kit.clothesline(c,r()*L.w,0.5,r()*L.w,1.5,(i*13)|0);}
+};
+/* ПРАЧЕЧНАЯ: пар, барабаны машин, развешанные простыни, мокрый кафель */
+SUBART.laundry={zone:{ambRGB:[120,126,134],haze:'#4a5058',void:'#08090a',fogA:0.16},
+  far(c,L,R,r){SA.vgrad(c,L,[[0,'#101215'],[1,'#1a1d21']]);
+    for(let i=0;i<60;i++){c.fillStyle='rgba(220,226,232,'+(r()*0.06)+')';c.beginPath();c.ellipse(r()*L.w,r()*L.h,2+r()*5,1+r()*2,0,0,TAU);c.fill();}
+    for(let i=0;i<L.w/3;i++){const x=r()*L.w,y=L.h*(0.1+r()*0.3);c.fillStyle='rgba(200,206,210,.25)';c.fillRect(x,y,1.4+r(),2+r()*2);}},
+  bg(c,L,R,r){SA.vgrad(c,L,[[0,'#16181b'],[1,'#121417']]);SA.tiles(c,0,0,L.w,L.h,1.0,'#262a2e','rgba(0,0,0,.35)',r);
+    for(let x=2;x<L.w;x+=5){const y=L.h-3.4;c.fillStyle='#2a2e32';rr(c,x,y,3.4,3.4,0.3);c.fill();c.fillStyle='#14171a';c.beginPath();c.arc(x+1.7,y+1.6,1.1,0,TAU);c.fill();
+      c.strokeStyle='#8a9299';c.lineWidth=0.12;c.beginPath();c.arc(x+1.7,y+1.6,1.1,0,TAU);c.stroke();c.fillStyle='rgba(180,200,220,.2)';c.beginPath();c.arc(x+1.4,y+1.3,0.5,0,TAU);c.fill();}},
+  mid(c,L,R,r){for(let i=0;i<8;i++){const x=r()*L.w,y=L.h*(0.15+r()*0.25);Kit.clothesline(c,x,y,x+5+r()*5,y+(r()-0.5),(i*11)|0);
+      for(let k=0;k<3;k++){c.fillStyle=['#c9c2b0','#a8a090','#d8d0bc'][k];c.fillRect(x+0.6+k*1.6,y+0.3,1.2,1.8+r());}}},
+  wall(c,L,R,r){SA.tiles(c,0,0,L.w,L.h,0.8,'rgba(70,76,80,.92)','rgba(0,0,0,.3)',r);
+    for(let i=0;i<L.w/3;i++){const x=r()*L.w,g=c.createLinearGradient(0,0,0,L.h);g.addColorStop(0,'rgba(140,160,170,0)');g.addColorStop(1,'rgba(140,160,170,.12)');c.fillStyle=g;c.fillRect(x,0,0.1,L.h);}
+    for(let i=0;i<L.w/10;i++)Kit.sign(c,r()*(L.w-3),2+r()*3,2.6,0.7,['ПАР · ОСТОРОЖНО','СМЕНА 3','БЕЛЬЁ СДАВАТЬ'][(r()*3)|0],'#c9a227','#191612',(i*7)|0);},
+  fgd(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<4;i++){const x=r()*L.w;c.fillStyle='rgba(30,32,34,.95)';c.fillRect(x,0,1.6+r(),2.4+r()*2);}}
+};
+
+/* ---------- проёмы в стене игрового слоя ----------
+   Стена не сплошная: в ней арки, окна, проёмы — сквозь них видны дальние слои (глубина).
+   Края проёма — пилястры/рамы; проём не ставится там, где стоит дверь. */
+SA.cut=function(c,L,R,r,o){
+  const ev=o.every||10,w=o.w||4,y0=o.y0===undefined?2:o.y0,y1=o.y1===undefined?L.h*0.62:o.y1,kind=o.kind||'arch';
+  const doors=R.doors||[];
+  for(let x=(o.off===undefined?ev*0.5:o.off);x+w<L.w-0.5;x+=ev){
+    if(doors.some(d=>d.x<x+w+1.5&&d.x+d.w>x-1.5&&d.y<y1))continue;
+    const h=y1-y0;
+    c.save();c.globalCompositeOperation='destination-out';c.fillStyle='#000';c.beginPath();
+    if(kind==='arch'){c.moveTo(x,y1);c.lineTo(x,y0+w*0.5);c.arc(x+w/2,y0+w*0.5,w/2,PI,0);c.lineTo(x+w,y1);c.closePath();}
+    else if(kind==='window'){rr(c,x,y0,w,h,0.2);}
+    else{c.rect(x,y0,w,h);}
+    c.fill();c.restore();
+    /* рама: тёмный кант и светлая фаска по внутренней кромке */
+    c.save();c.strokeStyle=o.frame||'rgba(10,8,6,.9)';c.lineWidth=0.22;c.beginPath();
+    if(kind==='arch'){c.moveTo(x,y1);c.lineTo(x,y0+w*0.5);c.arc(x+w/2,y0+w*0.5,w/2,PI,0);c.lineTo(x+w,y1);}
+    else if(kind==='window'){rr(c,x,y0,w,h,0.2);}
+    else c.rect(x,y0,w,h);
+    c.stroke();c.strokeStyle=o.edge||'rgba(255,230,190,.12)';c.lineWidth=0.05;c.stroke();
+    if(o.sill){c.fillStyle=o.sill;c.fillRect(x-0.2,y1-0.12,w+0.4,0.18);}
+    if(o.bars){c.strokeStyle='rgba(12,10,8,.85)';c.lineWidth=0.08;c.beginPath();for(let bx=x+w/(o.bars+1);bx<x+w-0.05;bx+=w/(o.bars+1)){c.moveTo(bx,y0+(kind==='arch'?w*0.2:0));c.lineTo(bx,y1);}c.stroke();}
+    c.restore();
+  }
+};
+/* настройки проёмов и заливочного света по подзонам */
+const SUBCUT={
+  workshop:{kind:'window',every:11,w:5,y0:2.2,y1:7.2,bars:3,sill:'#3a3a35'},
+  drains:{kind:'arch',every:12,w:5,y0:3,y1:12,frame:'rgba(8,12,10,.9)'},
+  foundry:{kind:'arch',every:13,w:6,y0:4,y1:14,frame:'rgba(10,4,2,.95)',edge:'rgba(255,150,80,.25)'},
+  boiler:{kind:'rect',every:12,w:5,y0:2,y1:9,bars:2},
+  market:{kind:'rect',every:12,w:6,y0:3,y1:10,frame:'rgba(14,8,6,.9)'},
+  school:{kind:'window',every:10,w:3.4,y0:2.2,y1:8.6,bars:1,sill:'#4a4a40'},
+  chapel:{kind:'arch',every:9,w:3.6,y0:3,y1:14,frame:'rgba(8,5,6,.95)',edge:'rgba(232,201,106,.2)'},
+  offices:{kind:'rect',every:9,w:2.4,y0:1.4,y1:9},
+  laundry:{kind:'window',every:12,w:4,y0:2,y1:7,bars:2}
+};
+for(const k in SUBCUT){const S0=SUBART[k];if(!S0||!S0.wall)continue;const base=S0.wall,o=SUBCUT[k];
+  S0.wall=(c,L,R,r)=>{base(c,L,R,r);if(!R.noCut)SA.cut(c,L,R,r,Object.assign({},o,R.cut||{}));};}
+/* заливочный свет подзоны: мягкие широкие источники под сводом — комната не тонет во мраке */
+const SUBFILL={workshop:['#e8e0d0',0.35],drains:['#69d68f',0.25],foundry:['#ff8a3a',0.4],boiler:['#ff7a4a',0.3],
+  market:['#ffcf7a',0.35],school:['#e8ecd8',0.35],chapel:['#e8c96a',0.25],offices:['#9fe6a0',0.25],roofs:['#ffcf7a',0.2],laundry:['#dfe8f0',0.35]};
+function subFill(R){const f=R.sub&&SUBFILL[R.sub];if(!f||R.noFill)return;
+  for(let x=6;x<R.w;x+=12)R.lights.push(lit(x,Math.min(R.h*0.35,6),Math.max(10,R.h*0.6),f[0],f[1]));}
+
+/* ---------- излучение: то, что светится само (окна, жерла, витражи, гирлянды) ----------
+   Запекается в отдельный слой и кладётся ПОСЛЕ света аддитивно — свет комнаты его не гасит.
+   emitF — параллакс слоя (как у фона, где эти огни стоят). */
+SA.win=(c,x,y,w,h,col,a)=>{c.fillStyle=rgba(col,a);c.fillRect(x,y,w,h);SA.glow(c,x+w/2,y+h/2,Math.max(w,h)*1.6,col,a*0.35);};
+SUBART.workshop.emitF=0.34;
+SUBART.workshop.emit=(c,L,R,r)=>{c.clearRect(0,0,L.w,L.h);
+  for(let x=2;x<L.w;x+=5+r()*2){const y=L.h*(0.14+r()*0.04);SA.glow(c,x,y,2.4,'#ffe2b0',0.22);c.fillStyle='rgba(255,236,200,.65)';c.fillRect(x-0.5,y,1.0,0.07);}};
+SUBART.drains.emitF=0.14;
+SUBART.drains.emit=(c,L,R,r)=>{c.clearRect(0,0,L.w,L.h);const n=Math.max(1,Math.round(L.w/30));
+  for(let i=0;i<n;i++){const cx=(i+0.5)*L.w/n,cy=L.h*0.62;SA.glow(c,cx,cy+L.h*0.14,L.h*0.3,'#69d68f',0.25);
+    c.fillStyle='rgba(140,255,190,.35)';c.fillRect(cx-L.w/n*0.12,cy+L.h*0.3,L.w/n*0.24,0.1);}};
+SUBART.foundry.emitF=0.14;
+SUBART.foundry.emit=(c,L,R,r)=>{c.clearRect(0,0,L.w,L.h);const n=Math.max(1,Math.round(L.w/34));
+  for(let i=0;i<n;i++){const cx=(i+0.5)*L.w/n,cy=L.h*0.78,w=Math.min(L.w/n*0.6,16),h=L.h*0.5;
+    SA.glow(c,cx,cy,h*0.9,'#ff7a2a',0.35);
+    const g=c.createRadialGradient(cx,cy,0,cx,cy,w*0.55);g.addColorStop(0,'rgba(255,230,160,.8)');g.addColorStop(0.5,'rgba(255,140,50,.45)');g.addColorStop(1,'rgba(255,90,20,0)');
+    c.fillStyle=g;c.beginPath();c.moveTo(cx-w*0.5,L.h);c.lineTo(cx-w*0.5,cy-h*0.1);c.quadraticCurveTo(cx,cy-h*0.55,cx+w*0.5,cy-h*0.1);c.lineTo(cx+w*0.5,L.h);c.closePath();c.fill();}
+  for(let i=0;i<80;i++){c.fillStyle='rgba(255,180,90,'+(r()*0.6)+')';c.fillRect(r()*L.w,r()*L.h,0.07,0.07);}};
+SUBART.boiler.emitF=0.34;
+SUBART.boiler.emit=(c,L,R,r)=>{c.clearRect(0,0,L.w,L.h);for(let i=0;i<L.w/5;i++){const x=r()*L.w,y=L.h*(0.3+r()*0.5);SA.glow(c,x,y,1.4,'#ff5a3a',0.25);
+  c.fillStyle='rgba(255,140,90,.6)';c.beginPath();c.arc(x,y,0.14,0,TAU);c.fill();}};
+SUBART.market.emitF=0.14;
+SUBART.market.emit=(c,L,R,r)=>{c.clearRect(0,0,L.w,L.h);
+  for(let i=0;i<7;i++){const x0=r()*L.w*0.5,x1=L.w*(0.5+r()*0.5),y=L.h*(0.18+r()*0.35),sag=1.5+r()*2;
+    for(let k=1;k<12;k++){const t=k/12,x=lerp(x0,x1,t),yy=y+sag*4*t*(1-t)*0.5;SA.glow(c,x,yy,0.7,'#ffcf7a',0.4);c.fillStyle='rgba(255,236,190,.9)';c.beginPath();c.arc(x,yy,0.07,0,TAU);c.fill();}}
+  for(let i=0;i<L.w/2;i++){const x=r()*L.w,y=r()*L.h*0.7;if(r()<0.5)SA.win(c,x,y,0.4,0.3,'#ffb46a',0.5);}};
+SUBART.school.emitF=0.14;
+SUBART.school.emit=(c,L,R,r)=>{c.clearRect(0,0,L.w,L.h);
+  for(let x=2;x<L.w;x+=7){const g=c.createLinearGradient(0,L.h*0.15,0,L.h*0.3);g.addColorStop(0,'rgba(140,180,220,.35)');g.addColorStop(1,'rgba(140,180,220,0)');
+    c.fillStyle=g;c.fillRect(x+0.3,L.h*0.15+0.3,3.4,L.h*0.15);SA.glow(c,x+2,L.h*0.22,3,'#9fc4e0',0.12);}};
+SUBART.chapel.emitF=0.14;
+SUBART.chapel.emit=(c,L,R,r)=>{c.clearRect(0,0,L.w,L.h);const cx=L.w/2,cy=L.h*0.36,rad=Math.min(L.w,L.h)*0.28;
+  for(let i=0;i<12;i++){const a0=i/12*TAU+0.02,a1=(i+1)/12*TAU-0.02;c.fillStyle=i%2?'rgba(232,201,106,.5)':'rgba(90,190,200,.45)';
+    c.beginPath();c.moveTo(cx,cy);c.arc(cx,cy,rad*0.95,a0,a1);c.closePath();c.fill();}
+  c.fillStyle='rgba(255,240,200,.85)';c.beginPath();c.arc(cx,cy,rad*0.2,0,TAU);c.fill();SA.glow(c,cx,cy,rad*1.9,'#e8c96a',0.28);
+  for(let k=0;k<2;k++){const g=c.createLinearGradient(cx,cy,cx+(k?6:-6),L.h);g.addColorStop(0,'rgba(232,201,106,.22)');g.addColorStop(1,'rgba(232,201,106,0)');
+    c.fillStyle=g;c.beginPath();c.moveTo(cx-1.5,cy);c.lineTo(cx+1.5,cy);c.lineTo(cx+(k?10:-4),L.h);c.lineTo(cx+(k?4:-10),L.h);c.closePath();c.fill();}};
+SUBART.offices.emitF=0.34;
+SUBART.offices.emit=(c,L,R,r)=>{c.clearRect(0,0,L.w,L.h);for(let i=0;i<L.w/4;i++){const x=r()*L.w,y=L.h*(0.4+r()*0.5);SA.glow(c,x,y,1.6,'#9fe6a0',0.22);
+  c.fillStyle='rgba(200,255,200,.5)';c.fillRect(x-0.25,y,0.5,0.06);}};
+SUBART.roofs.emitF=0.14;
+SUBART.roofs.emit=(c,L,R,r)=>{c.clearRect(0,0,L.w,L.h);
+  for(let i=0;i<L.w*1.4;i++){const x=r()*L.w,y=L.h*(0.4+r()*0.55);SA.win(c,x,y,0.28,0.22,r()<0.8?'#ffb46a':'#9fd6ff',0.55);}
+  for(let i=0;i<160;i++){c.fillStyle='rgba(255,230,190,'+(r()*0.6)+')';c.fillRect(r()*L.w,r()*L.h*0.4,0.05,0.05);}};
+SUBART.laundry.emitF=0.34;
+SUBART.laundry.emit=(c,L,R,r)=>{c.clearRect(0,0,L.w,L.h);for(let x=3;x<L.w;x+=8+r()*3){SA.glow(c,x,L.h*0.25,4,'#dfe8f0',0.14);}};
+/* яркость подзон: окружающий свет чуть выше, чтобы комнаты читались как картина, а не как подвал */
+(()=>{const up={workshop:1.15,drains:1.2,foundry:1.1,boiler:1.15,market:1.2,school:1.15,chapel:1.45,offices:1.35,roofs:1.35,laundry:1.1};
+  for(const k in up){const z=SUBART[k]&&SUBART[k].zone;if(z&&z.ambRGB)z.ambRGB=z.ambRGB.map(v=>Math.min(235,Math.round(v*up[k])));}})();
+/* световые столбы подзон (поверх фона, до света) */
+const SUBSHAFT={workshop:{n:3,col:'255,236,200',a:0.06,w:2.4},foundry:{n:3,col:'255,150,80',a:0.08,w:3},market:{n:4,col:'255,207,122',a:0.06,w:2},
+  school:{n:4,col:'200,220,240',a:0.08,w:2.4},chapel:{n:2,col:'232,201,106',a:0.12,w:3.4},laundry:{n:4,col:'220,232,240',a:0.07,w:2.6},drains:{n:2,col:'140,255,190',a:0.05,w:2}};

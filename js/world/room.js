@@ -10,6 +10,7 @@ class Room{
     Object.assign(this,base);
     this.playerRef=null;this.t=0;
     if(this.build)this.build(this);
+    if(typeof subFill==="function")subFill(this);
     /* схема яруса висит в хабе зоны всегда (после копирования — погасшая) */
     if(this.mapPlate)this.interactables.push(this.mapPlate);
     if(this.station)this.interactables.push(this.station);

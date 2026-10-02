@@ -9,7 +9,7 @@ z3_airlock:gs=>({id:'z3_airlock',zone:'seal',name:'ШЛЮЗ-ТАМБУР',w:30,h
        Причину видно без слов: облако, сорванная створка, садовник с треснувшим фильтром. */
     R.solids=[S(-2,-2,34,2.4,'lead'),S(-2,0,2,14,'lead'),S(30,0,2,14,'lead'),S(0,11,30,3,'lead')];
     R.pollen=[{x:8,y:0.4,w:14,h:10.6}];
-    R.doors=[{x:0.0,y:8.9,w:1.2,h:2.1,to:'z2_boss',tx:35.8,ty:15.6,label:'ТУРБИННЫЕ ЯРУСЫ',elevator:true},
+    R.doors=[{x:0.0,y:8.9,w:1.2,h:2.1,to:'z2_quiet',tx:35.8,ty:15.6,label:'ТУРБИННЫЕ ЯРУСЫ',elevator:true},
       {x:28.8,y:8.9,w:1.2,h:2.1,to:'z3_greenhouse',tx:1.8,ty:27.6,label:'ОРАНЖЕРЕИ'}];
     R.checkpoint={x:3,y:11,h:1.7,lit:gs.cp.room==='z3_airlock'};
     R.lights=[lit(4,3.4,7,'#e8e8e8',0.9),lit(15,3.4,8,'#cfe0a0',0.75),lit(26,3.4,7,'#e8e8e8',0.8),

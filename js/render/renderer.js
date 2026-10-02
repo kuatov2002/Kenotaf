@@ -6,7 +6,7 @@ class ParallaxSystem{
   build(room){
     const g=this.game,ppm=g.bakePpm,vw=g.vw/g.ppm,vh=g.vh/g.ppm,out={};
     const defs=[['far',0.14,room.art.far],['bg',0.34,room.art.bg],['mid',0.62,room.art.mid],
-      ['game',1.0,room.art.game],['fgd',1.22,room.art.fgd]];
+      ['game',1.0,room.art.game],['fgd',1.22,room.art.fgd],['emit',room.art.emitF||0.34,room.art.emit]];
     for(let i=0;i<defs.length;i++){
       const key=defs[i][0],f=defs[i][1],fn=defs[i][2];if(!fn)continue;
       const wm=Math.max(room.w,vw*f)+4*f+3,hm=Math.max(room.h,vh*f)+4*f+3;
