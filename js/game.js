@@ -19,6 +19,7 @@ class Game{
     this.abilities=new AbilitySystem(this);
     this.cinematic=new Cinematic(this);
     this.tutorial=new TutorialSystem(this);
+    this.map=new WorldMap(this);
     this.debug=new DebugUI(this);
     this.debugOpts={invuln:false,collision:false,gates:false,bounds:false,collider:false};
     this.state='menu';this.timeScale=1;this.hitstopT=0;this.acc=0;this.last=0;this.fps=60;
@@ -121,6 +122,9 @@ class Game{
       if(this.world.room)document.getElementById('pauseInfo').textContent=
         ZONES[this.world.room.zone].name+' · '+this.world.room.name;
       document.getElementById('journal').innerHTML=journalHTML(this.gs);
+      if(!this.mapCv){this.mapCv=document.getElementById('mapcv');
+        this.mapCv.addEventListener('click',()=>{this.map.whole=!this.map.whole;this.map.render(this.mapCv);});}
+      requestAnimationFrame(()=>this.map.render(this.mapCv));
       this.input.enabled=false;this.input.clearAll();
     }else if(this.state==='pause'){
       this.state='play';
@@ -240,6 +244,8 @@ class Game{
       this.particles.update(dt);
       if(this.world.room&&this.world.player)this.camera.update(dt,this.world.player,this.world.room,this.vw,this.vh,this.ppm);
     }
+    /* схема в паузе живая: пульсирует точка курьера */
+    if(this.state==='pause'&&this.mapCv&&(this._mapT=(this._mapT||0)+dt)>0.05){this._mapT=0;this.map.render(this.mapCv);}
     this.debug.update(dt);
     this.render(dt);
     this.input.endFrame();

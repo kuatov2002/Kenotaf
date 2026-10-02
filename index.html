@@ -68,13 +68,19 @@
     <div class="snd" data-snd></div>
     <div class="btns"><div class="btn" id="btnBack">НАЗАД</div></div>
   </div></div>
-  <div id="pause" class="screen hidden"><div class="panel">
-    <h2>ПАУЗА</h2><div class="hint" id="pauseInfo">ОТСТОЙНИК</div><div id="journal"></div>
-    <div class="snd" data-snd></div>
-    <div class="btns">
-      <div class="btn" id="btnResume">ПРОДОЛЖИТЬ</div>
-      <div class="btn" id="btnToMenu">В ГЛАВНОЕ МЕНЮ</div>
-      <div class="btn" id="btnWipe">СТЕРЕТЬ ПРОГРЕСС</div>
+  <div id="pause" class="screen hidden"><div class="panel wide">
+    <h2>ПАУЗА</h2><div class="hint" id="pauseInfo">ОТСТОЙНИК</div>
+    <div class="pausegrid">
+      <div class="mapbox"><canvas id="mapcv"></canvas>
+        <div class="maplegend"><span><i class="lg-cp"></i>ЧЕКПОИНТ</span><span><i class="lg-st"></i>ПНЕВМОПОЧТА</span>
+          <span><i class="lg-q">?</i>НЕ ИССЛЕДОВАНО</span><span><i class="lg-el"></i>ЛИФТ</span></div></div>
+      <div class="pside"><div id="journal"></div>
+        <div class="snd" data-snd></div>
+        <div class="btns">
+          <div class="btn" id="btnResume">ПРОДОЛЖИТЬ</div>
+          <div class="btn" id="btnToMenu">В ГЛАВНОЕ МЕНЮ</div>
+          <div class="btn" id="btnWipe">СТЕРЕТЬ ПРОГРЕСС</div>
+        </div></div>
     </div>
   </div></div>
   <div id="intro" class="screen hidden"><div class="iw"><div class="ik"></div><div class="it"></div>
@@ -106,6 +112,7 @@
 <script src="js/world/rooms/z3.js"></script>
 <script src="js/world/rooms/z4.js"></script>
 <script src="js/world/rooms/z5.js"></script>
+<script src="js/world/maplayout.js"></script>
 <script src="js/world/room.js"></script>
 <script src="js/world/interactables.js"></script>
 <script src="js/entities/enemies.js"></script>
@@ -115,6 +122,7 @@
 <script src="js/ui/cinematic.js"></script>
 <script src="js/world/world.js"></script>
 <script src="js/ui/hud.js"></script>
+<script src="js/ui/map.js"></script>
 <script src="js/ui/tutorial.js"></script>
 <script src="js/dev/audit.js"></script>
 <script src="js/dev/debug.js"></script>

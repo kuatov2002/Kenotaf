@@ -4,7 +4,7 @@ class Interactable{
   constructor(def,world){this.def=def;this.x=def.x;this.y=def.y;this.w=def.w||1.6;this.h=def.h||1.8;this.world=world;}
   rect(){return {x:this.x-this.w/2,y:this.y-this.h,w:this.w,h:this.h};}
   canUse(gs){const d=this.def;
-    if(d.kind==='salvage'||d.kind==='lever'||d.kind==='valve'||d.kind==='gauge'||d.kind==='wheel')return !gs.flags[d.flag];
+    if(d.kind==='salvage'||d.kind==='lever'||d.kind==='valve'||d.kind==='gauge'||d.kind==='wheel'||d.kind==='mapplate')return !gs.flags[d.flag];
     if(d.kind==='lore')return !gs.loreIds[d.loreId];
     if(d.kind==='talk'){if(gs.flags[d.flag]&&!d.again)return false;return d.ready?d.ready(this.world):true;}
     if(d.kind==='salvageBlocked'){
@@ -17,6 +17,7 @@ class Interactable{
     if(d.kind==='lore')return 'ИЗВЛЕЧЬ ЦИЛИНДР';
     if(d.kind==='talk')return 'ГОВОРИТЬ · '+d.title;
     if(d.kind==='wheel')return 'ВРАЩАТЬ КОЛЕСО ПЕЧАТИ';
+    if(d.kind==='mapplate')return 'СКОПИРОВАТЬ СХЕМУ · '+d.title;
     return d.label||'ОСМОТРЕТЬ';}
   use(game){
     const gs=game.gs,d=this.def,w=this.world;
@@ -32,6 +33,9 @@ class Interactable{
       }
       if(d.sys)w.startAnim(d.sys);
       game.particles.burst(this.x,this.y-1,22,{kind:'spark',col:'#ffcf7a',spd:4,life:0.7,size:0.05,add:true,g:9});
+    }else if(d.kind==='mapplate'){
+      gs.flag(d.flag);game.audio.lore();game.flash(0.15,'#9fd6ff');
+      game.hud.say('СХЕМА СКОПИРОВАНА В ПЛАНШЕТ · ESC — КАРТА',d.title);
     }else if(d.kind==='gauge'){
       gs.flag(d.flag);game.audio.checkpoint();game.flash(0.25);
       game.hud.say(d.label+' · ПОД ДАВЛЕНИЕМ','');
@@ -52,7 +56,7 @@ class Interactable{
   }
   draw(c,t,gs){
     const d=this.def,live=this.canUse(gs);
-    if(!live&&d.kind!=='lever'&&d.kind!=='valve')return;
+    if(!live&&d.kind!=='lever'&&d.kind!=='valve'&&d.kind!=='mapplate')return;
     const p=live?0.5+0.5*Math.sin(t*3):0;
     /* 0 → 1: рукоять/штурвал доворачивается за доли секунды после E */
     const k=this.usedAt!==undefined?clamp((this.world.time-this.usedAt)/0.32,0,1):(live?0:1);
@@ -84,6 +88,15 @@ class Interactable{
       Kit.loreCylinder(c,this.x,this.y-0.75);
       c.fillStyle=rgba('#bfefff',0.18*p);c.beginPath();c.arc(this.x,this.y-0.75,0.9+p*0.15,0,TAU);c.fill();
       game.renderer.glowAdd(this.x,this.y-0.75,0.9,'#9fe6ff',0.5);
+    }else if(d.kind==='mapplate'){
+      /* схема яруса: латунная рамка, синька с белыми линиями комнат */
+      const x=this.x-0.75,y=this.y-2.0;
+      Kit.plate(c,x-0.08,y-0.08,1.66,1.16,'steel',777,{rust:0.4,bolts:true});
+      c.fillStyle=live?'#16324a':'#1a2630';c.fillRect(x,y,1.5,1.0);
+      c.strokeStyle=live?'rgba(220,240,255,.85)':'rgba(220,240,255,.35)';c.lineWidth=0.03;
+      c.strokeRect(x+0.12,y+0.5,0.36,0.34);c.strokeRect(x+0.5,y+0.14,0.3,0.7);c.strokeRect(x+0.82,y+0.42,0.52,0.24);
+      c.fillStyle=live?rgba('#ffcf7a',0.6+0.4*p):'rgba(255,207,122,.3)';c.beginPath();c.arc(x+0.64,y+0.3,0.05,0,TAU);c.fill();
+      if(live)game.renderer.glowAdd(this.x,this.y-1.5,1.0,'#9fd6ff',0.18+0.12*p);
     }else if(d.kind==='gauge'){
       c.fillStyle=rgba('#69d68f',0.18*p);c.beginPath();c.arc(this.x,this.y-0.6,1.0,0,TAU);c.fill();
       c.strokeStyle=rgba('#bfefff',0.4+0.3*p);c.lineWidth=0.05;

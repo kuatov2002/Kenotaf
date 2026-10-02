@@ -92,6 +92,7 @@ z1_hub:gs=>({id:'z1_hub',zone:'sump',name:'НАСОСНАЯ СТАНЦИЯ',w:36
       {type:'drip',x:11,y:25.4,rate:0.4},{type:'drip',x:22,y:21.2,rate:0.6},
       {type:'drip',x:31,y:31.4,rate:0.35},{type:'dust',rate:26},{type:'coolant',x:18,y:37.4,rate:6}];
     R.checkpoint={x:5,y:34,h:1.7,lit:gs.cp.room==='z1_hub'};
+    R.mapPlate={kind:'mapplate',x:7.0,y:34,flag:'map_sump',title:'СХЕМА ЯРУСА −41'};
     R.machines=[{kind:'flywheel',x:7.6,y:26,r:2.2,spd:0.7},{kind:'flywheel',x:29.5,y:22,r:1.7,spd:-1.05},
       {kind:'flywheel',x:5.4,y:12,r:1.3,spd:1.5},{kind:'crane',y:8.6,x0:4,x1:30,spd:0.55},
       {kind:'chain',x:12.5,y:4.2,len:5.4,ph:0},{kind:'chain',x:23.5,y:4.2,len:3.6,ph:2},

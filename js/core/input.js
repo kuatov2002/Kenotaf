@@ -21,6 +21,7 @@ class Input{
       if(e.code==='F1')game.debug.toggle();
       if(e.code==='F2')game.debug.resetPlayer();
       if(e.code==='Escape')game.togglePause();
+      if(e.code==='Tab'&&game.state==='pause'&&game.mapCv){game.map.whole=!game.map.whole;game.map.render(game.mapCv);}
       if(e.code==='KeyM'){game.audio.init();game.audio.toggleMute();}
     });
     addEventListener('keyup',e=>{this.k[e.code]=false;this.r[e.code]=true;});

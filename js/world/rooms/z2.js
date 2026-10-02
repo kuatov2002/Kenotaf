@@ -57,6 +57,7 @@ z2_atrium:gs=>({id:'z2_atrium',zone:'hives',name:'СОТЫ-АТРИУМ',w:36,h:
       {x:0.2,y:14.9,w:1.3,h:2.1,locked:true,label:'ПНЕВМОТРУБА',
         msg:'КАПСУЛА ЗАПЕЧАТАНА. ПНЕВМОЛИНИЯ МЕРТВА — ДАЛЬШЕ ЭТОГО СРЕЗА НЕ ПРОЙТИ.'}];
     R.checkpoint={x:3.4,y:35,h:1.7,lit:gs.cp.room==='z2_atrium'};
+    R.mapPlate={kind:'mapplate',x:6.8,y:35,flag:'map_hives',title:'СХЕМА СОТ'};
     R.enemies=gs.flags.atrium_clear?[]:[{type:'aristocrat',x:27,y:23.65,patrol:[25.5,33.5]}];
     R.clearFlag='atrium_clear';
     R.lights=[lit(6,33.4,9,'#d9a441',0.9),lit(29,33.4,9,'#d9a441',0.9),
