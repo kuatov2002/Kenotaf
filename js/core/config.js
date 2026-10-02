@@ -15,7 +15,16 @@ const CFG={
     energy:100,energyRegen:26,energyDelay:0.45,hp:5,invuln:1.15,knock:11,
     /* бой HK: удар вниз в воздухе = отскок; отдача при попадании; РЕМОНТ копится ударами, тратится на ячейку */
     pogoV:16.4,recoilG:3.4,recoilA:4.4,slashT:0.16,
-    weldMax:100,weldHit:17,weldPulse:8,healCost:50,healTime:0.85},
+    weldMax:100,weldHit:11,weldPulse:0,healCost:50,healTime:0.85,
+    /* ключ — тяжёлый инструмент: короткий замах (отклик в том же кадре — поза), удар, отдача, восстановление.
+       Тяжёлый удар — удержание после взмаха: набор давления, отпуск — длинный замах и сильная отдача */
+    atkWind:0.055,atkRecover:0.15,heavyHold:0.36,heavyWind:0.1,heavyRecover:0.3,heavyRecoil:7.5,heavyMove:0.45,
+    evadeIF:0.16},
+  /* «ломать, а не убивать» */
+  combat:{damagedAt:0.55,exposedMul:2.0,heavyMul:2.2,heavyNodeMul:2.6,bonusMul:1.6,bodyArmor:0.55,nodeLeak:0.25,
+    pulseImpulse:16,pulseLift:5,dashShove:9,slamSpeed:8,pinSpeed:10.5,pinT:1.05,slamStunT:0.6,
+    interruptOpen:1.5,markT:0.95,perfectWin:0.14,empowerT:1.4,tokenGap:0.3,
+    debrisDmg:26,scrapWeld:6,weldHeavy:16,weightDmg:130},
   hsMelee:0.055,hsPulse:0.075,hsHeavy:0.13,hsDash:0.02,
   noiseRun:13,noisePulse:22,colStep:0.18,probeEps:0.1
 };

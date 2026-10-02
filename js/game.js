@@ -13,6 +13,7 @@ class Game{
     this.world=new World(this);
     this.hud=new HUD(this);
     this.combat=new Combat(this);
+    this.fx=new CombatFX(this);
     this.gates=new GateSystem(this);
     this.checkpoints=new CheckpointSystem(this);
     this.salvage=new SalvageSystem(this);
@@ -24,7 +25,7 @@ class Game{
     this.menuNav=new MenuNav(this);
     this.debug=new DebugUI(this);
     this.debugOpts={invuln:false,collision:false,gates:false,bounds:false,collider:false};
-    this.state='menu';this.timeScale=1;this.hitstopT=0;this.acc=0;this.last=0;this.fps=60;
+    this.state='menu';this.timeScale=1;this.hitstopT=0;this.acc=0;this.last=0;this.fps=60;this.slowT=0;this.slowK=1;
     this.transitionT=-1;this.transitionCb=null;this.vw=0;this.vh=0;this.ppm=40;this.bakePpm=40;
     this.menuT=0;this.menuRoom=null;this.menuPar=null;
     this.resize();
@@ -148,6 +149,8 @@ class Game{
     f.style.background=col||'#fff';f.style.transition='none';f.style.opacity=a;
     void f.offsetWidth;f.style.transition='opacity .55s ease';f.style.opacity=0;}
   hitstop(t){this.hitstopT=Math.max(this.hitstopT,t);}
+  /* замедление времени (идеальное уклонение, прерывание): реальные секунды, множитель */
+  slowmo(t,k){this.slowT=Math.max(this.slowT,t);this.slowK=Math.min(this.slowT>t?this.slowK:1,k);}
   onPlayerDeath(){
     this.gs.hp=this.gs.maxHp();this.world.slain={};
     this.transition(()=>{this.world.load(this.gs.cp.room,this.gs.cp.x,this.gs.cp.y);this.hud.syncHp();});
@@ -212,7 +215,8 @@ class Game{
       this.cinematic.update(dt);
       if(this.hitstopT>0)this.hitstopT-=dt;
       else{
-        this.acc+=dt*this.timeScale;
+        if(this.slowT>0){this.slowT-=dt;if(this.slowT<=0)this.slowK=1;}
+        this.acc+=dt*this.timeScale*(this.slowT>0?this.slowK:1);
         const STEP=1/120;let n=0;
         while(this.acc>=STEP&&n<8){
           if(!this.cinematic.active)this.world.update(STEP);
@@ -306,6 +310,7 @@ class Game{
     this.renderer.worldTransform(c,cam,zoom);
     this.particles.render(c,'add');
     c.setTransform(1,0,0,1,0,0);
+    if(!inMenu)this.renderer.distortPass(c,dt);
     this.renderer.foreground(c,par,cam,zoom,room);
     this.renderer.atmosphere(c,zone,t);
     this.renderer.bloomPass(c);

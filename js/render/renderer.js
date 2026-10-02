@@ -65,6 +65,24 @@ class WorldRenderer{
     vc.fillStyle=g;vc.fillRect(0,0,w,h);this.vig=v;
   }
   beginFrame(){this.glowSources.length=0;}
+  /* волна давления импульса: кольцо искажения в экранном пространстве (линза по кольцу) */
+  wave(x,y,r,life){(this.waves||(this.waves=[])).push({x,y,r,life,max:life});}
+  distortPass(c,dt){
+    const W=this.waves;if(!W||!W.length)return;
+    const g=this.game,cam=g.camera,s=g.ppm*cam.zoom,cv=g.canvas;
+    for(const w of W){
+      w.life-=dt;if(w.life<=0)continue;
+      const k=1-w.life/w.max,R=Math.max(8,w.r*s*(0.25+0.85*EZ.out(k))),th=Math.max(6,R*0.28),amp=0.07*(1-k);
+      const sx=(w.x-cam.cx)*s+g.vw/2,sy=(w.y-cam.cy)*s+g.vh/2;
+      if(sx<-R||sy<-R||sx>g.vw+R||sy>g.vh+R)continue;
+      c.save();c.setTransform(1,0,0,1,0,0);
+      c.beginPath();c.arc(sx,sy,R,0,TAU);c.arc(sx,sy,Math.max(1,R-th),0,TAU,true);c.clip();
+      const R2=R*(1+amp);
+      c.globalAlpha=0.9;c.drawImage(cv,sx-R,sy-R,R*2,R*2,sx-R2,sy-R2,R2*2,R2*2);
+      c.restore();
+    }
+    this.waves=W.filter(w=>w.life>0);
+  }
   glowAdd(x,y,r,col,a){this.glowSources.push({x:x,y:y,r:r,col:col,a:a});}
   worldTransform(c,cam,zoom){const s=this.game.ppm*zoom;
     c.setTransform(s,0,0,s,-cam.cx*s+this.game.vw/2,-cam.cy*s+this.game.vh/2);}
@@ -274,13 +292,17 @@ class WorldRenderer{
   entities(c,room,t){
     const g=this.game,W=g.world,Z=READ[room.zone]||READ.sump,cam=g.camera;
     const calm=rgba(Z.ent,0.55),hot='rgba(255,64,36,.95)';
+    /* обломки механизмов — за врагами: оторванные детали, лопнувшие баллоны, корпуса */
+    if(W.debris.length){this.worldTransform(c,cam,cam.zoom);for(const d of W.debris)d.draw(c,t);}
     for(const e of W.enemies){
       if(e.dead){if(e.deadT<=2.4){this.worldTransform(c,cam,cam.zoom);e.drawBody(c,t);}continue;}
       const thr=e.threat();this.outlined(c,e.spriteBounds(),x=>e.drawBody(x,t),thr?hot:calm,thr?2.6:1.7);
+      if(e.drawOverlay){this.worldTransform(c,cam,cam.zoom);e.drawOverlay(c,t);}
     }
     const b=W.boss;
-    if(b&&b.activated&&!b.dead){const thr=b.threat();
-      this.outlined(c,b.spriteBounds(),x=>b.drawBody(x,t),thr?hot:calm,thr?3:2);}
+    if(b&&!b.dead&&(b.activated||b.isMech)){const thr=b.activated&&b.threat();
+      this.outlined(c,b.spriteBounds(),x=>b.drawBody(x,t),thr?hot:calm,thr?3:2);
+      if(b.drawOverlay){this.worldTransform(c,cam,cam.zoom);b.drawOverlay(c,t);}}
     if(room.npcs)for(const n of room.npcs)this.outlined(c,n.bounds(),x=>n.draw(x,t),calm,1.6);
     const p=room.playerRef;
     if(p&&p.bottom!==undefined){
@@ -288,6 +310,8 @@ class WorldRenderer{
       this.outlined(c,p.spriteBounds(),x=>p.draw(x,t),rgba(Z.ent,0.72),1.8);
       this.worldTransform(c,cam,cam.zoom);p.drawSlash(c,t);
     }
+    /* лом из сломанных узлов */
+    this.worldTransform(c,cam,cam.zoom);W.scrap.draw(c,t);
     /* клапаны-отбойники: латунные головки, от которых отскакивают ударом вниз */
     if(room.pogos)for(const q of room.pogos){this.worldTransform(c,cam,cam.zoom);drawPogo(c,q,t);}
   }

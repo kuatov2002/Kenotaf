@@ -110,6 +110,54 @@ class AudioSystem{
     [0,150,300,480].forEach((d,i)=>setTimeout(()=>this.tone([392,523,659,784][i],0.6,'sine',0.04),d));
     this.nz(0.6,650,0.6,0.03,'lowpass');}
   lore(){this.tone(660,0.4,'sine',0.035,880);this.nz(0.12,1300,2,0.014);}
+  /* ---------- бой «ломать, а не убивать»: звук по материалу ----------
+     латунь звенит долго (колокол), сталь лязгает коротко, ржавчина/чугун — глухой хруст,
+     стекло — дребезг высоких частот. k — сила 0..1 */
+  mat(m,k){if(!this.ready||this.muted)return;k=k===undefined?1:k;const r=0.94+Math.random()*0.12;
+    if(m==='brass'||m==='copper'){this.tone(860*r,0.55,'sine',0.032*k,840*r);this.tone(1290*r,0.38,'sine',0.018*k,1270*r);
+      this.tone(2150*r,0.2,'sine',0.009*k);this.nz(0.04,2400,1.4,0.03*k);this.tone(150,0.1,'triangle',0.035*k,90);}
+    else if(m==='glass'){this.nz(0.14,4800,2.2,0.045*k,'highpass');this.tone(2600*r,0.16,'sine',0.018*k);this.tone(3700*r,0.1,'sine',0.01*k);}
+    else if(m==='rust'||m==='iron'||m==='soot'){this.nz(0.11,520,0.8,0.075*k,'lowpass');this.tone(130*r,0.16,'triangle',0.06*k,72);
+      this.nz(0.05,1500,1.6,0.02*k);}
+    else if(m==='rubber'){this.nz(0.08,300,0.7,0.06*k,'lowpass');this.tone(100,0.1,'sine',0.05*k,60);}
+    else{this.tone(520*r,0.3,'sine',0.03*k,470*r);this.tone(1270*r,0.16,'sine',0.012*k,1180*r);this.nz(0.05,1500,1.2,0.03*k);
+      this.tone(170,0.12,'triangle',0.045*k,90);}}
+  /* узел треснул (перешёл в DAMAGED): сухой треск поверх удара */
+  crack(m){if(!this.ready||this.muted)return;
+    for(let i=0;i<4;i++)setTimeout(()=>this.nz(0.03,1800+Math.random()*1800,3,0.03),i*28+Math.random()*12);
+    if(m==='glass')this.nz(0.2,4600,2.5,0.04,'highpass');}
+  /* броня: короткий «тинь» и всё */
+  deflect(){const r=0.95+Math.random()*0.1;this.tone(1700*r,0.12,'sine',0.02,1650*r);this.nz(0.03,3000,2,0.02);}
+  /* отрыв узла: удар + звон материала + рассыпающиеся детальки */
+  breakPart(m,boss){if(!this.ready||this.muted)return;const k=boss?1.3:1;
+    this.tone(70,0.45,'sine',0.13*k,32);this.nz(0.35,420,0.6,0.09*k,'lowpass');this.mat(m,1);
+    this.tone(m==='brass'?640:420,0.7,'sine',0.02,m==='brass'?620:400,this.verb);
+    for(let i=0;i<5;i++)setTimeout(()=>this.nz(0.03,1400+Math.random()*2400,3,0.02),90+i*55+Math.random()*30);}
+  /* прерывание: в саму систему врага — «клац» + восходящий латунный отзвук */
+  interrupt(){if(!this.ready||this.muted)return;
+    this.tone(110,0.22,'triangle',0.08,55);this.nz(0.06,1800,1.6,0.05);
+    this.tone(990,0.5,'sine',0.03,1480);this.tone(1480,0.35,'sine',0.014,2200,this.verb);}
+  /* прижатие к стене: тяжёлый хруст и стон металла */
+  pin(){if(!this.ready||this.muted)return;this.tone(55,0.5,'sine',0.15,30);this.nz(0.3,260,0.6,0.11,'lowpass');
+    this.tone(180,0.6,'sawtooth',0.025,120);this.nz(0.08,2200,2,0.03);}
+  clatter(m,k){if(!this.ready||this.muted)return;k=k||0.6;
+    this.nz(0.05,m==='brass'?2600:1200,2,0.03*k);this.tone(m==='brass'?1100:420,0.08,'sine',0.012*k);}
+  /* след рывка лёг на узел: тонкий высокий звон */
+  mark(){this.tone(2400,0.18,'sine',0.014,2900);this.nz(0.05,4200,3,0.012,'highpass');}
+  kill(m,boss){if(!this.ready||this.muted)return;
+    this.tone(boss?48:80,boss?1.4:0.5,'sine',boss?0.2:0.11,boss?24:40);this.nz(boss?1.2:0.45,boss?220:520,0.5,boss?0.16:0.08,'lowpass');
+    this.mat(m,1);for(let i=0;i<(boss?10:5);i++)setTimeout(()=>this.clatter(Math.random()<0.5?'brass':'steel',0.8),120+i*70+Math.random()*40);}
+  /* идеальное уклонение: воздух + чистый колокол, без текста */
+  evade(){if(!this.ready||this.muted)return;this.nz(0.2,2600,0.8,0.035,'highpass');
+    this.tone(1320,0.6,'sine',0.03,1320);this.tone(1980,0.45,'sine',0.016,1980,this.verb);}
+  /* тяжёлый удар: набор давления (шипение нарастает), отпуск — гулкий взмах */
+  charge(){if(!this.ready||this.muted)return;const s=this.ctx.createBufferSource();s.buffer=this.noise;
+    const f=this.ctx.createBiquadFilter();f.type='bandpass';f.Q.value=2;f.frequency.setValueAtTime(600,this.t());
+    f.frequency.exponentialRampToValueAtTime(2600,this.t()+0.5);s.connect(f);this.env(f,0.12,0.5,0.03);s.start();s.stop(this.t()+0.7);}
+  chargeFull(){this.tone(740,0.25,'sine',0.025,760);this.tone(1110,0.2,'sine',0.012);}
+  heavy(){this.nz(0.22,700,0.6,0.07);this.tone(120,0.25,'triangle',0.06,60);}
+  scrap(){const r=0.9+Math.random()*0.2;this.tone(1900*r,0.08,'sine',0.012,2300*r);}
+  steamBurst(){this.nz(0.6,1200,0.5,0.07);this.nz(0.3,300,0.6,0.06,'lowpass');}
   /* лампада: замах — нарастающий вой винта, пике — свист; мокрица — сухой стрёкот лапок */
   lampWind(){this.tone(380,0.58,'sawtooth',0.026,1250);this.nz(0.58,2000,3,0.018);}
   lampDive(){this.nz(0.32,900,0.8,0.05);this.tone(1000,0.26,'triangle',0.02,320);}

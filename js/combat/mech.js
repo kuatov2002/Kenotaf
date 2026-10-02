@@ -1,0 +1,288 @@
+"use strict";
+/* ============================== MECH ==============================
+   Механизм — враг, собранный из узлов. Его жизнь — корпус (hp); узлы — системы.
+     Melee  — ЧТО я ломаю: урон по узлу под ударом (или по корпусу, если узла нет).
+     Pulse  — ГДЕ противник: импульс без урона по массе; в окно телеграфа — прерывание атаки.
+     Dash   — ГДЕ я: проход сквозь механизм ставит след на повреждённом узле → следующий удар ломает.
+   Удар о стену после импульса: оглушение, а с разгона от импульса — прижатие (броня ломается).
+   Подкласс задаёт узлы, позу (lx/ly узлов), ИИ атак (с телеграфом), onBreak/onInterrupt/onPin,
+   рисунок и обломки своих деталей (partDebris / corpseDebris). */
+class Mech extends Enemy{
+  constructor(world,def,x,y){
+    super(world,def,x,y);
+    this.isMech=true;this.nodes=[];this.mass=def.mass||1;
+    this.bodyArmor=def.bodyArmor===undefined?CFG.combat.bodyArmor:def.bodyArmor;this.bodyMat=def.bodyMat||'iron';
+    this.state='idle';this.st=0;this.knockT=0;this.stunT=0;this.pinT=0;this.pinSide=0;this.openT=0;
+    this.token=false;this.cd=0.9+Math.random()*0.7;this.lastImp=null;this.slamCd=0;
+    this.walk=0;this.recoil=0;this.recoilDir=0;this.flying=!!def.flying;this.turnT=0;
+  }
+  addNode(o){const n=new Node(o);n.owner=this;this.nodes.push(n);return n;}
+  node(id){for(const n of this.nodes)if(n.id===id)return n;return null;}
+  has(id){const n=this.node(id);return !!n&&!n.broken;}
+  /* --- общие состояния --- */
+  safe(){return this.stunT>0||this.pinT>0||this.openT>0;}
+  threat(){for(const n of this.nodes)if(n.teleHot)return true;return this.state==='strike';}
+  isWinding(){return this.state==='wind';}
+  canPin(){return this.mass<=2;}
+  attackUses(n){return true;}
+  /* --- очередь атак: механизмы бьют по одному --- */
+  wantAttack(){return this.world.game.combat.requestToken(this);}
+  releaseToken(){this.world.game.combat.releaseToken(this);}
+  cancelAttack(){this.releaseToken();for(const n of this.nodes){n.tele=0;n.teleHot=false;}
+    if(this.state==='wind'||this.state==='strike'){this.state='recover';this.st=0;}}
+  /* узел телеграфирует: k — прогресс замаха 0..1; последние hot секунд — окно прерывания */
+  telegraph(n,k,hot){if(!n||n.broken)return;n.tele=clamp(k,0,1);n.teleHot=!!hot;}
+  /* --- цикл --- */
+  update(dt){
+    this.t+=dt;if(this.flash>0)this.flash-=dt;
+    for(const n of this.nodes){if(n.exT>0)n.exT-=dt;if(n.markT>0)n.markT-=dt;if(n.hitT>0)n.hitT-=dt;n.tele=0;n.teleHot=false;}
+    if(this.recoil>0)this.recoil=Math.max(0,this.recoil-dt*5);
+    if(this.slamCd>0)this.slamCd-=dt;
+    if(this.dead){this.deadT+=dt;return;}
+    if(this.pinT>0){this.pinT-=dt;this.vx=0;this.vy=0;
+      if(Math.random()<dt*14)this.world.game.particles.spawn({kind:'dust',x:this.cx+this.pinSide*this.w*0.5,y:this.cy+(Math.random()-0.5)*this.h,
+        vx:-this.pinSide*1.5,vy:-0.5,life:0.6,size:0.08,col:'#8a7a6a',g:6});
+      if(this.pinT<=0){this.vx=-this.pinSide*2.5;this.knockT=0.25;this.onUnpin();}}
+    else if(this.stunT>0){this.stunT-=dt;if(this.onGround)this.vx=damp(this.vx,0,7,dt);if(this.stunT<=0)this.onStunEnd();}
+    else if(this.knockT>0){this.knockT-=dt;if(this.onGround)this.vx=damp(this.vx,0,this.fric||6,dt);}
+    else if(this.openT>0){this.openT-=dt;this.vx=damp(this.vx,0,5,dt);if(this.openT<=0){this.state='recover';this.st=0;this.cd=Math.max(this.cd,0.5);}}
+    else this.ai(dt);
+    this.physics(dt);
+    this.pose(dt);
+    for(const n of this.nodes){n.wx=this.cx+this.face*n.lx;n.wy=this.bottom+n.ly;}
+    this.nodeEmit(dt);
+  }
+  ai(dt){}
+  pose(dt){}
+  physics(dt){
+    if(!this.flying){this.vy+=CFG.gravity*dt;this.vy=clamp(this.vy,-40,CFG.player.maxFall);}
+    const vx0=this.vx,vy0=this.vy;
+    moveBody(this,dt,this.world.room.solids);
+    const imp=this.lastImp,fresh=imp&&this.world.time-imp.t<0.6;
+    if(fresh&&this.slamCd<=0&&!this.dead){
+      if(this.wall!==0&&Math.abs(vx0)>CFG.combat.slamSpeed)this.slam(Math.abs(vx0),this.wall,imp);
+      else if(this.ceilHit&&vy0<-CFG.combat.slamSpeed)this.slam(Math.abs(vy0),0,imp);
+    }
+  }
+  /* искры и дым из повреждённых узлов — из конкретной точки, не «вообще» */
+  nodeEmit(dt){
+    const g=this.world.game;
+    for(const n of this.nodes){
+      if(n.broken){if(n.stump!==false&&Math.random()<dt*3)g.particles.spawn({kind:'smoke',x:n.wx,y:n.wy,vx:(Math.random()-0.5)*0.4,vy:-0.8,
+        life:1.2,size:0.16,grow:0.5,col:'#2c2824',drag:0.8,a:0.45});
+        if(n.stump!==false&&Math.random()<dt*2.2)g.particles.burst(n.wx,n.wy,3,{kind:'spark',col:'#ffcf7a',spd:3,life:0.3,size:0.035,add:true,g:14});
+        continue;}
+      if(!n.damaged)continue;
+      n.fxT-=dt;
+      if(n.fxT<=0){n.fxT=0.25+Math.random()*0.7;
+        g.particles.burst(n.wx+(Math.random()-0.5)*n.r,n.wy+(Math.random()-0.5)*n.r,2+((Math.random()*3)|0),
+          {kind:'spark',col:n.mat==='glass'?'#cfe6ff':'#ffd27a',spd:3,life:0.3,size:0.035,add:true,g:14});
+        if(Math.random()<0.5)g.particles.spawn({kind:'smoke',x:n.wx,y:n.wy,vx:(Math.random()-0.5)*0.3,vy:-0.6,life:1,size:0.12,grow:0.4,col:'#3a342c',drag:0.8,a:0.35});}
+    }
+  }
+  /* --- импульс --- */
+  impulse(vx,vy,src){
+    if(this.dead)return;
+    this.vx+=vx;this.vy+=vy;
+    this.knockT=Math.max(this.knockT,0.32+Math.min(0.3,Math.hypot(vx,vy)*0.012));
+    this.lastImp={src,t:this.world.time};
+  }
+  /* импульс резака: ни единицы урона — только позиция, траектория и срыв замаха */
+  applyPulse(p,dir){
+    const C=CFG.combat;if(this.dead)return;
+    const tn=this.nodes.find(n=>n.teleHot&&!n.broken);
+    if(tn)this.interrupt(tn,p);
+    const m=this.mass;
+    if(m>=3){this.vx+=dir*C.pulseImpulse*0.22;this.knockT=Math.max(this.knockT,0.28);this.lastImp={src:'pulse',t:this.world.time};
+      this.recoil=1;this.recoilDir=dir;}
+    else this.impulse(dir*C.pulseImpulse/m,-C.pulseLift/Math.max(1,m),'pulse');
+    if(!tn&&this.isWinding())this.cancelAttack();
+    this.alert=6;
+  }
+  /* рывок сквозь механизм: толкает лёгких и средних, след ставит на выходе (Combat.update) */
+  dashShove(p){if(this.mass<2&&!this.dead){this.impulse(p.face*CFG.combat.dashShove/this.mass,-1.5,'dash');}}
+  dashMark(p){
+    const C=CFG.combat;let any=false;
+    for(const n of this.nodes){
+      if(n.broken||n.locked||n.hidden||n.core)continue;
+      if(!(n.damaged||n.exT>0))continue;
+      if(Math.abs(n.wy-p.cy)>1.4)continue;
+      n.markT=C.markT;n.markA=(Math.random()-0.5)*0.6;any=true;}
+    if(any)this.world.game.fx.mark(this.cx,this.cy);
+    return any;
+  }
+  /* прерывание: атака сорвана, узел повреждён и вскрыт, у механизма — окно уязвимости */
+  interrupt(n,p){
+    const C=CFG.combat,g=this.world.game;
+    this.cancelAttack();
+    n.hp=Math.min(n.hp,n.max*(C.damagedAt-0.08));n.exT=Math.max(n.exT,C.interruptOpen+0.2);n.hitT=0.22;
+    this.openT=C.interruptOpen;this.state='open';this.st=0;
+    g.fx.interrupt(n.wx,n.wy,n.mat,this.isBoss);
+    this.onInterrupt(n,p);
+  }
+  slam(speed,side,imp){
+    const C=CFG.combat,g=this.world.game;this.slamCd=0.7;
+    const back=side!==0&&side===-this.face;
+    if(imp.src==='pulse'&&speed>=C.pinSpeed&&side!==0&&this.canPin()){
+      this.pinT=C.pinT;this.pinSide=side;this.vx=0;this.vy=0;this.cancelAttack();this.state='pinned';
+      for(const n of this.nodes)if(!n.broken&&!n.locked&&!n.core)n.exT=Math.max(n.exT,C.pinT+0.35);
+      g.fx.pin(this.cx+side*this.w*0.5,this.cy,this.bodyMat);
+      this.onPin(back);
+    }else{
+      this.stunT=Math.max(this.stunT,C.slamStunT);this.cancelAttack();
+      g.fx.slam(this.cx+side*this.w*0.5,this.cy,this.bodyMat,speed);
+      this.onSlam(back,speed);
+    }
+  }
+  /* --- урон: удар ищет узел под собой, иначе бьёт корпус --- */
+  takeHit(h){
+    if(this.dead)return null;
+    const behind=Math.sign(h.fromX-this.cx)===-this.face;
+    let best=null,bs=1e9;
+    for(const n of this.nodes){
+      if(n.broken||n.locked||n.hidden)continue;
+      /* баллон на спине с фронта недоступен — удар уходит в корпус (броня-«щит» — только узлы с deflect) */
+      if(n.exT<=0&&!n.deflect&&((n.backOnly&&!behind)||(n.frontOnly&&behind)))continue;
+      const nx=clamp(n.wx,h.hb.x,h.hb.x+h.hb.w),ny=clamp(n.wy,h.hb.y,h.hb.y+h.hb.h);
+      if(Math.hypot(nx-n.wx,ny-n.wy)>n.r)continue;
+      /* линия взмаха: боковой удар бьёт то, что на высоте ключа и ближе; вверх/вниз — по вертикали */
+      let s;
+      if(h.sd==='side')s=Math.abs(n.wy-h.sy)+Math.abs(n.wx-(h.fromX+h.dir*0.7))*0.35;
+      else if(h.sd==='up'||h.sd==='down')s=Math.abs(n.wx-h.fromX)+Math.abs(n.wy-h.sy)*0.35;
+      else s=Math.hypot(n.wx-h.sx,n.wy-h.sy);
+      if(n.exT>0)s-=1.5;if(n.markT>0)s-=3;
+      if(((n.backOnly&&!behind)||(n.frontOnly&&behind))&&n.exT<=0)s+=2.5;
+      if(s<bs){bs=s;best=n;}
+    }
+    return best?this.hitNode(best,h,behind):this.hitBody(h);
+  }
+  hitNode(n,h,behind){
+    const C=CFG.combat,g=this.world.game;
+    if(n.exT<=0&&n.deflect&&!(n.backOnly&&behind)&&!(n.frontOnly&&!behind)){
+      n.hitT=0.08;g.fx.deflect(n.wx,n.wy,n.mat);this.react(h,0.35);return 'deflect';}
+    if(n.markT>0&&!n.core){n.markT=0;this.breakNode(n,h,true);return 'break';}
+    const d=h.dmg*(n.exT>0?C.exposedMul:n.armor)*(h.heavy?C.heavyNodeMul:1)*(h.bonus?C.bonusMul:1);
+    const was=n.damaged;
+    n.hp-=d;n.hitT=0.16;
+    this.hp-=n.core?d:d*C.nodeLeak;
+    if(n.hp<=0){this.breakNode(n,h,false);return 'break';}
+    g.fx.nodeHit(n.wx,n.wy,n.mat,h,!was&&n.damaged,this.isBoss);
+    this.react(h,1);
+    if(this.hp<=0){this.die(h);return 'kill';}
+    return 'node';
+  }
+  hitBody(h){
+    const C=CFG.combat,g=this.world.game;
+    const open=this.openT>0||this.pinT>0||this.stunT>0;
+    const d=h.dmg*(open?1:this.bodyArmor)*(h.heavy?C.heavyMul:1)*(h.bonus?C.bonusMul:1);
+    this.hp-=d;this.flash=0.12;
+    g.fx.bodyHit(clamp(h.sx,this.x,this.x+this.w),clamp(h.sy,this.y,this.bottom),this.bodyMat,h,this.isBoss);
+    this.react(h,0.75);
+    if(this.hp<=0){this.die(h);return 'kill';}
+    return 'body';
+  }
+  /* отклик тела на удар: вес решает, насколько он сдвинется */
+  react(h,k){
+    const m=this.mass;this.recoil=1;this.recoilDir=h.dir||0;this.alert=6;
+    if(m>=3||this.pinT>0)return;
+    const kb=(h.heavy?8.5:2.4)*k/Math.max(0.7,m);
+    this.vx+=(h.dir||0)*kb;if(h.ky)this.vy+=h.ky*k/Math.max(1,m);
+    this.knockT=Math.max(this.knockT,h.heavy?0.32:0.1);
+    if(h.heavy)this.lastImp={src:'heavy',t:this.world.time};
+    if(h.heavy&&this.isWinding())this.cancelAttack();
+  }
+  breakNode(n,h,guar){
+    const g=this.world.game,W=this.world;
+    n.broken=true;n.hp=0;n.exT=0;n.markT=0;n.tele=0;n.teleHot=false;
+    this.hp-=n.coreDmg||0;
+    const dir=(h&&h.dir)||(h&&Math.sign(n.wx-h.sx))||-this.face;
+    const part=this.partDebris(n);
+    if(part)W.addDebris(Object.assign({x:n.wx,y:n.wy,vx:dir*(2.5+Math.random()*3)+this.vx*0.4,vy:-4.5-Math.random()*3,
+      vr:(Math.random()-0.5)*14,hot:2.4,src:this,face:this.face},part));
+    if(n.scrap!==0)W.scrap.spawn(n.wx,n.wy,n.scrap||3,dir);
+    g.fx.breakNode(n.wx,n.wy,n.mat,guar,this.isBoss);
+    if(this.isWinding()&&this.attackUses(n))this.cancelAttack();
+    this.onBreak(n,h);
+    if(this.hp<=0&&!this.dead)this.die(h);
+  }
+  /* смерть: механизм разваливается — уцелевшие детали отлетают, корпус остаётся обломком */
+  die(h){
+    if(this.dead)return;
+    this.dead=true;this.deadT=0;this.releaseToken();
+    const g=this.world.game,W=this.world;
+    if(this.key&&W.room){const id=W.room.id;(W.slain[id]=W.slain[id]||{})[this.key]=true;}
+    const dir=(h&&h.dir)||-this.face;
+    for(const n of this.nodes){if(n.broken||n.core)continue;const part=this.partDebris(n);
+      if(part)W.addDebris(Object.assign({x:n.wx,y:n.wy,vx:dir*(1.5+Math.random()*4)+(Math.random()-0.5)*3,vy:-4-Math.random()*4,
+        vr:(Math.random()-0.5)*16,hot:3,src:this,face:this.face},part));n.broken=true;}
+    const cp=this.corpseDebris();
+    if(cp)W.addDebris(Object.assign({x:this.cx,y:this.cy,vx:dir*0.8+this.vx*0.15,vy:-1.5,vr:dir*1.2,hot:6,corpse:true,src:this,face:this.face},cp));
+    W.scrap.spawn(this.cx,this.cy,this.scrapOnDeath||3,dir);
+    g.fx.kill(this.cx,this.cy,this.bodyMat,this.isBoss);
+    this.onDeath(h);
+    W.checkClear();
+  }
+  hurt(dmg,kx,ky){this.takeHit({kind:'raw',dmg,hb:this.rect(),sx:this.cx,sy:this.cy,fromX:this.cx-(kx||0),dir:Math.sign(kx||0),ky:ky||0});}
+  /* --- крючки подклассов --- */
+  onBreak(n,h){}
+  onInterrupt(n,p){}
+  onPin(back){}
+  onSlam(back,speed){}
+  onUnpin(){this.state='recover';this.st=0;}
+  onStunEnd(){this.state='recover';this.st=0;}
+  onDeath(h){}
+  partDebris(n){return null;}
+  corpseDebris(){return null;}
+  /* эффекты поверх контурного спрайта (без обводки): пламя, свечение узлов, кольца телеграфа, след рывка */
+  drawOverlay(c,t){
+    if(this.dead)return;
+    c.save();c.translate(this.cx,this.bottom);if(this.face<0)c.scale(-1,1);
+    if(this.recoil>0)c.translate(this.recoil*this.recoilDir*this.face*0.1,0);
+    this.drawFX(c,t);drawNodeFX(c,this,t);
+    c.restore();
+  }
+  drawFX(c,t){}
+  /* --- рисунок: живой механизм; после смерти его заменяют обломки --- */
+  drawBody(c,t){
+    if(this.dead)return;
+    c.save();c.translate(this.cx,this.bottom);
+    if(this.face<0)c.scale(-1,1);
+    /* отдача от удара: корпус уходит по направлению удара (в локальных осях) */
+    if(this.recoil>0)c.translate(this.recoil*this.recoilDir*this.face*0.1,0);
+    this.draw(c,t);
+    c.restore();
+    if(this.flash>0){c.save();c.globalCompositeOperation='source-atop';c.globalAlpha=clamp(this.flash*3,0,0.55);
+      const m=this.spriteBounds();c.fillStyle='#ffe2c0';c.fillRect(m.x,m.y,m.w,m.h);c.restore();}
+  }
+}
+/* ============================== MECH BOSS ==============================
+   Босс-механизм: та же разборка по узлам, но жизнь — ядро (узел core, закрыт бронёй до
+   поломки нескольких систем). Полоса босса показывает целостность всей конструкции. */
+class MechBoss extends Mech{
+  constructor(world,def,x,y){
+    super(world,Object.assign({mass:6,bodyArmor:0.12},def),x,y);
+    this.isBoss=true;this.activated=false;this.phase=1;this.name=def.name||'';this.done=false;
+  }
+  safe(){return this.stunT>0||this.pinT>0||this.openT>0||this.state==='stuck'||this.state==='stunWall'||!this.activated;}
+  canPin(){return false;}
+  /* целостность для полосы: системы + ядро (вдвое весомее) */
+  integrity(){let s=0,w=0;for(const n of this.nodes){const k=n.core?2:1;s+=k*(n.broken?0:n.hp/n.max);w+=k;}return w?s/w:0;}
+  update(dt){
+    if(!this.activated&&!this.dead){this.t+=dt;this.pose(dt);for(const n of this.nodes){n.wx=this.cx+this.face*n.lx;n.wy=this.bottom+n.ly;}return;}
+    super.update(dt);
+    if(!this.dead)this.world.game.hud.boss(this.name,this.integrity());
+  }
+  /* узел-ядро сломан — механизм кончился */
+  onBreak(n,h){if(n.core&&!this.dead){this.hp=0;this.die(h);}}
+  die(h){
+    if(this.dead)return;
+    super.die(h);
+    const g=this.world.game;g.hud.bossOff();g.hud.say(this.name+' · РАЗОБРАН.','');
+    g.flash(0.6,'#fff2d0');g.slowmo(0.5,0.3);
+  }
+  hurt(dmg,kx,ky,raw){
+    /* сырой урон от окружения (отражённый осколок и т. п.) — по ближайшему открытому узлу */
+    const n=this.nodes.filter(q=>!q.broken&&!q.locked).sort((a,b)=>(b.exT>0)-(a.exT>0))[0];
+    if(n)this.hitNode(n,{kind:'raw',dmg,hb:this.rect(),sx:n.wx,sy:n.wy,fromX:n.wx-(kx||0),dir:Math.sign(kx||0),ky:0},true);
+  }
+}

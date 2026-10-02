@@ -1,34 +1,71 @@
 "use strict";
-/* ============================== COMBAT ============================== */
+/* ============================== COMBAT ==============================
+   КЕНОТАФ — «ломать, а не убивать».
+     Melee (ключ)   — что я ломаю: удар находит узел механизма под собой (иначе бьёт корпус).
+     Pulse (резак)  — где противник: НИ ЕДИНИЦЫ урона. Импульс по массе, срыв замаха, в окно
+                      телеграфа — прерывание. Отражает снаряды, швыряет обломки.
+     Dash (клапан)  — где я: сквозь механизм; на выходе — след на повреждённом узле.
+   Механизмы бьют по очереди (токен атаки): игрок всегда видит, кто сейчас замахивается. */
 class Combat{
-  constructor(game){this.game=game;}
-  /* удар ключом: sd — 'side' | 'up' | 'down' (вниз — только в воздухе).
-     Попадание по врагу копит РЕМОНТ; удар вниз по врагу / шипам / клапану-отбойнику / ящику — отскок;
-     удар вбок по чему-то твёрдому — отдача назад; гайки и осколки ключом отбиваются. */
-  melee(p,sd){
-    sd=sd||'side';
-    const w=this.game.world,g=this.game,C=CFG.player,f=p.face,R=w.room;
-    const hb=sd==='up'?{x:p.cx-0.85,y:p.y-1.55,w:1.7,h:1.75}
-      :sd==='down'?{x:p.cx-0.8,y:p.bottom-0.25,w:1.6,h:1.8}
-      :{x:p.cx+(f>0?0.1:-1.7),y:p.y+0.1,w:1.7,h:p.h-0.15};
-    const kx=sd==='side'?f*7:0,ky=sd==='up'?-6:sd==='down'?4:-3.4;
-    let hitAny=false,pogo=false;
-    for(const e of w.enemies){
-      if(e.dead)continue;
-      if(aabb(hb,e)){e.hurt(C.attackDmg,kx,ky);hitAny=true;this.gainWeld(C.weldHit);if(sd==='down')pogo=true;
-        if(e.type==='censor'&&sd==='side'&&f*e.face<0&&Math.random()<0.35)e.popTank();}
+  constructor(game){this.game=game;this.holder=null;this.nextGrant=0;}
+  reset(){this.holder=null;this.nextGrant=0;}
+  /* --- очередь атак --- */
+  requestToken(e){
+    const W=this.game.world;
+    if(e.isBoss||e===this.holder)return true;
+    const h=this.holder;
+    if(h&&!h.dead&&h.token&&W.enemies.indexOf(h)>=0)return false;
+    if(W.time<this.nextGrant)return false;
+    this.holder=e;e.token=true;return true;
+  }
+  releaseToken(e){if(this.holder===e){this.holder=null;this.nextGrant=this.game.world.time+CFG.combat.tokenGap;}e.token=false;}
+  /* рывок сквозь механизм: толчок на входе, след на выходе */
+  update(dt){
+    const W=this.game.world,p=W.player;if(!p)return;
+    const b=W.boss,list=b&&b.isMech&&b.activated&&!b.dead?W.enemies.concat([b]):W.enemies;
+    for(const e of list){
+      if(!e.isMech||e.dead){e._dashHot=false;continue;}
+      const ov=p.dashT>0&&!p.dead&&aabb(p.rect(),e.rect());
+      if(ov&&e._dashIn!==p.dashId){e._dashIn=p.dashId;e._dashHot=true;e.dashShove(p);}
+      else if(e._dashHot&&!ov){e._dashHot=false;e.dashMark(p);}
     }
+  }
+  /* удар ключом. sd — 'side' | 'up' | 'down'; o.heavy — тяжёлый (удержание), o.bonus — после идеального уклонения */
+  melee(p,sd,o){
+    sd=sd||'side';o=o||{};
+    const w=this.game.world,g=this.game,C=CFG.player,f=p.face,R=w.room,heavy=!!o.heavy;
+    const ext=heavy?0.4:0;
+    const hb=sd==='up'?{x:p.cx-0.85-ext*0.5,y:p.y-1.55-ext,w:1.7+ext,h:1.75+ext}
+      :sd==='down'?{x:p.cx-0.8-ext*0.5,y:p.bottom-0.25,w:1.6+ext,h:1.8+ext}
+      :{x:p.cx+(f>0?0.1:-1.7-ext),y:p.y+0.1-ext*0.3,w:1.7+ext,h:p.h-0.15+ext*0.6};
+    const sx=sd==='side'?p.cx+f*(1.0+ext*0.5):p.cx,sy=sd==='up'?p.y-0.7:sd==='down'?p.bottom+0.7:p.y+p.h*0.42;
+    const kx=sd==='side'?f*7:0,ky=sd==='up'?-6:sd==='down'?4:-3.4;
+    const hit={kind:heavy?'heavy':'melee',sd,dmg:C.attackDmg,hb,sx,sy,fromX:p.cx,dir:sd==='side'?f:0,
+      ky:sd==='up'?-5:sd==='down'?3.5:-1.2,heavy,bonus:!!o.bonus};
+    let hitAny=false,pogo=false,deflect=false,mechHit=false,plain=false;
+    const strike=e=>{
+      if(e.isMech){const r=e.takeHit(hit);if(!r)return;
+        if(r==='deflect'){deflect=true;}else{hitAny=true;mechHit=true;this.gainWeld(heavy?CFG.combat.weldHeavy:C.weldHit);}
+        if(sd==='down')pogo=true;return;}
+      e.hurt(C.attackDmg*(heavy?2.2:1)*(o.bonus?1.5:1),kx*(heavy?1.6:1),ky);hitAny=true;plain=true;this.gainWeld(C.weldHit);
+      if(sd==='down')pogo=true;
+      if(e.type==='censor'&&sd==='side'&&f*e.face<0&&Math.random()<0.35)e.popTank();};
+    for(const e of w.enemies){if(e.dead||!aabb(hb,e))continue;strike(e);}
     const b=w.boss;
     if(b&&!b.dead&&b.activated&&aabb(hb,b)){
-      if(!(b.onMelee&&b.onMelee(p)))b.hurt(C.attackDmg,kx*0.4,-1);hitAny=true;this.gainWeld(C.weldHit);if(sd==='down')pogo=true;}
+      if(b.isMech)strike(b);
+      else{if(!(b.onMelee&&b.onMelee(p)))b.hurt(C.attackDmg*(heavy?2:1),kx*0.4,-1);hitAny=true;plain=true;this.gainWeld(C.weldHit);if(sd==='down')pogo=true;}}
     for(const pb of w.pushables){
       if(pb.pushed&&pb.kind!=='counterweight')continue;
       if(!aabb(hb,pb.rect()))continue;
       if(sd==='down')pogo=true;
-      if(pb.strike(sd==='side'?f:(sd==='down'?2:-2))){hitAny=true;continue;}
-      hitAny=true;g.audio.hitMetal();
+      if(pb.strike(sd==='side'?f:(sd==='down'?2:-2))){hitAny=true;plain=true;continue;}
+      hitAny=true;plain=true;g.audio.hitMetal();
       g.particles.burst(clamp(p.cx,pb.x,pb.x+pb.w),clamp(p.cy,pb.y,pb.y+pb.h),10,{kind:'spark',col:'#ffd27a',spd:5,life:0.35,size:0.05,add:true});
     }
+    /* обломки: ключ сдвигает их и отскакивает от них */
+    for(const d of w.debris){if(!aabb(hb,d))continue;d.launch(sd==='side'?f*(heavy?14:6):0,sd==='up'?-9:sd==='down'?4:-3);
+      if(sd==='down')pogo=true;g.audio.clatter(d.mat,0.8);hitAny=true;plain=true;}
     if(sd==='down'){
       /* клапаны-отбойники и шипы: от них отскакивают, их не ломают */
       for(const q of (R.pogos||[])){const nx=clamp(q.x,hb.x,hb.x+hb.w),ny=clamp(q.y,hb.y,hb.y+hb.h);
@@ -39,26 +76,29 @@ class Combat{
     /* гайки и осколки отбиваются ключом (не волны, не орбы Архивариуса — те только импульсом) */
     for(const pr of w.projectiles){
       if(pr.back||pr.dead||pr.kind==='wave'||pr.kind==='orb')continue;
-      if(aabb(hb,{x:pr.x-pr.r,y:pr.y-pr.r,w:pr.r*2,h:pr.r*2})){pr.life=0;pr.dead=true;hitAny=true;g.audio.hitMetal();
+      if(aabb(hb,{x:pr.x-pr.r,y:pr.y-pr.r,w:pr.r*2,h:pr.r*2})){pr.life=0;pr.dead=true;hitAny=true;plain=true;g.audio.hitMetal();
         g.particles.burst(pr.x,pr.y,12,{kind:'spark',col:'#ffe6a3',spd:6,life:0.4,size:0.05,add:true,g:12});}
     }
     if(pogo)p.pogo();
-    else if(hitAny&&sd==='side')p.vx-=f*(p.onGround?C.recoilG:C.recoilA);
-    if(hitAny){g.audio.hit();g.hitstop(CFG.hsMelee);g.camera.addShake(0.3);
-      g.camera.impulse(sd==='side'?f*0.16:0,sd==='up'?-0.12:sd==='down'?0.12:0);}
+    else if((hitAny||deflect)&&sd==='side')p.vx-=f*(heavy?C.heavyRecoil:(p.onGround?C.recoilG:C.recoilA))*(deflect&&!hitAny?1.6:1);
+    if(plain&&!mechHit){g.audio.hit();g.hitstop(heavy?0.09:CFG.hsMelee);g.camera.addShake(heavy?0.5:0.3);}
+    if(hitAny||deflect)g.camera.impulse(sd==='side'?f*(heavy?0.3:0.16):0,sd==='up'?-0.12:sd==='down'?0.12:0);
+    return hitAny;
   }
   gainWeld(n){const gs=this.game.gs;gs.weld=Math.min(gs.weldMax(),(gs.weld||0)+n);}
+  /* импульс резака: позиция, траектория, срыв — без урона */
   pulse(p){
     const w=this.game.world,g=this.game,C=CFG.player,dir=p.face;
     const hb={x:p.cx+(dir>0?0:-C.pulseRange),y:p.cy-C.pulseRange*0.55,w:C.pulseRange,h:C.pulseRange*1.1};
     let hitAny=false;
     for(const e of w.enemies){
-      if(e.dead)continue;
-      if(aabb(hb,e)){e.hurt(C.pulseDmg,dir*13,-5);hitAny=true;this.gainWeld(C.weldPulse);
+      if(e.dead||!aabb(hb,e))continue;hitAny=true;
+      if(e.isMech)e.applyPulse(p,dir);
+      else{/* немеханизмы: только толчок */const m=e.mass||1;e.vx+=dir*12/m;e.vy-=4/m;e.alert=6;
         if(e.type==='censor'&&!e.tankBroken)e.popTank();}
     }
-    if(w.boss&&!w.boss.dead&&w.boss.activated&&aabb(hb,w.boss)){
-      if(!(w.boss.onPulse&&w.boss.onPulse(p)))w.boss.hurt(C.pulseDmg*0.6,dir*2,-1);hitAny=true;}
+    const b=w.boss;
+    if(b&&!b.dead&&b.activated&&aabb(hb,b)){hitAny=true;if(b.isMech)b.applyPulse(p,dir);else if(b.onPulse)b.onPulse(p);}
     for(const pb of w.pushables){
       if(!aabb(hb,pb.rect()))continue;
       if(pb.kind==='counterweight'&&!pb.pushed){
@@ -92,19 +132,22 @@ class Combat{
         }
       }
     }
+    /* обломки летят — импульс управляет всем, у чего есть масса */
+    for(const d of w.debris){if(!aabb(hb,d))continue;d.launch(dir*19,-6);hitAny=true;}
+    /* снаряды: отражаются назад; орбы Архивариуса — в ядро */
     const ox=p.cx+dir*0.6,oy=p.cy;
     for(const pr of w.projectiles){
       if(pr.back)continue;
-      const inBox=aabb(hb,{x:pr.x-pr.r,y:pr.y-pr.r,w:pr.r*2,h:pr.r*2});
-      if(pr.reflect&&(inBox||Math.hypot(pr.x-ox,pr.y-oy)<C.pulseRing)&&w.boss&&!w.boss.dead){
-        /* отражение: осколок летит обратно в ядро Архивариуса */
+      const inBox=aabb(hb,{x:pr.x-pr.r,y:pr.y-pr.r,w:pr.r*2,h:pr.r*2}),inRing=Math.hypot(pr.x-ox,pr.y-oy)<C.pulseRing;
+      if(pr.reflect&&(inBox||inRing)&&w.boss&&!w.boss.dead){
         const bx=w.boss.coreX,by=w.boss.coreY,d=Math.hypot(bx-pr.x,by-pr.y)||1;
         pr.vx=(bx-pr.x)/d*17;pr.vy=(by-pr.y)/d*17;pr.back=true;pr.life=3;hitAny=true;
         g.audio.hitMetal();g.tutorial.notify('reflect');
         g.particles.burst(pr.x,pr.y,16,{kind:'spark',col:'#cfe6ee',spd:7,life:0.45,size:0.06,add:true});
         continue;}
-      if(inBox){pr.life=0;pr.dead=true;hitAny=true;
-        g.particles.burst(pr.x,pr.y,10,{kind:'spark',col:'#ffd27a',spd:5,life:0.4,size:0.05,add:true});}
+      if(inBox&&pr.kind!=='wave'){const sp=Math.max(12,Math.hypot(pr.vx,pr.vy)*1.2);
+        pr.vx=dir*sp;pr.vy=-Math.abs(pr.vy)*0.2-1;pr.back=true;pr.mine=true;pr.life=2.2;hitAny=true;
+        g.audio.deflect();g.particles.burst(pr.x,pr.y,10,{kind:'spark',col:'#ffd27a',spd:5,life:0.4,size:0.05,add:true});}
     }
     if(hitAny){g.hitstop(CFG.hsPulse);g.camera.addShake(0.4);}
     g.particles.spawn({kind:'ring',x:p.cx+dir*0.6,y:p.cy,ringR:3.6,life:0.34,size:0.1,col:'#dff0f6',add:true,a:0.8});
@@ -113,6 +156,7 @@ class Combat{
       y:p.cy+(Math.random()-0.5)*1.6,vx:dir*(5+Math.random()*7),vy:(Math.random()-0.5)*3,
       life:0.45,size:0.24,grow:0.7,col:'#cfe6ee',drag:3});
     g.renderer.glowAdd(p.cx+dir*1.4,p.cy,1.6,'#cfe6ee',0.6);
+    g.renderer.wave(p.cx+dir*0.6,p.cy,3.8,0.38);
   }
   damagePlayer(dmg,srcX){
     const p=this.game.world.player;if(!p)return false;

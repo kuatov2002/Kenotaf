@@ -10,7 +10,9 @@ class World{
     this.token=0;this.timers=[];
     /* убитые с последнего отдыха: обычные враги возвращаются, когда курьер отдохнул у фонаря или погиб
        (как в HK); стражи с clearFlag и арены — навсегда */
-    this.slain={};}
+    this.slain={};
+    /* обломки механизмов и лом — живут до смены комнаты */
+    this.debris=[];this.scrap=new ScrapSystem(this);}
   /* отложенные события в ИГРОВОМ времени: пауза/хитстоп их честно задерживают,
      смена комнаты (token) — отменяет */
   later(ms,fn){this.timers.push({at:this.time+ms/1000,fn:fn,tok:this.token});}
@@ -36,7 +38,7 @@ class World{
     this.room=new Room(def,gs);this.room.id=id;
     gs.room=id;gs.visited[id]=true;
     this.time=0;this.projectiles.length=0;this.enemies.length=0;
-    this.pushables.length=0;this.interactables.length=0;
+    this.pushables.length=0;this.interactables.length=0;this.debris.length=0;this.scrap.clear();g.combat.reset();
     this.boss=null;this.bossDoorClosed=false;this.waveIdx=-1;this.waveT=0;this.doorCd=0.35;
     this.anims={};
     this.wheelSeq=false;this.wheelT=0;this.wheelDone2=false;
@@ -105,6 +107,10 @@ class World{
     g.particles.burst(p.cx,p.cy,18,{kind:'dust',col:'#ffd79a',spd:1.4,life:1.2,size:0.05,add:true,drag:1.6,g:-1});
     g.hud.say('КУРТКА ПОДКАЧАНА','ОТДЫХ · '+this.room.name);
   }
+  addDebris(o){const d=new Debris(this,o);this.debris.push(d);
+    /* не больше 28 обломков: старые мелкие исчезают первыми, корпуса держатся */
+    if(this.debris.length>28){const i=this.debris.findIndex(q=>!q.corpse);this.debris.splice(i>=0?i:0,1);}
+    return d;}
   respawn(){const g=this.game;g.gs.hp=g.gs.maxHp();this.slain={};
     this.load(g.gs.cp.room,g.gs.cp.x,g.gs.cp.y);g.hud.syncHp();}
   spawnWave(i){
@@ -141,6 +147,9 @@ class World{
     this.updatePollen(dt);
     for(let i=0;i<this.enemies.length;i++)this.enemies[i].update(dt);
     this.updateBoss(dt);
+    for(let i=0;i<this.debris.length;i++)this.debris[i].update(dt);
+    this.scrap.update(dt);
+    g.combat.update(dt);
     /* арена Архивариуса: камера отъезжает, чтобы видеть и пол с соплами, и ядро под сводом */
     {const b=this.boss,cz=(b&&b.activated&&!b.dead&&b.camZoom)||1;if(!this.game.cinematic.active)this.game.camera.tzoom=cz;}
     for(let i=0;i<this.pushables.length;i++)this.pushables[i].update(dt);
@@ -226,6 +235,8 @@ class World{
         else g.hud.say(R.id==='z1_boss'?'ВОРОТА ЗАХЛОПНУЛИСЬ.':'ГЕРМОДВЕРЬ ЗАКРЫТА.','');
         if(R.bossDoor)g.particles.burst(R.bossDoor.x+0.7,R.bossDoor.y+1,22,{kind:'dust',col:'#7a6c5c',spd:4,life:1,size:0.14,g:12});
       }
+      /* механизм-босс до боя — спящий: стоит, дышит, линза тлеет */
+      if(!b.activated&&b.isMech)b.update(dt);
       return;
     }
     b.update(dt);
@@ -262,7 +273,18 @@ class World{
       if(pr.kind==='wave'){pr.vy=0;
         if(Math.random()<0.5)g.particles.spawn({kind:'dust',x:pr.x,y:pr.y,vx:0,vy:-2,life:0.4,size:0.14,col:'#8a7a6a',g:4});}
       let hit=false;
-      if(pr.back){
+      if(pr.mine){
+        /* отражённая импульсом гайка / осколок: бьёт механизмы (урон наносит железо) */
+        const b=this.boss,list=b&&b.activated&&!b.dead?this.enemies.concat([b]):this.enemies;
+        for(const e of list){if(e.dead||!aabb({x:pr.x-pr.r,y:pr.y-pr.r,w:pr.r*2,h:pr.r*2},e.rect()))continue;
+          const dir=Math.sign(pr.vx)||1;
+          if(e.isMech)e.takeHit({kind:'reflect',dmg:22,hb:{x:pr.x-pr.r,y:pr.y-pr.r,w:pr.r*2,h:pr.r*2},sx:pr.x,sy:pr.y,fromX:pr.x-dir,dir,ky:-1});
+          else if(!e.isBoss)e.hurt(22,dir*4,-2);
+          hit=true;break;}
+        if(!hit)for(let k=0;k<R.solids.length;k++){const s=R.solids[k];if(s.hidden||s.ow)continue;
+          if(pr.x>s.x-pr.r&&pr.x<s.x+s.w+pr.r&&pr.y>s.y-pr.r&&pr.y<s.y+s.h+pr.r){hit=true;break;}}
+        if(pr.kind==='nut')pr.vy+=0;
+      }else if(pr.back){
         /* отражённый осколок: летит сквозь всё, бьёт только ядро */
         const b=this.boss;
         if(b&&!b.dead&&Math.hypot(pr.x-b.coreX,pr.y-b.coreY)<1.6){
@@ -318,7 +340,8 @@ class World{
         g.particles.spawn({kind:'shock',x:wt.x,y:21.8,ringR:7,life:0.5,size:0.1,col:'#ffcf7a',add:true,a:0.6});
         const hitBoss=this.boss&&!this.boss.dead&&Math.abs(this.boss.cx-wt.x)<3.8;
         if(!hitBoss&&this.boss&&!this.boss.dead)wt.rehang=6;
-        if(hitBoss){
+        if(hitBoss&&this.boss.weightHit){this.boss.weightHit(wt);}
+        else if(hitBoss){
           this.boss.hurt(20.5,0,0,true);this.boss.weightHits=(this.boss.weightHits||0)+1;
           g.particles.burst(this.boss.cx,this.boss.cy,40,{kind:'spark',col:'#ffb45a',spd:12,life:0.9,size:0.08,add:true,g:20});
           if(this.boss.hp<=0)this.boss.die();

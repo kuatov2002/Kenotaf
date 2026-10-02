@@ -17,6 +17,10 @@ class Player extends Body{
     this.wallT=0;this.wallDir=0;this.wallLock=0;this.landT=0;this.jumpStretch=0;this.stepT=0;this.grabbed=0;
     this.scarf=[];for(let i=0;i<6;i++)this.scarf.push({x:x,y:y,vx:0,vy:0});
     this.healT=0;this.slashT=0;this.slashDir='side';this.slashFace=1;this.pogoT=0;this.lookT=0;this.lookV=0;
+    /* удар фазами: замах → удар → восстановление; тяжёлый — удержание после взмаха */
+    this.atkPhase=null;this.atkPT=0;this.atkDir='side';this.atkHeavy=false;this.chargeT=0;this.charged=false;
+    /* уклонение: возраст рывка/подката, флаг идеального уклонения, бонус к следующему удару */
+    this.dashId=0;this.evAge=9;this.evIF=0;this.pfDone=false;this.empowerT=0;this.slideAge=9;this.hitHeavyT=0;
   }
   maxEnergy(){return this.world.game.gs.flags.energy_cap?150:CFG.player.energy;}
   /* рывков в воздухе: клапан MK-II (заборник №3) даёт второй */
@@ -69,6 +73,8 @@ class Player extends Body{
     if(this.slashT>0)this.slashT-=dt;
     if(this.pogoT>0)this.pogoT-=dt;
     if(this.restT>0)this.restT-=dt;
+    this.evAge+=dt;if(this.evIF>0)this.evIF-=dt;if(this.empowerT>0)this.empowerT-=dt;
+    if(this.hitHeavyT>0)this.hitHeavyT-=dt;
     const canAct=this.hurtT<=0&&g.state==='play'&&!(this.restT>0);
 
     /* 1. INPUT -> INTENT */
@@ -92,7 +98,7 @@ class Player extends Body{
       if(this.setH(C.crouchH)){
         this.crouch=true;
         if(Math.abs(this.vx)>C.slideMin){
-          this.slideT=C.slideTime;
+          this.slideT=C.slideTime;this.evAge=0;this.evIF=C.evadeIF;this.pfDone=false;
           this.vx=(this.vx>0?1:-1)*C.slideSpeed;
           g.audio.slide();this.noiseLevel=0;
           g.particles.burst(this.cx,this.bottom,14,{kind:'dust',col:'#6b5f52',spd:3.2,life:0.55,size:0.09,g:6,
@@ -128,7 +134,7 @@ class Player extends Body{
         const f=this.onGround?C.friction:C.airDrag;
         if(Math.abs(this.vx)<=f*dt)this.vx=0;else this.vx-=(this.vx>0?1:-1)*f*dt;
       }
-      const cap=sliding?C.slideSpeed:(this.crouch?C.crouchMax:C.maxRun);
+      const cap=sliding?C.slideSpeed:(this.crouch?C.crouchMax:C.maxRun*(this.chargeT>0.12?C.heavyMove:1));
       if(Math.abs(this.vx)>cap)this.vx=damp(this.vx,(this.vx>0?1:-1)*cap,C.overCap,dt);
     }else if(sliding){
       this.vx=damp(this.vx,0,1.6,dt);
@@ -138,7 +144,9 @@ class Player extends Body{
     /* 4. DASH */
     if(dashReq&&gs.has('dash')&&this.dashCd<=0&&(this.onGround||this.airDash>0)){
       if(!this.onGround)this.airDash--;
-      this.dashT=C.dashTime;this.dashCd=0.1;
+      this.dashT=C.dashTime;this.dashCd=0.1;this.dashId++;this.evAge=0;this.evIF=0;this.pfDone=false;
+      this.chargeT=0;this.charged=false;if(this.atkPhase==='wind')this.atkPhase=null;
+      this.dashX0=this.cx;this.dashY0=this.cy;
       const d=mv!==0?mv:this.face;this.face=d>0?1:-1;
       this.vx=d*C.dashSpeed;this.vy=0;this.slideT=0;
       g.audio.dash();g.camera.addShake(0.3);g.camera.impulse(-d*0.4,0);g.hitstop(CFG.hsDash);
@@ -241,13 +249,13 @@ class Player extends Body{
       }
     }
 
-    /* combat: направление удара — ↑ вверх, ↓ в воздухе вниз (отскок от того, что ударил), иначе вбок */
-    if(atkReq&&this.atkCd<=0&&!sliding&&!healing){
+    /* combat: направление удара — ↑ вверх, ↓ в воздухе вниз (отскок от того, что ударил), иначе вбок.
+       Отклик в том же кадре — поза замаха; удар — через atkWind. Удержание после взмаха — тяжёлый удар */
+    if(atkReq&&this.atkCd<=0&&!sliding&&!healing&&this.atkPhase!=='wind'){
       const dir=inp.up?'up':(!this.onGround&&holdDn?'down':'side');
-      this.atkT=C.attackTime;this.atkCd=C.attackCd;this.slashT=C.slashT;this.slashDir=dir;this.slashFace=this.face;
-      g.audio.slash(dir);this.noiseLevel=Math.max(this.noiseLevel,0.5);
-      g.combat.melee(this,dir);
+      this.startSwing(dir,false);
     }
+    this.updateSwing(dt,inp,canAct&&!sliding&&!healing);
     if(pulseReq&&gs.has('pulse')&&this.pulseCd<=0&&!healing){
       if(this.energy>=C.pulseCost){
         this.energy-=C.pulseCost;this.energyDelay=C.energyDelay;
@@ -291,6 +299,53 @@ class Player extends Body{
     else if(!this.onGround)this.state=(this.vy*this.gravDir<0)?'jump':'fall';
     else if(Math.abs(this.vx)>0.6)this.state='run';
     else this.state='idle';
+  }
+  startSwing(dir,heavy){
+    const C=CFG.player,g=this.world.game;
+    this.atkPhase='wind';this.atkPT=heavy?C.heavyWind:C.atkWind;this.atkDir=dir;this.atkHeavy=heavy;
+    this.atkT=this.atkPT+0.2;this.atkCd=heavy?C.heavyWind+0.2:C.attackCd;this.slashFace=this.face;this.slashDir=dir;
+    this.noiseLevel=Math.max(this.noiseLevel,0.5);
+    if(heavy)g.audio.heavy();else g.audio.slash(dir);
+  }
+  updateSwing(dt,inp,ok){
+    const C=CFG.player,g=this.world.game;
+    if(this.atkPhase==='wind'){
+      this.atkPT-=dt;
+      if(this.atkPT<=0){
+        const bonus=this.empowerT>0;
+        this.slashT=C.slashT*(this.atkHeavy?1.5:1);this.slashDir=this.atkDir;this.slashFace=this.face;this.slashHeavy=this.atkHeavy;
+        const hit=g.combat.melee(this,this.atkDir,{heavy:this.atkHeavy,bonus});
+        if(bonus&&hit)this.empowerT=0;
+        if(this.atkHeavy){this.hitHeavyT=0.2;g.camera.addShake(0.25);
+          if(this.onGround)g.particles.burst(this.cx+this.face*0.6,this.bottom,10,{kind:'dust',col:'#7a6c5c',spd:3.5,life:0.45,size:0.1,g:8,ang:-PI/2,spread:PI});}
+        this.atkPhase='recover';this.atkPT=this.atkHeavy?C.heavyRecover:C.atkRecover;
+      }
+    }else if(this.atkPhase==='recover'){this.atkPT-=dt;if(this.atkPT<=0)this.atkPhase=null;}
+    /* тяжёлый удар: держишь атаку после взмаха — давление в ранце растёт; отпустил заряженным — удар */
+    const held=inp.attackHeld&&ok&&this.atkDir==='side'&&this.atkPhase!=='wind';
+    if(held&&(this.atkPhase==='recover'||this.atkPhase===null)&&this.slashFace===this.face){
+      const was=this.chargeT;this.chargeT+=dt;
+      if(was<0.12&&this.chargeT>=0.12)g.audio.charge();
+      if(!this.charged&&this.chargeT>=C.heavyHold){this.charged=true;g.audio.chargeFull();
+        g.particles.spawn({kind:'ring',x:this.cx,y:this.cy,ringR:1.6,life:0.3,size:0.08,col:'#ffcf7a',add:true,a:0.8});}
+      if(this.chargeT>0.12&&Math.random()<dt*30)g.particles.spawn({kind:'steam',x:this.cx-this.face*0.45,y:this.bottom-this.h*0.7,
+        vx:-this.face*1.5,vy:-1.5,life:0.4,size:0.18,grow:0.5,col:'#dff0f6',drag:2,a:0.6});
+    }else if(this.chargeT>0){
+      if(this.charged&&ok&&!inp.attackHeld)this.startSwing('side',true);
+      this.chargeT=0;this.charged=false;
+    }
+  }
+  /* идеальное уклонение: рывок или подкат за мгновение до удара — вспышка, замедление,
+     мгновенное восстановление и бонус к следующему удару. Без текста */
+  perfectEvade(srcX){
+    const g=this.world.game,C=CFG.combat;
+    this.pfDone=true;this.empowerT=C.empowerT;this.dashCd=0;this.airDash=this.airDashes();this.pulseCd=0;
+    this.energy=Math.min(this.maxEnergy(),this.energy+20);
+    g.slowmo(0.14,0.22);g.flash(0.14,'#dff4ff');g.audio.evade();g.camera.addShake(0.2);
+    g.particles.spawn({kind:'ring',x:this.cx,y:this.cy,ringR:2.4,life:0.35,size:0.08,col:'#dff4ff',add:true,a:0.9});
+    for(let i=0;i<10;i++)g.particles.spawn({kind:'spark',x:this.cx+(Math.random()-0.5)*0.6,y:this.y+Math.random()*this.h,
+      vx:(this.cx<srcX?-1:1)*(2+Math.random()*4),vy:(Math.random()-0.5)*3,life:0.35,size:0.045,col:'#dff4ff',add:true});
+    this.ghosts=[{x:this.cx,y:this.bottom,face:this.face,a:0.7}];
   }
   /* сварка шва: стоя, не в рывке, есть порция РЕМОНТА и есть что латать. Урон прерывает (порция не тратится) */
   updateHeal(dt,inp,ok){
@@ -445,11 +500,16 @@ class Player extends Body{
   }
   hurtBy(dmg,srcX){
     const g=this.world.game;
-    /* рывок = уклонение: на время рывка курьер неуязвим (сквозь пар, таран, осколки) */
-    if(this.invuln>0||this.dead||this.dashT>0||g.debugOpts.invuln||g.state!=='play')return false;
+    /* рывок = уклонение: на время рывка (и первые мгновения подката) курьер неуязвим.
+       Если удар пришёлся на самое начало уклонения — идеальное уклонение */
+    if(!this.dead&&g.state==='play'&&(this.dashT>0||this.evIF>0)){
+      if(!this.pfDone&&this.evAge<=CFG.combat.perfectWin)this.perfectEvade(srcX);
+      return false;}
+    if(this.invuln>0||this.dead||g.debugOpts.invuln||g.state!=='play')return false;
     g.gs.hp--;this.invuln=CFG.player.invuln;this.hurtT=0.34;this.healT=0;
-    this.vx=(this.cx<srcX?-1:1)*CFG.player.knock;
-    this.vy=this.gravDir>0?-6:6;
+    this.atkPhase=null;this.chargeT=0;this.charged=false;this.hurtDir=this.cx<srcX?-1:1;
+    this.vx=this.hurtDir*CFG.player.knock*1.15;
+    this.vy=this.gravDir>0?-7.5:7.5;
     if(this.onCeil)this.detach(true);
     this.dashT=0;this.slideT=0;
     g.audio.hurt();g.camera.addShake(0.75);g.hitstop(0.09);g.flash(0.32,'#8a1a10');

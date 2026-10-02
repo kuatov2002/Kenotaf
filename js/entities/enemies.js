@@ -63,95 +63,6 @@ class Enemy extends Body{
   /* угроза читается контуром: в покое — светлый, на замахе — красный */
   threat(){return this.wind>0||this.swing>0||this.state==='windup'||this.state==='grab'||this.state==='slam';}
 }
-class Repairer extends Enemy{
-  constructor(world,def,x,y){
-    super(world,Object.assign({w:0.95,h:1.55,hp:68,dmg:1,aggro:11,blood:'#6b4a3a'},def),x,y);
-    this.torch=def.type!=='wrench';this.leg=0;this.throwCd=2+rng(x*7)()*2;}
-  ai(dt){
-    const p=this.world.player,g=this.world.game;
-    if(this.alert>0)this.alert-=dt;
-    const d=this.sensePlayer();
-    if(d>0){this.alert=4;this.investigate={x:p.cx,y:p.cy,t:4};}
-    else if(this.investigate){this.investigate.t-=dt;if(this.investigate.t<=0)this.investigate=null;}
-    if(this.alert>0||this.investigate){
-      const tx=this.investigate?this.investigate.x:p.cx;
-      this.face=tx>this.cx?1:-1;const dd=Math.abs(tx-this.cx);
-      if(this.torch){
-        if(this.wind>0){this.wind-=dt;this.vx=damp(this.vx,0,10,dt);
-          if(this.wind<=0){this.swing=0.28;
-            g.particles.burst(this.cx+this.face*1.1,this.cy-0.2,14,{kind:'spark',col:'#9fe0ff',spd:6,life:0.35,size:0.05,add:true,g:8});
-            g.audio.steam(0.6);
-            const hb={x:this.cx+(this.face>0?0.2:-1.7),y:this.y-0.1,w:1.7,h:this.h+0.2};
-            if(aabb(hb,p.rect()))this.damagePlayer();}}
-        else if(this.swing>0){this.swing-=dt;this.vx=damp(this.vx,0,8,dt);}
-        else{this.vx=damp(this.vx,this.face*(dd<1.7?0:3.1),7,dt);
-          if(dd<1.9&&this.onGround)this.wind=0.55;}
-      }else{
-        this.throwCd-=dt;
-        if(this.wind>0){this.wind-=dt;this.vx=damp(this.vx,0,9,dt);
-          if(this.wind<=0&&dd<14){
-            const dx=p.cx-this.cx,dy=p.cy-this.cy,sp=9.5,tt=Math.max(0.25,Math.abs(dx)/sp);
-            this.world.projectiles.push({x:this.cx+this.face*0.6,y:this.cy-0.3,vx:this.face*sp,
-              vy:dy/tt-0.5*40*tt,r:0.16,dmg:1,life:3,kind:'nut',rot:0});
-            g.audio.melee();}}
-        else{this.vx=damp(this.vx,this.face*(dd<3.0?0:2.4),6,dt);
-          if(dd<11&&dd>3&&this.throwCd<=0&&this.onGround){this.throwCd=2.6+rng(this.t*13)()*1.2;this.wind=0.5;}}
-      }
-    }else{
-      if(this.cx<this.patrol[0]-0.4)this.face=1;
-      if(this.cx>this.patrol[1]+0.4)this.face=-1;
-      this.vx=damp(this.vx,this.face*1.7,7,dt);
-    }
-    this.leg+=Math.abs(this.vx)*dt*2.4;
-  }
-  draw(c,t){
-    const w=this.w,h=this.h;
-    const wind=this.wind>0?clamp(1-this.wind/0.55,0,1):0;
-    const sw=this.swing>0?clamp(1-this.swing/0.28,0,1):0;
-    c.strokeStyle='#3d3229';c.lineWidth=0.13;c.lineCap='round';
-    for(let i=0;i<2;i++){const ph=this.leg+i*PI,kx=Math.sin(ph)*0.22,ky=Math.abs(Math.cos(ph))*0.1;
-      c.beginPath();c.moveTo((i?0.14:-0.14),-h*0.42);
-      c.lineTo((i?0.14:-0.14)+kx,-h*0.2+ky);c.lineTo((i?0.14:-0.14)+kx*1.5,0);c.stroke();}
-    const g=c.createLinearGradient(-w/2,-h,w/2,0);
-    g.addColorStop(0,'#7a5741');g.addColorStop(.4,'#5e4433');g.addColorStop(1,'#3a2b21');
-    c.fillStyle=g;rr(c,-w*0.42,-h*0.94,w*0.84,h*0.56,0.12);c.fill();
-    c.save();rr(c,-w*0.42,-h*0.94,w*0.84,h*0.56,0.12);c.clip();
-    c.fillStyle=PAT(c,'rust');c.globalAlpha=0.35;c.fillRect(-w,-h,w*2,h*2);c.restore();
-    c.fillStyle='rgba(0,0,0,.35)';c.fillRect(-w*0.42,-h*0.5,w*0.84,0.06);
-    for(let i=0;i<3;i++)Kit.bolt(c,-w*0.3+i*w*0.3,-h*0.86,0.045);
-    c.fillStyle='#4a3a2e';rr(c,w*0.1,-h*1.0,w*0.42,h*0.3,0.08);c.fill();
-    c.save();c.translate(0,-h*1.02);
-    c.fillStyle='#4d4038';rr(c,-0.2,-0.3,0.42,0.34,0.07);c.fill();
-    const eye=this.alert>0?1:0.45+0.2*Math.sin(t*3);
-    c.fillStyle=rgba('#ff3b22',eye);c.beginPath();c.arc(0.08,-0.13,0.075,0,TAU);c.fill();
-    c.save();c.globalCompositeOperation='lighter';
-    c.fillStyle=rgba('#ff5a2a',eye*0.3);c.beginPath();c.arc(0.08,-0.13,0.22,0,TAU);c.fill();c.restore();
-    c.strokeStyle='#2b241e';c.lineWidth=0.04;c.beginPath();c.moveTo(-0.2,-0.3);c.lineTo(-0.34,-0.5);c.stroke();
-    c.restore();
-    c.save();
-    c.translate(w*0.24,-h*0.8);c.rotate(this.torch?(-0.5+wind*1.2-sw*1.6):(-0.3+wind*1.0-sw*1.2));
-    c.strokeStyle='#54463a';c.lineWidth=0.12;c.beginPath();c.moveTo(0,0);c.lineTo(0.52,0.1);c.stroke();
-    if(this.torch){
-      c.fillStyle='#3d3833';rr(c,0.5,-0.1,0.42,0.24,0.05);c.fill();
-      c.fillStyle='#8a6d2a';c.fillRect(0.86,-0.05,0.16,0.14);
-      if(wind>0.3||sw>0){
-        const fl=Math.max(wind,sw);
-        c.save();c.globalCompositeOperation='lighter';
-        const fg=c.createRadialGradient(1.1,0.02,0,1.1,0.02,0.7*fl+0.2);
-        fg.addColorStop(0,'rgba(200,240,255,.95)');fg.addColorStop(.4,'rgba(120,190,255,.5)');fg.addColorStop(1,'rgba(80,140,255,0)');
-        c.fillStyle=fg;c.beginPath();c.arc(1.1+0.2*fl,0.02,0.7*fl+0.2,0,TAU);c.fill();c.restore();
-      }else{c.fillStyle=rgba('#ff3b22',0.35+0.25*Math.sin(t*8));c.beginPath();c.arc(0.98,0.02,0.1,0,TAU);c.fill();}
-    }else{
-      c.fillStyle='#5c646b';c.beginPath();c.moveTo(0.5,-0.14);c.lineTo(0.86,-0.06);c.lineTo(0.86,0.1);c.lineTo(0.5,0.16);c.closePath();c.fill();
-      c.fillStyle='#3a4046';c.beginPath();c.arc(0.9,0.02,0.13,0,TAU);c.fill();
-      if(wind>0){c.fillStyle=rgba('#ff3b22',wind*0.6);c.beginPath();c.arc(0.9,0.02,0.2,0,TAU);c.fill();}
-    }
-    c.restore();
-    c.strokeStyle='#4a3d33';c.lineWidth=0.1;
-    c.beginPath();c.moveTo(-w*0.24,-h*0.78);c.lineTo(-w*0.34,-h*0.45+Math.sin(this.leg)*0.06);c.stroke();
-    if(this.alert>0)game.renderer.glowAdd(this.cx,this.bottom-h*1.02,0.5,'#ff3b22',0.35);
-  }
-}
 class Aristocrat extends Enemy{
   constructor(world,def,x,y){
     super(world,Object.assign({w:0.8,h:2.35,hp:80,dmg:1,aggro:6.5,hearing:1.0,blood:'#3a2a2a'},def),x,y);
@@ -548,5 +459,5 @@ class Mokrica extends Enemy{
     if(this.alert>0)game.renderer.glowAdd(this.cx+this.face*w*0.5,this.bottom-h*0.32,0.35,'#ff3b22',0.3);
   }
 }
-const ENEMY_TYPES={repairer:Repairer,wrench:Repairer,aristocrat:Aristocrat,censor:Censor,gardener:Gardener,clockmaker:Clockmaker,
+const ENEMY_TYPES={aristocrat:Aristocrat,censor:Censor,gardener:Gardener,clockmaker:Clockmaker,
   lampada:Lampada,mokrica:Mokrica};

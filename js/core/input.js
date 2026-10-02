@@ -50,6 +50,7 @@ class Input{
   get up(){return this.down('KeyW','ArrowUp','PadUp');}
   get healHeld(){return this.down('KeyQ','KeyI','PadLB');}
   get jumpHeld(){return this.down('Space','PadA');}
+  get attackHeld(){return this.enabled&&(this.ml||this.down('KeyJ','KeyX','PadX'));}
   usingPad(){return (this.lastPad||0)>(this.lastKey||0);}
   /* опрос геймпада раз в кадр (до логики): удержание — в k, нажатия — как у клавиатуры */
   pollPad(){
