@@ -225,6 +225,7 @@ class WorldRenderer{
       if(sg.need&&!gs.has(sg.need))continue;
       if(sg.needNot&&gs.has(sg.needNot))continue;
       if(sg.hideFlag&&gs.flags[sg.hideFlag])continue;
+      if(sg.showFlag&&!gs.flags[sg.showFlag])continue;
       const near=p&&p.bottom!==undefined?clamp(1-(Math.abs(p.cx-sg.x)-3)/6,0,1):0;
       c.font='500 0.36px Oswald';
       const kw=sg.keys.map(k=>Math.max(0.54,c.measureText(k).width+0.28));

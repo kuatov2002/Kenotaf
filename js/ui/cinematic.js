@@ -30,10 +30,11 @@ class Cinematic{
       g.particles.spawn({kind:'ring',x:d.x,y:d.y-0.8,ringR:5,life:0.8,size:0.1,col:'#ffcf7a',add:true,a:0.9});
       g.hud.showAbilityCard(d.ability);
     }
-    if(d.upgrade){
-      g.gs.flag(d.upgrade);g.audio.pickup();g.flash(0.3);
-      g.hud.showUpgradeCard(UPGRADES[d.upgrade]);
-    }
+    const ups=(d.upgrades||[]).concat(d.upgrade?[d.upgrade]:[]);
+    for(const u of ups)grantUpgrade(g,u);
+    if(ups.length)g.hud.showUpgradeCard(ups.length>1?{name:ups.map(u=>(UPGRADES[u]||{name:u}).name).join(' + '),
+      desc:ups.map(u=>(UPGRADES[u]||{desc:''}).desc).join(' ')}:UPGRADES[ups[0]]);
+    for(const f of (d.setFlags||[]))g.gs.flag(f);
   }
   end(){
     const g=this.game,wasActive=this.active;

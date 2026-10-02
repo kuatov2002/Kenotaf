@@ -54,10 +54,10 @@ z2_atrium:gs=>({id:'z2_atrium',zone:'hives',name:'СОТЫ-АТРИУМ',w:36,h:
       {x:10.4,y:32.9,w:1.4,h:2.1,to:'z2_apartment',link:'apt_low',label:'КВАРТИРЫ'},
       {x:34.6,y:23.9,w:1.4,h:2.1,to:'z2_stairwell',label:'ЛЕСТНИЧНАЯ КЛЕТЬ'},
       {x:34.6,y:14.9,w:1.4,h:2.1,to:'z2_apartment',link:'apt_up',label:'КВАРТИРЫ · ВЕРХ'},
-      {x:0.2,y:14.9,w:1.3,h:2.1,locked:true,label:'ПНЕВМОТРУБА',
-        msg:'КАПСУЛА ЗАПЕЧАТАНА. ПНЕВМОЛИНИЯ МЕРТВА — ДАЛЬШЕ ЭТОГО СРЕЗА НЕ ПРОЙТИ.'}];
+      {x:0.2,y:14.9,w:1.3,h:2.1,to:'z2_post',label:'ГЛАВПОЧТАМТ'}];
     R.checkpoint={x:3.4,y:35,h:1.7,lit:gs.cp.room==='z2_atrium'};
     R.mapPlate={kind:'mapplate',x:6.8,y:35,flag:'map_hives',title:'СХЕМА СОТ'};
+    R.station={kind:'station',station:'atrium',x:30.5,y:35,tubeTop:26.5};
     R.enemies=gs.flags.atrium_clear?[]:[{type:'aristocrat',x:27,y:23.65,patrol:[25.5,33.5]}];
     R.clearFlag='atrium_clear';
     R.lights=[lit(6,33.4,9,'#d9a441',0.9),lit(29,33.4,9,'#d9a441',0.9),
@@ -297,4 +297,80 @@ z2_boss:gs=>({id:'z2_boss',zone:'hives',name:'ЗАЛ ЦЕНЗОРА-ПРИМАР
         Kit.stencil(c,19.4,16.4,'ПРИМАРХ · ОСТАНОВЛЕН',0.34,'rgba(216,164,65,.45)',0.45);}
     };
   }}),
+});
+/* ============================== ГЛАВПОЧТАМТ ============================== */
+/* Вход — бывшая «пневмотруба» атриума. Справа — приёмный зал с конторкой почтмейстера (тихо, чекпоинт).
+   Посередине — сортировочный провал 28 м: капсулы падали в жёлоба. Под сводом — магнитный рельс
+   капсульной тележки: на ту сторону — только на подковах (латунные клёпки видны с порога).
+   Слева — главный клапан пневмосети и станция ГЛАВПОЧТАМТ. */
+Object.assign(ROOMDEFS,{
+z2_post:gs=>({id:'z2_post',zone:'hives',name:'ГЛАВПОЧТАМТ · СОРТИРОВОЧНАЯ',w:48,h:26,
+  art:{bg:Art.bgHives,mid:Art.midHives,game:Art.gameHives},
+  build(R){
+    const on=!!gs.flags.post_on;
+    R.solids=[S(-2,-3,52,3.4,'concrete'),S(-2,0,2,26,'concrete'),S(48,0,2,26,'concrete'),
+      S(36,20,12,6,'concrete'),S(0,16,8,10,'concrete'),S(8,25,28,1,'steel')];
+    R.magnetRects=[{x:7,y:12.4,w:31,h:0.7}];
+    for(const m of R.magnetRects)R.solids.push(S(m.x,m.y,m.w,m.h,'steel'));
+    R.hazards=[{x:8,y:23.6,w:28,h:1.4,kind:'pit',back:{x:37.4,y:18.32}}];
+    R.doors=[{x:46.8,y:17.9,w:1.2,h:2.1,to:'z2_atrium',label:'АТРИУМ'}];
+    R.checkpoint={x:38.2,y:20,h:1.7,lit:gs.cp.room==='z2_post'};
+    R.interactables=[{kind:'postmaster',x:41.6,y:20,w:2.4,h:2.4},
+      {kind:'valve',post:true,x:2.4,y:16,label:'ГЛАВНЫЙ КЛАПАН ПНЕВМОСЕТИ',flag:'post_on'},
+      {kind:'station',station:'post',x:5.6,y:16,tubeTop:0.4}];
+    R.lights=[lit(41.5,15.5,9,'#d9a441',0.95),lit(42.4,17.6,3.2,'#9fe08a',0.7),lit(22,6,12,'#d9a441',0.55,{flicker:0.4}),
+      lit(4,12,7,on?'#69d68f':'#c8452f',0.7,{flicker:on?0:0.8}),lit(22,23,10,'#3a2a26',0.6),lit(46,18.6,3,'#d9a441',0.5)];
+    R.emitters=[{type:'dust',rate:24},{type:'drip',x:30,y:11.8,rate:0.6},{type:'drip',x:12,y:11.8,rate:0.4}];
+    const TUBES=[10.5,16.5,22.5,28.5,34.5];
+    R.dyn=(c,t,W)=>{
+      /* капсулы в трубах: при живой сети — летят вниз в жёлоба, при мёртвой — висят застрявшие */
+      for(let i=0;i<TUBES.length;i++){const x=TUBES[i];
+        if(on){for(let k=0;k<2;k++){const u=((t*0.55+i*0.31+k*0.5)%1),y=lerp(0.6,22.4,u);
+          c.fillStyle='#c9a227';rr(c,x-0.17,y-0.32,0.34,0.64,0.13);c.fill();
+          c.fillStyle='rgba(255,255,255,.35)';c.fillRect(x-0.11,y-0.26,0.05,0.52);}}
+        else{const y=6+((i*37)%9);c.fillStyle='#7d6120';rr(c,x-0.17,y-0.32,0.34,0.64,0.13);c.fill();}}
+    };
+    R.npcs=[{bounds:()=>({x:39.2,y:15.6,w:4.8,h:4.6}),draw:(c,t)=>{
+      const W=game.world,p=W.player,near=p&&Math.abs(p.cx-41.6)<4.5;
+      drawPostmaster(c,41.6,18.8,t,near?(p.cx<41.6?-1:1):0);}}];
+    R.extraGame=(c,L,r)=>{
+      /* стеллаж сортировки за конторкой: ячейки с письмами */
+      Kit.plate(c,37,8.6,10.4,6.4,'ply',1201,{bolts:false});
+      for(let j=0;j<5;j++)for(let i=0;i<8;i++){const x=37.3+i*1.26,y=8.9+j*1.2;
+        c.fillStyle='#16110d';c.fillRect(x,y,1.1,1.0);
+        if(((i*7+j*3)%4)!==0){c.fillStyle=((i+j)%3)?'#d8cdb8':'#c9b48a';c.fillRect(x+0.12,y+0.5,0.86,0.42);
+          c.fillStyle='rgba(200,69,47,.6)';c.fillRect(x+0.5,y+0.62,0.12,0.1);}}
+      Kit.stencil(c,37.2,8.2,'СОРТИРОВКА · ЯРУСЫ −41 … +12',0.3,'rgba(216,164,65,.6)',0.6);
+      /* трубы пневмопочты от свода в жёлоба */
+      for(const x of TUBES){c.fillStyle='rgba(150,190,210,.09)';c.fillRect(x-0.24,0.4,0.48,22.6);
+        c.strokeStyle='rgba(200,225,235,.3)';c.lineWidth=0.05;c.beginPath();c.moveTo(x-0.24,0.4);c.lineTo(x-0.24,23);
+        c.moveTo(x+0.24,0.4);c.lineTo(x+0.24,23);c.stroke();
+        for(let y=1.2;y<23;y+=2.2){c.fillStyle='#8a6d2a';c.fillRect(x-0.32,y,0.64,0.14);}
+        c.fillStyle='#2b2620';c.beginPath();c.moveTo(x-1.2,23.6);c.lineTo(x+1.2,23.6);c.lineTo(x+0.4,25);c.lineTo(x-0.4,25);c.closePath();c.fill();}
+      Kit.stencil(c,9,22.2,'ЖЁЛОБ',0.34,'rgba(216,164,65,.4)',0.4);
+      /* схема магистрали над клапаном */
+      Kit.plate(c,0.6,3.2,6.6,4.4,'steel',1202,{rust:0.3,bolts:true});
+      c.fillStyle='#16324a';c.fillRect(0.9,3.5,6,3.8);
+      c.strokeStyle='rgba(220,240,255,.7)';c.lineWidth=0.06;c.beginPath();
+      c.moveTo(1.4,6.8);c.lineTo(3.0,5.6);c.lineTo(4.4,5.6);c.lineTo(5.6,4.2);c.lineTo(6.4,3.9);c.moveTo(3.0,5.6);c.lineTo(3.0,6.9);c.stroke();
+      for(const q of [[1.4,6.8],[3.0,5.6],[4.4,5.6],[5.6,4.2],[6.4,3.9],[3.0,6.9]]){c.fillStyle='#ffcf7a';c.beginPath();c.arc(q[0],q[1],0.09,0,TAU);c.fill();}
+      Kit.stencil(c,0.9,3.2,'МАГИСТРАЛЬ · ВСЕ ЯРУСЫ',0.24,'rgba(216,164,65,.6)',0.6);
+      Kit.poster(c,24.6,2.2,2.2,3.0,301);
+      Kit.stencil(c,12,10.6,'КАПСУЛЬНАЯ ТЕЛЕЖКА · РЕЛЬС ПОД СВОДОМ',0.32,'rgba(216,164,65,.45)',0.45);
+      Kit.sign(c,30.2,3.0,5.6,0.9,'ПОЧТА — НЕРВЫ АРКОЛОГИИ','#c9a227','#191612',1203);
+      Kit.sign(c,13.0,3.0,7.4,0.9,'ПЕРЕПИСКА МЕЖДУ ЯРУСАМИ ПРЕКРАЩЕНА · СОВЕТ','#c8452f','#f0e2cf',1204);
+      Kit.hazardTape(c,34.4,19.6,1.6,0.4);Kit.hazardTape(c,8,15.6,1.4,0.4);
+      /* мешки и письма на полу приёмного зала */
+      for(let i=0;i<5;i++){const x=44+i*0.7;c.fillStyle=i%2?'#5a4a36':'#6b5a44';
+        c.beginPath();c.ellipse(x,19.65,0.42,0.38,0,PI,TAU);c.fill();c.fillRect(x-0.42,19.6,0.84,0.4);}
+      for(let i=0;i<18;i++){c.save();c.translate(36.6+r()*11,19.92);c.rotate((r()-0.5)*0.8);
+        c.fillStyle=r()<0.5?'#d8cdb8':'#c9b48a';c.fillRect(-0.18,-0.06,0.36,0.12);c.restore();}
+      Kit.lampCage(c,22,1.4,0.34,{glass:'#e8c07a'});Kit.lampCage(c,41.5,1.2,0.34,{glass:'#e8c07a'});
+      Kit.pipe(c,[[0,1.8],[48,1.8]],0.2,'steel',{seed:1205});
+    };
+    R.extraTop=(c,L,r)=>{
+      for(const m of R.magnetRects){Kit.plate(c,m.x,m.y,m.w,m.h,'steel',1206,{rust:0.3,boltStep:0.9});
+        Kit.magnetRivets(c,m.x,m.y+m.h-0.5,m.w);}
+    };
+  }})
 });

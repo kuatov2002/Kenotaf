@@ -93,6 +93,7 @@ z1_hub:gs=>({id:'z1_hub',zone:'sump',name:'НАСОСНАЯ СТАНЦИЯ',w:36
       {type:'drip',x:31,y:31.4,rate:0.35},{type:'dust',rate:26},{type:'coolant',x:18,y:37.4,rate:6}];
     R.checkpoint={x:5,y:34,h:1.7,lit:gs.cp.room==='z1_hub'};
     R.mapPlate={kind:'mapplate',x:7.0,y:34,flag:'map_sump',title:'СХЕМА ЯРУСА −41'};
+    R.station={kind:'station',station:'hub',x:9.4,y:34,tubeTop:8.2};
     R.machines=[{kind:'flywheel',x:7.6,y:26,r:2.2,spd:0.7},{kind:'flywheel',x:29.5,y:22,r:1.7,spd:-1.05},
       {kind:'flywheel',x:5.4,y:12,r:1.3,spd:1.5},{kind:'crane',y:8.6,x0:4,x1:30,spd:0.55},
       {kind:'chain',x:12.5,y:4.2,len:5.4,ph:0},{kind:'chain',x:23.5,y:4.2,len:3.6,ph:2},
@@ -177,28 +178,39 @@ z1_vent:gs=>({id:'z1_vent',zone:'sump',name:'ВЕНТШАХТА B-2',w:12,h:34,
       Kit.lampCage(c,2.4,4.4,0.26);Kit.pipe(c,[[10.6,0],[10.6,31]],0.2,'rust',{seed:7});
     };
   }}),
-z1_cellar:gs=>({id:'z1_cellar',zone:'sump',name:'ПОДВАЛ ХАБА',w:14,h:9,
+z1_cellar:gs=>({id:'z1_cellar',zone:'sump',name:'ПОДВАЛ ХАБА',w:18,h:9,
   art:{bg:Art.bgSump,mid:Art.midSump,game:Art.gameSump},
   build(R){
-    R.solids=[S(-2,-2,18,2,'concrete'),S(-2,0,2,9,'concrete'),S(14,0,2,9,'concrete'),S(0,7,14,2,'concrete')];
-    const blocked=!gs.flags.cellar_open;
+    /* за штабелем (импульс) — цилиндр и решётка в полу над дренажом: снизу зелёный свет хладагента.
+       Решётку берёт только удар вниз в прыжке — первый урок удара вниз */
+    R.solids=[S(-2,-2,22,2,'concrete'),S(-2,0,2,9,'concrete'),S(18,0,2,9,'concrete'),S(0,7,14,2,'concrete'),S(16.2,7,1.8,2,'concrete')];
+    const blocked=!gs.flags.cellar_open,grate=!gs.flags.cellar_grate;
     if(blocked)R.solids.push(S(8.4,0,1.8,7,'ply',{dyn:true,pid:'ccrates'}));
-    R.pushables=blocked?[{x:8.4,y:0,w:1.8,h:7,id:'ccrates',kind:'crate',flag:'cellar_open'}]:[];
-    R.doors=[{x:0.0,y:4.9,w:1.2,h:2.1,to:'z1_hub',tx:5.0,ty:31.8,label:'ХАБ'}];
-    R.lights=[lit(4,3,6,'#ffbe63',0.7,{flicker:1.3}),lit(11,3.4,5,'#69d68f',0.6)];
-    R.emitters=[{type:'drip',x:6,y:2,rate:0.5},{type:'dust',rate:10}];
+    if(grate)R.solids.push(S(14,7,2.2,0.45,'steel',{dyn:true,pid:'cgrate'}));
+    R.pushables=[];
+    if(blocked)R.pushables.push({x:8.4,y:0,w:1.8,h:7,id:'ccrates',kind:'crate',flag:'cellar_open'});
+    if(grate)R.pushables.push({x:14,y:7,w:2.2,h:0.45,id:'cgrate',kind:'grate',floor:true,hp:3,flag:'cellar_grate'});
+    R.doors=[{x:0.0,y:4.9,w:1.2,h:2.1,to:'z1_hub',tx:5.0,ty:31.8,label:'ХАБ'},
+      {x:14,y:8.0,w:2.2,h:1.0,to:'z1_drain',link:'cellar_hole',fall:true,label:'ДРЕНАЖ',reqFlag:'cellar_grate'}];
+    R.signs=[{x:12.6,y:2.0,keys:['↓','J'],text:'В ПРЫЖКЕ — УДАР ВНИЗ',showFlag:'cellar_open',hideFlag:'cellar_grate'}];
+    R.lights=[lit(4,3,6,'#ffbe63',0.7,{flicker:1.3}),lit(11,3.4,5,'#69d68f',0.6),lit(15.1,8.4,4.5,'#69d68f',0.9)];
+    R.emitters=[{type:'drip',x:6,y:2,rate:0.5},{type:'dust',rate:10},{type:'coolant',x:15.1,y:8.8,rate:2.5,sw:2}];
     R.interactables=gs.loreIds[1]?[]:[{kind:'lore',loreId:1,x:11.4,y:6.4,
       title:'ЦИЛИНДР №1 · ЗАВЕТ ОСНОВАТЕЛЕЙ',
       text:'«МИР НАВЕРХУ СГОРЕЛ. ВОЗДУХ — ЯД. ПЕЧАТЬ — ПОСЛЕДНЯЯ СТЕНА МЕЖДУ НАМИ И ПЕПЛОМ. НЕ ОТКРЫВАТЬ.»'}];
     R.extraGame=(c,L,r)=>{
-      c.fillStyle='rgba(30,60,45,.5)';c.fillRect(0,6.5,14,0.6);
+      c.fillStyle='rgba(30,60,45,.5)';c.fillRect(0,6.5,18,0.6);
       Kit.puddle(c,3,6.9,2.4,'#4a7a5e');Kit.puddle(c,9,6.9,2.0,'#4a7a5e');
       Kit.plate(c,10,5.4,3,1.6,'ply',401,{rust:0.3});
       for(let i=0;i<5;i++){c.strokeStyle='#7a8087';c.lineWidth=0.06;
         c.beginPath();c.moveTo(10.2+r()*2.6,5.6);c.lineTo(10.4+r()*2.6,6.2);c.stroke();}
       Kit.lampCage(c,4,3,0.26);
       Kit.stencil(c,1.6,4.4,'ПОДВАЛ · НЕ ВХОДИТЬ',0.36,'rgba(216,204,178,.5)',0.5);
-      Kit.pipe(c,[[0,1.6],[14,1.6]],0.16,'rust',{seed:42});
+      Kit.stencil(c,14.2,6.4,'ДРЕНАЖ ↓',0.34,'rgba(150,230,180,.6)',0.6);
+      Kit.pipe(c,[[0,1.6],[18,1.6]],0.16,'rust',{seed:42});
+      /* провал под решёткой: зелёный отсвет хладагента */
+      const g=c.createLinearGradient(0,7,0,9);g.addColorStop(0,'rgba(40,140,90,.5)');g.addColorStop(1,'rgba(10,40,25,.95)');
+      c.fillStyle=g;c.fillRect(14,7,2.2,2);
     };
   }}),
 z1_east:gs=>({id:'z1_east',zone:'sump',name:'ВОСТОЧНЫЙ КОРИДОР',w:38,h:15,
@@ -212,7 +224,8 @@ z1_east:gs=>({id:'z1_east',zone:'sump',name:'ВОСТОЧНЫЙ КОРИДОР',
     if(cleared)R.solids.push(S(18.2,11.1,2.6,0.4,'concrete',{dyn:true,pid:'eastpile2'}));
     if(cleared)R.solids.push(S(26.8,5.95,5.4,1.4,'steel',{dyn:true,pid:'eastslab'}));
     R.doors=[{x:0.0,y:9.9,w:1.2,h:2.1,to:'z1_hub',tx:33.4,ty:28.6,label:'НАСОСНАЯ'},
-      {x:36.8,y:9.9,w:1.2,h:2.1,to:'z1_arena',tx:1.8,ty:17.6,label:'РЕМОНТНЫЙ ЦЕХ'}];
+      {x:36.8,y:9.9,w:1.2,h:2.1,to:'z1_arena',tx:1.8,ty:17.6,label:'РЕМОНТНЫЙ ЦЕХ'},
+      {x:31.2,y:11.6,w:1.6,h:0.9,down:true,to:'z1_drain',link:'drain_up',label:'ДРЕНАЖ',latch:'drain_latch',msg:'ЛЮК ЗАДРАЕН СНИЗУ.'}];
     R.lights=[lit(5,4.4,10,'#ffbe63',0.95),lit(14,4.2,9.5,'#ffbe63',0.85,{flicker:1.1}),
       lit(24,4.4,10,'#ffa64a',0.9),lit(33,4.2,10,'#ffbe63',0.9),
       lit(9,11.4,5,'#ffb070',0.55),lit(28,11.4,5,'#ffb070',0.5),
@@ -607,4 +620,48 @@ z1_sluice:gs=>({id:'z1_sluice',zone:'sump',name:'СЕВЕРНЫЙ ШЛЮЗ',w:48
         c.beginPath();c.arc(L.w*0.28+r()*L.w*0.3,L.h*0.4+r()*L.h*0.6,0.06+r()*0.09,0,TAU);c.fill();}
       Kit.tank(c,L.w*0.72,L.h*0.2,3,L.h*0.4,{seed:81,label:'Ш-3'});};
   }}),
+});
+/* ============================== ДРЕНАЖ ХЛАДАГЕНТА ============================== */
+/* Урок отскока. Сверху, из подвала, падаешь на площадку. Первый клапан-отбойник — над сухим
+   жёлобом: промахнулся — вылез по ступени и пробуй снова. Потом два клапана подряд над
+   хладагентом (срыв — ячейка и откат, не смерть). В конце — пластина куртки и люк в Восточный
+   коридор: засов на этой стороне, обратно короткой дорогой. */
+Object.assign(ROOMDEFS,{
+z1_drain:gs=>({id:'z1_drain',zone:'sump',name:'ДРЕНАЖ ХЛАДАГЕНТА',w:44,h:16,
+  art:{bg:Art.bgSump,mid:Art.midSump,game:Art.gameSump,fgd:Art.fgdSump},
+  build(R){
+    R.solids=[S(-2,-2,48,2.4,'steel'),S(-2,0,2,16,'steel'),S(44,0,2,16,'steel'),
+      S(0,10,8,6,'rust'),S(8,13.6,8,2.4,'concrete'),S(8.2,12.2,1.0,1.4,'ply'),
+      S(16,10,4,6,'rust'),S(20,14.4,14,1.6,'steel'),S(34,10,10,6,'rust')];
+    /* клапаны стоят по дуге прыжка с разбега: прыжок с края → удар вниз → удар вниз → уступ */
+    R.pogos=[{x:13,y:11.3,r:0.45,len:2.3},{x:25,y:11.0,r:0.45,len:3.4},{x:31.8,y:11.0,r:0.45,len:3.4}];
+    R.hazards=[{x:20,y:13.0,w:14,h:1.4,kind:'pit',look:'coolant',back:{x:17.6,y:8.32}}];
+    R.doors=[{x:2.0,y:1.0,w:2.2,h:1.2,to:'z1_cellar',link:'cellar_hole',label:'ПОДВАЛ',oneway:true},
+      {x:40.4,y:7.9,w:1.4,h:2.1,to:'z1_east',link:'drain_up',label:'ВОСТОЧНЫЙ КОРИДОР',latch:'drain_latch',latchHere:true}];
+    R.signs=[{x:4.6,y:6.4,keys:['↓','J'],text:'НАД КЛАПАНОМ — УДАР ВНИЗ'}];
+    R.interactables=gs.flags.got_plate_drain?[]:[{kind:'salvage',upgrade:'plate_drain',x:37.4,y:10,flag:'got_plate_drain',
+      title:'ПЛАСТИНА КУРТКИ',
+      lines:['НА УСТУПЕ — БРЕЗЕНТОВАЯ КУРТКА ДРЕНАЖНИКА. ХОЗЯИНА НЕТ.','НАГРУДНАЯ ПЛАСТИНА ЦЕЛА. ЗАКЛЁПКИ САДЯТСЯ НА ТВОЮ КУРТКУ.']}];
+    R.lights=[lit(4,4,7,'#ffbe63',0.8,{flicker:1.1}),lit(27,13.4,12,'#69d68f',1.1),lit(12,13,5,'#8a7a5a',0.5),
+      lit(38,4.4,7,'#ffbe63',0.85),lit(41.1,7.6,3.5,'#8fd6ff',0.6),lit(3.1,1.6,3,'#69d68f',0.6)];
+    R.emitters=[{type:'coolant',x:27,y:13.1,rate:5,sw:14},{type:'drip',x:12,y:1,rate:0.7},{type:'drip',x:30,y:1,rate:0.5},
+      {type:'steam',x:22,y:13,rate:0.4},{type:'dust',rate:14}];
+    R.extraGame=(c,L,r)=>{
+      Kit.pipe(c,[[0,1.4],[44,1.4]],0.26,'rust',{seed:51,band:2,bandCol:'#69d68f'});
+      Kit.pipe(c,[[6,2.4],[38,2.4]],0.16,'steel',{seed:52});
+      Kit.lampCage(c,4,4,0.3);Kit.lampCage(c,38,4.4,0.3);
+      Kit.stencil(c,9.2,9.4,'ЖЁЛОБ · СУХО',0.32,'rgba(216,204,178,.45)',0.45);
+      Kit.stencil(c,21.4,9.0,'ХЛАДАГЕНТ · КАНАЛ 3',0.36,'rgba(150,230,180,.55)',0.55);
+      Kit.sign(c,16.2,6.6,3.6,0.8,'ОТБОЙНИКИ · НЕ СТОЯТЬ','#c9a227','#191612',511);
+      Kit.hazardTape(c,19.6,9.6,0.6,0.4);Kit.hazardTape(c,33.8,9.6,0.6,0.4);
+      Kit.ladder(c,40.6,0.4,7.6,0.55);
+      /* куртка дренажника на уступе — откуда пластина */
+      if(!gs.flags.got_plate_drain){c.fillStyle='#5a4a36';c.beginPath();c.ellipse(37.4,9.85,0.75,0.2,0.05,0,TAU);c.fill();
+        c.fillStyle='#c9a227';rr(c,37.2,9.6,0.42,0.24,0.04);c.fill();}
+      /* дыра в своде, откуда свалился */
+      c.fillStyle='#050706';c.fillRect(2,0.3,2.2,0.7);Kit.hazardTape(c,1.7,0.9,2.8,0.22);
+      for(let i=0;i<6;i++)Kit.oilStain(c,1+r()*42,9.95,1+r(),rng(520+i));
+    };
+    R.extraMid=(c,L,r)=>{Kit.tank(c,6,2,3,L.h*0.6,{seed:53,label:'ДР-3'});Kit.tank(c,30,1.5,3.4,L.h*0.55,{seed:54,label:'ДР-4'});};
+  }})
 });

@@ -228,7 +228,7 @@ class Player extends Body{
         if(this.cx<m.x-0.25||this.cx>m.x+m.w+0.25)continue;
         const cb=m.y+m.h;
         if((this.ceilHit||this.vy<=2.0)&&this.y>=cb-0.7&&this.y<=cb+0.34){
-          this.onCeil=true;this.ceiling=m;this.gravDir=-1;
+          this.onCeil=true;this.ceiling=m;this.gravDir=-1;this.jumpBuf=0;
           this.y=cb;this.vy=0;this.vx*=0.4;
           if(!this.setH(C.h)){this.onCeil=false;this.gravDir=1;}
           g.audio.hitMetal();g.tutorial.notify('magnet');
@@ -276,7 +276,8 @@ class Player extends Body{
       if(h.kind==='spikes'){g.combat.damagePlayer(1,this.cx);this.vy=-13;this.y-=0.35;}
       else if(h.kind==='steam'&&h.active)g.combat.damagePlayer(1,this.cx);
     }
-    if(this.y>w.room.h+6)this.kill();
+    /* ниже комнаты — смерть, кроме провала в дыру-переход (шторка уже закрывается) */
+    if(this.y>w.room.h+6&&!w.exiting)this.kill();
 
     this.updateScarf(dt);
     if(this.hurtT>0)this.state='hurt';
@@ -332,7 +333,8 @@ class Player extends Body{
     }
     this.y=m.y+m.h;
     if(this.cx<m.x-0.2||this.cx>m.x+m.w+0.2||this.hurtT>0){this.detach();return;}
-    if(inp.consume('jump')){this.detach(true);g.tutorial.notify('detach');return;}
+    /* прыжок уже лежит в буфере (update съел нажатие раньше) — по нему и отцепляемся */
+    if(this.jumpBuf>0||inp.consume('jump')){this.jumpBuf=0;this.detach(true);g.tutorial.notify('detach');return;}
     if(inp.dn){this.detach(false);g.tutorial.notify('detach');return;}
     if(Math.random()<0.22)g.particles.spawn({kind:'spark',x:this.cx+(Math.random()-0.5)*0.5,y:this.y,
       vy:-0.6,life:0.3,size:0.04,col:'#ffe6a3',add:true});

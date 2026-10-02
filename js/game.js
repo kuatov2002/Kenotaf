@@ -20,6 +20,7 @@ class Game{
     this.cinematic=new Cinematic(this);
     this.tutorial=new TutorialSystem(this);
     this.map=new WorldMap(this);
+    this.travel=new TravelMenu(this);
     this.debug=new DebugUI(this);
     this.debugOpts={invuln:false,collision:false,gates:false,bounds:false,collider:false};
     this.state='menu';this.timeScale=1;this.hitstopT=0;this.acc=0;this.last=0;this.fps=60;
@@ -115,6 +116,7 @@ class Game{
     const cb=this.introCb;this.introCb=null;if(cb)cb();
   }
   togglePause(){
+    if(this.state==='travel'){this.travel.close();return;}
     if(this.state==='intro'){this.introEnd();return;}
     if(this.state==='play'){
       this.state='pause';
@@ -218,6 +220,9 @@ class Game{
       this.camera.update(dt,this.world.player,this.world.room,this.vw,this.vh,this.ppm);
       this.hud.update(dt);
       this.tutorial.update(dt);
+    }else if(this.state==='travel'){
+      /* меню пневмопочты: мир замер, частицы дотлевают */
+      this.travel.update();this.particles.update(dt);this.hud.update(dt);
     }else if(this.state==='ending'){
       if(this.endReady&&this.input.skip){this.endReady=false;this.toMenuState();}
     }else if(this.state==='intro'){

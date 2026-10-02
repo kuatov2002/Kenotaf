@@ -44,7 +44,7 @@ class World{
     this.player=new Player(this,px,py);this.player.face=face;this.player.energy=this.player.maxEnergy();
     if(prev){const p=this.player;p.vx=prev.vx;p.vy=prev.vy;p.face=prev.face;p.energy=prev.energy;p.invuln=prev.invuln;}
     /* точка отката при удушье в пыльце: вход в комнату — заведомо чистый воздух */
-    if(!soft||!this.safeSpot)this.safeSpot={x:px,y:py};this.chokeT=0;
+    if(!soft||!this.safeSpot)this.safeSpot={x:px,y:py};this.chokeT=0;this.exiting=false;
     /* новая комната / респаун — фильтр продут: задохнуться у самой двери было бы нечестно */
     if(!soft)this.filter=this.filterCap();
     this.room.playerRef=this.player;
@@ -380,7 +380,7 @@ class World{
             vx:3+Math.random()*3,vy:(Math.random()-0.5)*0.6,life:8,size:0.045,col:'#ffffff',drag:0.02,a:0.5,noise:0.6});break;
           case 'airjet':g.particles.spawn({kind:'dust',x:x+(Math.random()-0.5)*2,y:y,vx:(Math.random()-0.5)*0.3,vy:-6-Math.random()*5,
             life:2.2,size:0.04+Math.random()*0.04,col:'#e6f4ff',drag:0.1,a:0.6,add:true});break;
-          case 'coolant':g.particles.spawn({kind:'dust',x:x,y:37.3,vx:(Math.random()-0.5)*0.4,vy:-0.5-Math.random()*0.6,
+          case 'coolant':g.particles.spawn({kind:'dust',x:x,y:e.y!==undefined?y:37.3,vx:(Math.random()-0.5)*0.4,vy:-0.5-Math.random()*0.6,
             life:3,size:0.07,col:'#8ff0b4',drag:0.4,a:0.5,add:true,noise:0.5});break;
         }
       }
@@ -396,14 +396,18 @@ class World{
       for(let i=0;i<R.doors.length;i++){
         const d=R.doors[i];
         if(!aabb(p.rect(),d))continue;
+        /* провал (fall): переход срабатывает сам, когда курьер падает в дыру — не по E */
+        if(d.fall){if(p.vy>0&&this.doorCd<=0&&!g.gates.doorLocked(d)){this.doorCd=0.9;this.exiting=true;g.enterRoom(d);}continue;}
         this.nearDoor={d:d,locked:g.gates.doorLocked(d),down:!!d.down};break;
       }
     }
+    /* E — к ближайшему объекту в досягаемости (а не к первому в списке) */
+    let best=2.6;
     for(let i=0;i<this.interactables.length;i++){
       const it=this.interactables[i];
       if(!it.canUse(g.gs))continue;
-      const r=it.rect();
-      if(dist(p.cx,p.cy,r.x+r.w/2,r.y+r.h/2)<2.6){this.nearInter=it;break;}
+      const r=it.rect(),dd=dist(p.cx,p.cy,r.x+r.w/2,r.y+r.h/2);
+      if(dd<best){best=dd;this.nearInter=it;}
     }
     if(g.input.consume('use')){
       if(this.nearInter)this.nearInter.use(g);

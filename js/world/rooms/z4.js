@@ -15,6 +15,7 @@ z4_antechamber:gs=>({id:'z4_antechamber',zone:'seal',name:'ПРЕДПЕЧАТЬ�
       {x:36.4,y:21.9,w:2.6,h:2.1,to:'z4_exam_c',label:'МАГИСТРАЛЬ C'}];
     R.checkpoint={x:3,y:24,h:1.7,lit:gs.cp.room==='z4_antechamber'};
     R.mapPlate={kind:'mapplate',x:11.5,y:24,flag:'map_seal',title:'СХЕМА ПЕЧАТИ'};
+    R.station={kind:'station',station:'seal',x:15.8,y:24,tubeTop:17.2};
     const ready=gs.flags.gaugeA&&gs.flags.gaugeB&&gs.flags.gaugeC,arch=!!gs.flags.archivist_dead;
     R.interactables=(ready&&arch&&!done)?[{kind:'wheel',x:22,y:24,label:'КОЛЕСО ПЕЧАТИ',flag:'wheel_turned'}]:[];
     /* финал: три магистрали под давлением будят Архивариуса над Колесом */

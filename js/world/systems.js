@@ -14,8 +14,17 @@ const ABILITIES={
 };
 const UPGRADES={
   energy_cap:{name:'РЕСИВЕР ДАВЛЕНИЯ',desc:'ЗАПАС ДАВЛЕНИЯ +50%: ИМПУЛЬСОВ ПОДРЯД — ПЯТЬ ВМЕСТО ТРЁХ.'},
-  filter_cap:{name:'ФИЛЬТР · ДОП. КАССЕТА',desc:'ЁМКОСТЬ ФИЛЬТРА MK-II +60%.'}
+  filter_cap:{name:'ФИЛЬТР · ДОП. КАССЕТА',desc:'ЁМКОСТЬ ФИЛЬТРА MK-II +60%.'},
+  weld_kit:{name:'СВАРОЧНЫЙ КОМПЛЕКТ',desc:'ЗАПАС РЕМОНТА +50%: ТРИ ШВА ВМЕСТО ДВУХ.'},
+  dash_mk2:{name:'КЛАПАН DASH · MK-II',desc:'ВТОРОЙ РЫВОК В ВОЗДУХЕ.'}
 };
+/* пластины куртки: любая plate_* — ещё одна ячейка (и сразу полная починка) */
+const PLATE_UP={name:'ПЛАСТИНА КУРТКИ',desc:'ЕЩЁ ОДНА ЯЧЕЙКА ДАВЛЕНИЯ В КУРТКЕ. КУРТКА ЗАЛАТАНА ЦЕЛИКОМ.'};
+function grantUpgrade(g,u){
+  if(!UPGRADES[u]&&u.indexOf('plate_')===0)UPGRADES[u]=PLATE_UP;
+  g.gs.flag(u);g.audio.pickup();g.flash(0.3);
+  if(u.indexOf('plate_')===0){g.gs.hp=g.gs.maxHp();g.hud.buildHp();g.hud.syncHp();}
+}
 /* ---------- нарратив: вступление и цели ---------- */
 const INTRO=[
   {k:'АРКОЛОГИЯ «КЕНОТАФ» · ЯРУС −41',t:'ДВЕСТИ ЧЕТЫРНАДЦАТЬ ЛЕТ НАЗАД МИР НАВЕРХУ СГОРЕЛ. ГОРОД ЖИВЁТ ПОД ЗЕМЛЁЙ, ЗА ПЕЧАТЬЮ.'},
@@ -69,7 +78,7 @@ class GateSystem{
   /* засов (latch): шорткат открывается только с той стороны, где висит засов (latchHere) —
      с другой стороны дверь видна запертой, пока её не откроют изнутри */
   doorLocked(d){const gs=this.game.gs;
-    if(d.locked||!d.to)return true;
+    if(d.locked||!d.to||d.oneway)return true;   /* oneway: только вход (дыра в своде) — изнутри не выйти */
     if(d.latch&&!d.latchHere&&!gs.flags[d.latch])return true;
     if(d.reqAbility&&!gs.has(d.reqAbility))return true;
     if(d.req==='filter')return !gs.has('filter');

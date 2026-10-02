@@ -44,7 +44,7 @@ const {ROOT,serve,launch,openGame}=require('./lib');
           g.render(1/60);
           /* каждая дверь: целевая комната строится, точка появления свободна */
           for(const d of g.world.room.doors){
-            if(!d.to||!ROOMDEFS[d.to])continue;
+            if(!d.to||!ROOMDEFS[d.to]||d.oneway)continue;
             const R=new Room(ROOMDEFS[d.to],g.gs);R.id=d.to;
             const td=pairDoor(R,id,d);
             const arr=td?doorArrival(R,td):{x:d.tx,y:d.ty};

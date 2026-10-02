@@ -86,6 +86,15 @@ const LevelAudit={
         const free=!R.solids.some(q=>!q.ow&&!q.hidden&&aabb(t,q));
         if(!free)s.blk=true;
         if(s.blk&&free&&f>12){s.done=true;H(I,false);I.h.D=false;}}});
+      /* отскок от клапанов-отбойников: прыжок (или шаг с края), над головкой — удар вниз */
+      if(R.pogos&&R.pogos.length)for(const J of [true,false])for(const lag of [0,12])pols.push({dir:d,max:520,fn:(f,p,I,s)=>{
+        H(I,f>=lag);
+        if(J&&f===0)I.p.jump=1;I.h.J=J&&f<30;
+        const tg=R.pogos.find(q=>Math.abs(q.x-p.cx)<0.75&&q.y-p.bottom>-0.25&&q.y-p.bottom<1.6);
+        I.h.D=!!tg&&!p.onGround;
+        if(s.cool>0)s.cool--;
+        if(tg&&!p.onGround&&p.vy>-3&&s.cool<=0){I.p.attack=1;s.cool=14;}
+        if(f>8&&p.onGround)s.done=true;}});
       if(has('claws')){
         for(const flip of [true,false])pols.push({dir:d,max:700,fn:(f,p,I,s)=>{
           if(s.cool>0)s.cool--;

@@ -70,7 +70,7 @@ class WorldMap{
           /* выход в неизвестность: короткий обрубок наружу и «?» */
           const dirx=d.x<0.8?-1:(d.x+d.w>i.w-0.8?1:0),diry=dirx?0:(d.down?1:-1);
           const ex=ax+dirx*5,ey=ay+diry*5;
-          c.strokeStyle=g.gates.doorLocked(d)?'rgba(255,110,80,.55)':'rgba(232,201,106,.55)';c.lineWidth=2*dpr;
+          c.strokeStyle=g.gates.doorLocked(d)&&!d.oneway?'rgba(255,110,80,.55)':'rgba(232,201,106,.55)';c.lineWidth=2*dpr;
           c.beginPath();c.moveTo(X(ax),Y(ay));c.lineTo(X(ex),Y(ey));c.stroke();
           c.fillStyle='rgba(232,201,106,.75)';c.font='600 '+Math.round(11*dpr)+'px Oswald';c.textAlign='center';c.textBaseline='middle';
           c.fillText('?',X(ex+dirx*2.2),Y(ey+diry*2.2));
@@ -100,7 +100,7 @@ class WorldMap{
           c.fillStyle='rgba(8,8,8,.55)';c.fillText(nm,rx+5*dpr,ry+4*dpr+1);
           c.fillStyle=id===cur?'#ffe9b0':'rgba(238,226,200,.8)';c.fillText(nm,rx+4*dpr,ry+4*dpr);}}
       /* двери — светлые зарубки на кромке */
-      for(const d of i.doors){c.fillStyle=g.gates.doorLocked(d)?'#ff6e50':'#f6e8c6';
+      for(const d of i.doors){c.fillStyle=g.gates.doorLocked(d)&&!d.oneway?'#ff6e50':'#f6e8c6';
         c.fillRect(X(L[0]+d.x),Y(L[1]+d.y),Math.max(2,d.w*sc),Math.max(2,d.h*sc));}
       /* чекпоинт: латунный фонарь (горит, если это точка возврата) */
       if(i.cp){const lit=gs.cp.room===id,cx=X(L[0]+i.cp.x),cy=Y(L[1]+i.cp.y-i.cp.h*0.6);

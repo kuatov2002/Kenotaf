@@ -12,6 +12,7 @@ class Room{
     if(this.build)this.build(this);
     /* схема яруса висит в хабе зоны всегда (после копирования — погасшая) */
     if(this.mapPlate)this.interactables.push(this.mapPlate);
+    if(this.station)this.interactables.push(this.station);
     this.solids=this.solids.filter(s=>!s.hidden);
   }
 }

@@ -77,6 +77,7 @@ z3_greenhouse:gs=>({id:'z3_greenhouse',zone:'eden',name:'ОРАНЖЕРЕИ-ТЕ
       {x:22.2,y:10.6,keys:[],text:'ТРАВЕРСА · ДОПУСК: МАГНИТНЫЕ ПОДКОВЫ',needNot:'magnet'}];
     R.checkpoint={x:4,y:30,h:1.7,lit:gs.cp.room==='z3_greenhouse'};
     R.mapPlate={kind:'mapplate',x:7.5,y:30,flag:'map_eden',title:'СХЕМА ЭДЕМА'};
+    R.station={kind:'station',station:'eden',x:15.6,y:30,tubeTop:22};
     R.enemies=gs.flags.gh_clear?[]:[{type:'gardener',x:24,y:25.9,patrol:[21,32]},
       {type:'gardener',x:38,y:20.3,patrol:[37,46]},{type:'gardener',x:12,y:14.9,patrol:[7,17]}];
     R.clearFlag='gh_clear';

@@ -96,7 +96,7 @@ function drawWorldDyn(c,R,t,gs){
   const hz=R.hazards||[];
   for(let i=0;i<hz.length;i++){
     const h=hz[i];
-    if(h.kind==='coolant'){
+    if(h.kind==='coolant'||h.look==='coolant'){
       const yy=h.y+Math.sin(t*1.2)*0.06;
       const g=c.createLinearGradient(0,yy,0,h.y+h.h);
       g.addColorStop(0,'rgba(120,240,170,.55)');g.addColorStop(.3,'rgba(40,140,90,.75)');g.addColorStop(1,'rgba(10,50,30,.9)');
@@ -242,6 +242,82 @@ function drawPogo(c,q,t){
   c.strokeStyle=rgba('#ffe6a3',0.35+0.35*p+0.3*hit);c.lineWidth=0.05;
   c.beginPath();c.ellipse(q.x,y-r*0.25,r*1.25,r*0.5,0,PI*1.1,PI*1.9);c.stroke();
   game.renderer.glowAdd(q.x,y-0.2,0.9,'#e8c96a',0.18+0.12*p+0.4*hit);
+}
+/* станция пневмопочты: латунный шкаф с круглым люком под капсулу, манометр, лампа; вверх уходит
+   стеклянная труба. Сеть мертва — всё тёмное, стрелка на нуле; живая — в трубе пробегают капсулы */
+function drawStation(c,it,t,gs){
+  const x=it.x,y=it.y,on=!!gs.flags.post_on,reg=on&&gs.flags['st_'+it.def.station];
+  const tubeTop=it.def.tubeTop===undefined?y-8:it.def.tubeTop;
+  c.fillStyle='rgba(150,190,210,.10)';c.fillRect(x-0.22,tubeTop,0.44,y-2.2-tubeTop);
+  c.strokeStyle='rgba(200,225,235,.35)';c.lineWidth=0.05;
+  c.beginPath();c.moveTo(x-0.22,tubeTop);c.lineTo(x-0.22,y-2.2);c.moveTo(x+0.22,tubeTop);c.lineTo(x+0.22,y-2.2);c.stroke();
+  for(let yy=tubeTop+0.6;yy<y-2.4;yy+=1.6){c.fillStyle='#8a6d2a';c.fillRect(x-0.3,yy,0.6,0.12);}
+  if(on){const k=((t*0.9+x*0.13)%1),cy=lerp(y-2.4,tubeTop,k);
+    c.fillStyle='#c9a227';rr(c,x-0.15,cy-0.3,0.3,0.6,0.12);c.fill();
+    c.fillStyle='rgba(255,255,255,.4)';c.fillRect(x-0.1,cy-0.25,0.05,0.5);}
+  Kit.plate(c,x-0.65,y-2.3,1.3,2.3,'steel',990+((x*7)|0),{rust:0.4,bolts:true});
+  const g=c.createLinearGradient(x-0.6,0,x+0.6,0);g.addColorStop(0,'#6d5416');g.addColorStop(0.45,'#e8c96a');g.addColorStop(1,'#6d5416');
+  c.fillStyle=g;c.fillRect(x-0.65,y-2.3,1.3,0.18);
+  c.fillStyle='#1b1d20';c.beginPath();c.arc(x,y-1.35,0.42,0,TAU);c.fill();
+  c.strokeStyle='#b08d3e';c.lineWidth=0.09;c.beginPath();c.arc(x,y-1.35,0.42,0,TAU);c.stroke();
+  for(let i=0;i<6;i++){const a=i/6*TAU;Kit.bolt(c,x+Math.cos(a)*0.5,y-1.35+Math.sin(a)*0.5,0.035);}
+  if(reg){const p=0.5+0.5*Math.sin(t*2.4);
+    c.fillStyle=rgba('#9fe0ff',0.25+0.25*p);c.beginPath();c.arc(x,y-1.35,0.34,0,TAU);c.fill();
+    game.renderer.glowAdd(x,y-1.35,1.1,'#9fe0ff',0.25+0.2*p);}
+  Kit.gauge(c,x-0.36,y-0.48,0.17,on?0.7+0.05*Math.sin(t*3):0.0);
+  const lc=reg?'#69d68f':on?(Math.sin(t*6)>0?'#ffcf7a':'#5a4a2a'):'#3a2a26';
+  c.fillStyle=lc;c.beginPath();c.arc(x+0.36,y-0.48,0.08,0,TAU);c.fill();
+  if(on)game.renderer.glowAdd(x+0.36,y-0.48,0.4,lc,0.35);
+}
+/* почтмейстер за конторкой Главпочтамта. look: 0 — штемпелюет письма, ±1 — повернулась к курьеру */
+function drawPostmaster(c,x,dy,t,look){
+  const ph=look?0:Math.max(0,Math.sin(t*1.6))*Math.max(0,Math.sin(t*1.6));
+  /* спинка стула */
+  c.fillStyle='#2a201a';rr(c,x+0.3,dy-2.05,0.55,2.05,0.14);c.fill();
+  /* корпус: форменная тужурка */
+  const tg=c.createLinearGradient(x-0.5,dy-1.6,x+0.5,dy);tg.addColorStop(0,'#33405a');tg.addColorStop(1,'#1a2130');
+  c.fillStyle=tg;rr(c,x-0.5,dy-1.6,1.0,1.7,0.3);c.fill();
+  for(let i=0;i<3;i++){c.fillStyle='#c9a227';c.beginPath();c.arc(x+0.05,dy-1.25+i*0.32,0.045,0,TAU);c.fill();}
+  /* шаль */
+  c.fillStyle='#77736a';c.beginPath();c.moveTo(x-0.58,dy-1.3);c.quadraticCurveTo(x,dy-0.62,x+0.58,dy-1.3);
+  c.lineTo(x+0.5,dy-1.6);c.quadraticCurveTo(x,dy-1.12,x-0.5,dy-1.6);c.closePath();c.fill();
+  c.strokeStyle='rgba(0,0,0,.25)';c.lineWidth=0.025;for(let i=1;i<4;i++){c.beginPath();c.moveTo(x-0.5+i*0.25,dy-1.5);c.lineTo(x-0.42+i*0.21,dy-1.0);c.stroke();}
+  /* голова */
+  const hx=x+look*0.06,hy=dy-1.95;
+  c.fillStyle='#d2b49a';c.fillRect(hx-0.08,hy+0.18,0.16,0.18);
+  c.fillStyle='#e0c4a8';c.beginPath();c.ellipse(hx,hy,0.27,0.3,0,0,TAU);c.fill();
+  c.fillStyle='#bdbab2';c.beginPath();c.arc(hx-0.24,hy-0.06,0.15,0,TAU);c.fill();
+  c.fillStyle='#cfccc4';c.beginPath();c.ellipse(hx,hy-0.18,0.29,0.16,0,PI,TAU);c.fill();
+  /* фуражка с латунным рожком */
+  c.fillStyle='#232c3c';rr(c,hx-0.3,hy-0.42,0.6,0.22,0.06);c.fill();
+  c.fillStyle='#161c27';c.beginPath();c.ellipse(hx+0.12,hy-0.2,0.32,0.06,0,0,TAU);c.fill();
+  c.strokeStyle='#e8c96a';c.lineWidth=0.035;c.beginPath();c.arc(hx-0.02,hy-0.31,0.07,0.2,PI*1.6);c.stroke();
+  /* очки: латунь, блик смотрит туда же, куда она */
+  const ex=hx+0.06+look*0.04;
+  c.strokeStyle='#b08d3e';c.lineWidth=0.03;
+  c.beginPath();c.arc(ex-0.1,hy+0.0,0.075,0,TAU);c.stroke();c.beginPath();c.arc(ex+0.1,hy+0.0,0.075,0,TAU);c.stroke();
+  c.fillStyle='rgba(220,240,255,.55)';c.fillRect(ex-0.13+look*0.02,hy-0.04,0.03,0.03);c.fillRect(ex+0.07+look*0.02,hy-0.04,0.03,0.03);
+  c.strokeStyle='#8a6a52';c.lineWidth=0.025;c.beginPath();c.moveTo(ex-0.06,hy+0.16);c.quadraticCurveTo(ex,hy+0.19,ex+0.06,hy+0.16);c.stroke();
+  /* рука со штемпелем */
+  const sx=x+0.32,sy=dy-1.25,hx2=x+0.78,hy2=dy-0.12-ph*0.55;
+  c.strokeStyle='#2a3448';c.lineWidth=0.16;c.lineCap='round';c.beginPath();c.moveTo(sx,sy);c.lineTo(x+0.62,dy-0.55-ph*0.3);c.lineTo(hx2,hy2);c.stroke();
+  c.fillStyle='#8a6d2a';rr(c,hx2-0.05,hy2-0.28,0.1,0.26,0.04);c.fill();
+  c.fillStyle='#2b2620';rr(c,hx2-0.13,hy2-0.04,0.26,0.1,0.03);c.fill();
+  c.strokeStyle='#2a3448';c.beginPath();c.moveTo(x-0.32,dy-1.2);c.lineTo(x-0.5,dy-0.4);c.lineTo(x-0.2,dy-0.1);c.stroke();
+  /* конторка */
+  const g=c.createLinearGradient(0,dy,0,dy+1.2);g.addColorStop(0,'#5a4030');g.addColorStop(1,'#2e2018');
+  c.fillStyle=g;c.fillRect(x-1.5,dy,3.4,1.2);
+  c.fillStyle='#8a6d2a';c.fillRect(x-1.55,dy-0.06,3.5,0.1);
+  c.strokeStyle='rgba(0,0,0,.35)';c.lineWidth=0.04;c.strokeRect(x-1.3,dy+0.22,1.3,0.8);c.strokeRect(x+0.2,dy+0.22,1.5,0.8);
+  /* письма и штемпельная подушка */
+  for(let i=0;i<4;i++){c.fillStyle=i%2?'#d8cdb8':'#c9b48a';c.fillRect(x+1.0,dy-0.1-i*0.05,0.6,0.05);}
+  c.fillStyle='#d8cdb8';c.fillRect(x+0.62,dy-0.06,0.42,0.06);
+  if(ph>0.95){c.fillStyle='rgba(200,69,47,.8)';c.fillRect(x+0.72,dy-0.07,0.14,0.03);}
+  /* лампа с зелёным абажуром */
+  c.strokeStyle='#3a3630';c.lineWidth=0.05;c.beginPath();c.moveTo(x-1.1,dy-0.05);c.lineTo(x-1.1,dy-0.75);c.lineTo(x-0.8,dy-0.95);c.stroke();
+  c.fillStyle='#2f6b44';c.beginPath();c.moveTo(x-1.05,dy-0.95);c.lineTo(x-0.55,dy-0.95);c.lineTo(x-0.65,dy-1.15);c.lineTo(x-0.95,dy-1.15);c.closePath();c.fill();
+  c.fillStyle='rgba(255,236,170,.9)';c.fillRect(x-0.98,dy-0.96,0.36,0.04);
+  game.renderer.glowAdd(x-0.8,dy-0.85,1.1,'#ffe6a3',0.35);
 }
 function drawLightShafts(c,R,t){
   if(R.zone!=='eden'&&R.zone!=='sump')return;

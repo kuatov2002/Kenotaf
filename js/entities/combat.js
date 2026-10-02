@@ -69,7 +69,7 @@ class Combat{
         w.startAnim('beam',{dir:dir});w.startAnim('gardener');
         g.particles.burst(pb.x+pb.w/2,pb.y+0.4,24,{kind:'debris',col:'#8a8d7a',spd:5,life:1.0,size:0.12,g:22});
         g.particles.burst(pb.x+pb.w/2,pb.y+0.9,14,{kind:'dust',col:'#a8a48a',spd:3,life:1.2,size:0.14,g:6});
-      }else if((pb.kind==='crate'||pb.kind==='grate')&&!pb.pushed){
+      }else if((pb.kind==='crate'||pb.kind==='grate')&&!pb.pushed&&!pb.floor){
         hitAny=true;w.breakPushable(pb,dir);
       }else if(pb.kind==='core'&&!pb.pushed){
         hitAny=true;pb.vx+=dir*11;pb.vy-=2;g.audio.hitMetal();g.camera.addShake(0.25);

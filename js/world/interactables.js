@@ -6,6 +6,7 @@ class Interactable{
   canUse(gs){const d=this.def;
     if(d.kind==='salvage'||d.kind==='lever'||d.kind==='valve'||d.kind==='gauge'||d.kind==='wheel'||d.kind==='mapplate')return !gs.flags[d.flag];
     if(d.kind==='lore')return !gs.loreIds[d.loreId];
+    if(d.kind==='station'||d.kind==='postmaster')return true;
     if(d.kind==='talk'){if(gs.flags[d.flag]&&!d.again)return false;return d.ready?d.ready(this.world):true;}
     if(d.kind==='salvageBlocked'){
       if(gs.flags[d.flag])return false;
@@ -18,13 +19,19 @@ class Interactable{
     if(d.kind==='talk')return 'ГОВОРИТЬ · '+d.title;
     if(d.kind==='wheel')return 'ВРАЩАТЬ КОЛЕСО ПЕЧАТИ';
     if(d.kind==='mapplate')return 'СКОПИРОВАТЬ СХЕМУ · '+d.title;
+    if(d.kind==='station')return 'ПНЕВМОПОЧТА · '+(STATIONS[d.station]?STATIONS[d.station].name:'');
+    if(d.kind==='postmaster')return 'ГОВОРИТЬ · ПОЧТМЕЙСТЕР';
     return d.label||'ОСМОТРЕТЬ';}
   use(game){
     const gs=game.gs,d=this.def,w=this.world;
     if(!this.canUse(gs))return;
     if(d.kind==='lever'||d.kind==='valve'){
       gs.flag(d.flag);game.audio.lever();game.camera.addShake(0.4);this.usedAt=w.time;
-      if(d.kind==='valve'){
+      if(d.kind==='valve'&&d.post){
+        /* главный клапан пневмосети: магистраль под давлением — станции оживают по всей аркологии */
+        w.later(700,()=>{game.audio.elevator();game.camera.addShake(0.5);});
+        game.hud.say('МАГИСТРАЛЬ ПОД ДАВЛЕНИЕМ. ПНЕВМОПОЧТА ЖИВА.','СТАНЦИИ — В ХАБАХ ЗОН');
+      }else if(d.kind==='valve'){
         /* два клапана = давление: гермодверь к Примарху открывается сразу, без обходных флагов */
         const n=(gs.flags.valve_l?1:0)+(gs.flags.valve_r?1:0);
         if(n>=2){gs.flag('turbines_on');w.later(900,()=>{game.audio.gate();game.camera.addShake(0.6);});
@@ -33,6 +40,14 @@ class Interactable{
       }
       if(d.sys)w.startAnim(d.sys);
       game.particles.burst(this.x,this.y-1,22,{kind:'spark',col:'#ffcf7a',spd:4,life:0.7,size:0.05,add:true,g:9});
+    }else if(d.kind==='station'){
+      if(!gs.flags.post_on){game.hud.say('ЛИНИЯ МЕРТВА · МАНОМЕТР НА НУЛЕ','ПНЕВМОПОЧТА');game.audio.denied();return;}
+      if(!gs.flags['st_'+d.station]){gs.flag('st_'+d.station);game.audio.checkpoint();
+        game.particles.burst(this.x,this.y-1.4,18,{kind:'spark',col:'#9fe0ff',spd:4,life:0.6,size:0.05,add:true,g:6});}
+      game.travel.open(d.station);
+    }else if(d.kind==='postmaster'){
+      const sc=postmasterScene(gs);
+      game.cinematic.play({x:this.x,y:this.y,title:'ПОЧТМЕЙСТЕР',lines:sc.lines,upgrades:sc.upgrades,setFlags:sc.flags});
     }else if(d.kind==='mapplate'){
       gs.flag(d.flag);game.audio.lore();game.flash(0.15,'#9fd6ff');
       game.hud.say('СХЕМА СКОПИРОВАНА В ПЛАНШЕТ · ESC — КАРТА',d.title);
@@ -57,6 +72,8 @@ class Interactable{
   draw(c,t,gs){
     const d=this.def,live=this.canUse(gs);
     if(!live&&d.kind!=='lever'&&d.kind!=='valve'&&d.kind!=='mapplate')return;
+    if(d.kind==='station'){drawStation(c,this,t,gs);return;}
+    if(d.kind==='postmaster')return;
     const p=live?0.5+0.5*Math.sin(t*3):0;
     /* 0 → 1: рукоять/штурвал доворачивается за доли секунды после E */
     const k=this.usedAt!==undefined?clamp((this.world.time-this.usedAt)/0.32,0,1):(live?0:1);
@@ -190,6 +207,20 @@ class Pushable{
         c.beginPath();c.arc(cx,cy,0.44,0,TAU);c.stroke();c.beginPath();c.arc(cx,cy,0.22,0,TAU);c.stroke();
         c.fillStyle=rgba('#ffe6a3',0.45+0.4*p);c.beginPath();c.arc(cx,cy,0.09,0,TAU);c.fill();
         game.renderer.glowAdd(cx,cy,1.0,'#e8c96a',0.25+0.2*p);}
+    }else if(this.kind==='grate'&&this.floor){
+      /* решётка в полу: прутья поперёк провала, удары сверху прогибают их вниз */
+      const dmg=1-this.hp/this.maxHp,sag=dmg*0.22+(this.hitT>0?0.06:0),sh=this.hitT>0?(Math.random()-0.5)*0.05:0;
+      c.save();c.translate(sh,0);
+      Kit.plate(c,this.x-0.15,this.y-0.05,0.3,this.h+0.1,'steel',641,{bolts:false,rust:0.8});
+      Kit.plate(c,this.x+this.w-0.15,this.y-0.05,0.3,this.h+0.1,'steel',642,{bolts:false,rust:0.8});
+      c.lineCap='round';
+      for(let i=0;i<5;i++){const by=this.y+0.08+i*0.075,mid=this.x+this.w/2;
+        c.strokeStyle='#6b4a3a';c.lineWidth=0.07;c.beginPath();c.moveTo(this.x+0.1,by);c.quadraticCurveTo(mid,by+sag*(1+i*0.15),this.x+this.w-0.1,by);c.stroke();}
+      for(let i=1;i<5;i++){const bx=this.x+i*this.w/5;c.strokeStyle='#4a3a2e';c.lineWidth=0.06;
+        c.beginPath();c.moveTo(bx,this.y+0.05);c.lineTo(bx,this.y+this.h-0.02+sag*0.5);c.stroke();}
+      c.restore();
+      if(this.hitT>0){c.save();c.globalCompositeOperation='lighter';c.fillStyle=rgba('#ffcf7a',this.hitT*2);
+        c.fillRect(this.x,this.y,this.w,this.h);c.restore();}
     }else if(this.kind==='grate'){
       const bend=clamp(this.bend||0,-3,3),sh=this.hitT>0?(Math.random()-0.5)*0.08:0,dmg=1-this.hp/this.maxHp;
       c.save();c.translate(sh,0);
