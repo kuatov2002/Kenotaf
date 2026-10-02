@@ -1,8 +1,9 @@
 "use strict";
 /* ============================== WORLD MAP (пауза) ============================== */
-/* Схема-чертёж аркологии. Видны посещённые комнаты (и вся зона, если найдена её «схема яруса»):
-   внутри — настоящая геометрия комнаты в масштабе (стены, настилы, хладагент, пыльца), двери,
-   чекпоинты и станции пневмопочты. Неисследованный выход — оборванная линия со знаком «?». */
+/* Планшет курьера: только то, где он был сам. Комната — контур в масштабе, двери — зарубки,
+   связи — линии между дверями. Точки интереса: фонари (отдых), станции пневмопочты, залы стражей,
+   тайники. Неисследованный выход — обрубок со знаком «?». Терминал-схема в хабе добавляет одно:
+   отметки невзятых находок в уже пройденных залах своего яруса. Мини-карты нет. */
 class WorldMap{
   constructor(game){this.game=game;this.cache={};this.whole=false;}
   /* регион схемы — по номеру комнаты (тамбур Эдема нарисован свинцом Печати, но это Эдем) */
@@ -16,10 +17,7 @@ class WorldMap{
       stations:(R.interactables||[]).filter(d=>d.kind==='station')};
     this.cache[id]=o;return o;
   }
-  shown(id){const gs=this.game.gs,r=ROOMDEFS[id];if(!MAPLAYOUT[id]||!r)return false;
-    if(gs.visited[id])return true;
-    if(MAPSECRET[id])return false;
-    return !!gs.flags['map_'+this.region(id)];}
+  shown(id){const gs=this.game.gs;return !!(MAPLAYOUT[id]&&ROOMDEFS[id]&&gs.visited[id]);}
   zoneOf(id){const c=this.cache[id];if(c)return c.zone;
     return id[1]==='1'?'sump':id[1]==='2'?'hives':id[1]==='3'?(id==='z3_airlock'?'seal':'eden'):id[1]==='4'?'seal':(id==='z5_surface'?'surface':'archive');}
   render(cv){
@@ -77,39 +75,40 @@ class WorldMap{
           c.fillText('?',X(ex+dirx*2.2),Y(ey+diry*2.2));
         }
       }}
-    /* комнаты */
-    for(const id in infos){const i=infos[id],L=MAPLAYOUT[id],vis=!!gs.visited[id]||id===cur;
-      const rx=X(L[0]),ry=Y(L[1]),rw=i.w*sc,rh=i.h*sc;
-      c.save();c.beginPath();c.rect(rx,ry,rw,rh);c.clip();
-      c.fillStyle=vis?rgba(MAPTINT[this.region(id)]||'#555',0.55):'rgba(60,70,80,.18)';c.fillRect(rx,ry,rw,rh);
-      if(vis){
-        for(const z of i.pollen){c.fillStyle='rgba(206,220,110,.32)';c.fillRect(X(L[0]+z.x),Y(L[1]+z.y),z.w*sc,z.h*sc);}
-        for(const h of i.hazards){if(h.kind==='coolant'){c.fillStyle='rgba(105,214,143,.55)';c.fillRect(X(L[0]+h.x),Y(L[1]+h.y),h.w*sc,h.h*sc);}
-          else if(h.kind==='pit'){c.fillStyle='rgba(0,0,0,.6)';c.fillRect(X(L[0]+h.x),Y(L[1]+h.y),h.w*sc,h.h*sc);}}
-        for(const s of i.solids){c.fillStyle=s.ow?'rgba(20,16,12,.55)':'rgba(14,11,9,.92)';
-          c.fillRect(X(L[0]+s.x),Y(L[1]+s.y),Math.max(1,s.w*sc),Math.max(1,(s.ow?Math.max(s.h,0.5):s.h)*sc));}
-      }
-      c.restore();
-      c.strokeStyle=id===cur?'rgba(255,226,150,.95)':(vis?'rgba(232,201,106,.55)':'rgba(170,190,210,.3)');
-      c.lineWidth=(id===cur?2.4:1.3)*dpr;if(!vis)c.setLineDash([3*dpr,3*dpr]);
+    /* комнаты: контур и тон зоны, без внутренней геометрии */
+    const icon=(kind,x,y,on)=>{const r=4.2*dpr;c.save();c.translate(x,y);
+      if(kind==='lamp'){c.fillStyle=on?'#ffcf7a':'rgba(232,201,106,.7)';c.beginPath();c.moveTo(0,-r*1.2);c.lineTo(r*0.8,0);c.lineTo(0,r*1.2);c.lineTo(-r*0.8,0);c.closePath();c.fill();
+        if(on){c.strokeStyle='rgba(255,207,122,.5)';c.lineWidth=1.5*dpr;c.beginPath();c.arc(0,0,r*1.9,0,TAU);c.stroke();}}
+      else if(kind==='station'){c.fillStyle=on?'#9fe0ff':'rgba(159,224,255,.4)';rr(c,-r*1.2,-r*0.7,r*2.4,r*1.4,r*0.7);c.fill();}
+      else if(kind==='boss'){c.strokeStyle=on?'#ff6e50':'rgba(200,190,170,.45)';c.lineWidth=2*dpr;c.beginPath();c.arc(0,0,r*1.5,0,TAU);c.stroke();
+        for(let k=0;k<8;k++){const q=k/8*TAU;c.beginPath();c.moveTo(Math.cos(q)*r*1.5,Math.sin(q)*r*1.5);c.lineTo(Math.cos(q)*r*2.1,Math.sin(q)*r*2.1);c.stroke();}
+        if(!on){c.beginPath();c.moveTo(-r,-r);c.lineTo(r,r);c.moveTo(r,-r);c.lineTo(-r,r);c.stroke();}}
+      else if(kind==='secret'){c.fillStyle='#e8c96a';c.beginPath();for(let k=0;k<10;k++){const q=-PI/2+k/10*TAU,rr2=k%2?r*0.5:r*1.3;c.lineTo(Math.cos(q)*rr2,Math.sin(q)*rr2);}c.closePath();c.fill();}
+      else if(kind==='item'){c.fillStyle='#f0e6c8';c.beginPath();c.arc(0,0,r*0.7,0,TAU);c.fill();c.strokeStyle='rgba(240,230,200,.45)';c.lineWidth=1.2*dpr;c.beginPath();c.arc(0,0,r*1.4,0,TAU);c.stroke();}
+      c.restore();};
+    for(const id in infos){const i=infos[id],L=MAPLAYOUT[id];
+      const rx=X(L[0]),ry=Y(L[1]),rw=i.w*sc,rh=i.h*sc,secret=!!MAPSECRET[id];
+      c.fillStyle=rgba(MAPTINT[this.region(id)]||'#555',id===cur?0.62:0.42);c.fillRect(rx,ry,rw,rh);
+      c.strokeStyle=id===cur?'rgba(255,226,150,.95)':(secret?'rgba(232,201,106,.85)':'rgba(232,201,106,.5)');
+      c.lineWidth=(id===cur?2.4:1.3)*dpr;if(secret)c.setLineDash([5*dpr,3*dpr]);
       c.strokeRect(rx+0.5,ry+0.5,rw-1,rh-1);c.setLineDash([]);
-      if(!vis)continue;
       /* имя комнаты — если влезает */
       {const fs=Math.round(Math.min(11*dpr,Math.max(7*dpr,sc*1.1)));c.font='500 '+fs+'px Oswald';
         const nm=i.name.split(' · ')[0];
         if(c.measureText(nm).width<rw-8*dpr&&rh>fs*2.2){c.textAlign='left';c.textBaseline='top';
           c.fillStyle='rgba(8,8,8,.55)';c.fillText(nm,rx+5*dpr,ry+4*dpr+1);
           c.fillStyle=id===cur?'#ffe9b0':'rgba(238,226,200,.8)';c.fillText(nm,rx+4*dpr,ry+4*dpr);}}
-      /* двери — светлые зарубки на кромке */
+      /* двери — зарубки на кромке; запертые — красные */
       for(const d of i.doors){c.fillStyle=g.gates.doorLocked(d)&&!d.oneway?'#ff6e50':'#f6e8c6';
-        c.fillRect(X(L[0]+d.x),Y(L[1]+d.y),Math.max(2,d.w*sc),Math.max(2,d.h*sc));}
-      /* чекпоинт: латунный фонарь (горит, если это точка возврата) */
-      if(i.cp){const lit=gs.cp.room===id,cx=X(L[0]+i.cp.x),cy=Y(L[1]+i.cp.y-i.cp.h*0.6);
-        c.fillStyle=lit?'#ffcf7a':'rgba(232,201,106,.6)';c.beginPath();c.arc(cx,cy,(lit?4:3)*dpr,0,TAU);c.fill();
-        if(lit){c.strokeStyle='rgba(255,207,122,.5)';c.lineWidth=1.5*dpr;c.beginPath();c.arc(cx,cy,7*dpr,0,TAU);c.stroke();}}
-      /* станции пневмопочты: капсула */
-      for(const s of i.stations){const sx=X(L[0]+s.x),sy=Y(L[1]+s.y-1),on=gs.flags.post_on&&gs.flags['st_'+s.station];
-        c.fillStyle=on?'#9fe0ff':'rgba(159,224,255,.35)';rr(c,sx-5*dpr,sy-3*dpr,10*dpr,6*dpr,3*dpr);c.fill();}
+        c.fillRect(X(L[0]+d.x),Y(L[1]+d.y),Math.max(2.5*dpr,d.w*sc),Math.max(2.5*dpr,d.h*sc));}
+      /* точки интереса */
+      if(i.cp)icon('lamp',X(L[0]+i.cp.x),Y(L[1]+i.cp.y-i.cp.h*0.6),gs.cp.room===id);
+      for(const st of i.stations)icon('station',X(L[0]+st.x),Y(L[1]+st.y-1),gs.flags.post_on&&gs.flags['st_'+st.station]);
+      if(/_boss$/.test(id))icon('boss',rx+rw/2,ry+rh/2,!!i.R.boss);
+      if(secret)icon('secret',rx+rw-8*dpr,ry+8*dpr);
+      /* терминал-схема яруса: невзятые цилиндры и находки в пройденных залах */
+      if(gs.flags['map_'+this.region(id)])for(const d of (i.R.interactables||[]))
+        if(d.kind==='lore'||d.kind==='salvage')icon('item',X(L[0]+d.x),Y(L[1]+d.y-0.8));
     }
     /* подписи зон */
     const zones={};for(const id in infos){const L=MAPLAYOUT[id],rg=this.region(id),z=zones[rg]||(zones[rg]={x:1e9,y:1e9});

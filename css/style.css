@@ -197,4 +197,8 @@ kbd.kc{min-width:30px;height:30px;padding:0 8px;display:inline-grid;place-items:
 .archtext .aw{margin-top:14px;font-size:10px;letter-spacing:.32em;color:#7d7364}
 @media (max-width:900px){.archgrid{grid-template-columns:1fr}}
 .maplegend .lg-term{background:#9fd6ff;width:7px;height:9px}
-.maplegend .lg-boss{background:#ff6e50;transform:rotate(45deg);width:7px;height:7px}
+.maplegend .lg-boss{border:2px solid #ff6e50;border-radius:50%;width:7px;height:7px}
+.maplegend .lg-cp{transform:rotate(45deg);border-radius:1px!important;width:7px!important;height:7px!important}
+.maplegend .lg-sec{color:#e8c96a;width:auto;font-size:11px}
+.maplegend .lg-item{background:#f0e6c8;border-radius:50%;width:7px;height:7px;box-shadow:0 0 0 2px rgba(240,230,200,.3)}
+.maplegend .lg-lock{background:#ff6e50;width:7px;height:7px}

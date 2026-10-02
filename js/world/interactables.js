@@ -19,7 +19,7 @@ class Interactable{
     if(d.kind==='lore')return 'ИЗВЛЕЧЬ ЦИЛИНДР';
     if(d.kind==='talk')return 'ГОВОРИТЬ · '+d.title;
     if(d.kind==='wheel')return 'ВРАЩАТЬ КОЛЕСО ПЕЧАТИ';
-    if(d.kind==='mapplate')return 'СКОПИРОВАТЬ СХЕМУ · '+d.title;
+    if(d.kind==='mapplate')return 'СВЕРИТЬ ПЛАНШЕТ · '+d.title;
     if(d.kind==='station')return 'ПНЕВМОПОЧТА · '+(STATIONS[d.station]?STATIONS[d.station].name:'');
     if(d.kind==='postmaster')return 'ГОВОРИТЬ · ПОЧТМЕЙСТЕР';
     if(d.kind==='broadcast')return 'ВЕЩАТЬ НА ВСЕ ЯРУСЫ';
@@ -61,7 +61,7 @@ class Interactable{
       game.cinematic.play({x:this.x,y:this.y,title:'ПОЧТМЕЙСТЕР',lines:sc.lines,upgrades:sc.upgrades,setFlags:sc.flags});
     }else if(d.kind==='mapplate'){
       gs.flag(d.flag);game.audio.lore();game.flash(0.15,'#9fd6ff');
-      game.hud.say('СХЕМА СКОПИРОВАНА В ПЛАНШЕТ · ESC — КАРТА',d.title);
+      game.hud.say('ПЛАНШЕТ СВЕРЕН СО СХЕМОЙ: НЕВЗЯТОЕ В ПРОЙДЕННЫХ ЗАЛАХ ОТМЕЧЕНО',d.title);
     }else if(d.kind==='gauge'){
       gs.flag(d.flag);game.audio.checkpoint();game.flash(0.25);
       const all=gs.flags.gaugeA&&gs.flags.gaugeB&&gs.flags.gaugeC;

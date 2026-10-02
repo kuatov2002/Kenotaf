@@ -54,25 +54,28 @@ const INTRO=[
 ];
 /* записи курьера: что он знает и о чём догадывается — без инструкций «нажми/иди» */
 const OBJECTIVES=[
-  {t:'НАСОСЫ ЯРУСА −41 СТОЯТ ТРЕТЬИ СУТКИ. НАВЕРХ ВЕДЁТ НАСОСНАЯ СТАНЦИЯ.',done:gs=>!!gs.visited.z1_hub},
-  {t:'ВОСТОЧНЫЙ КОРИДОР ЗАВАЛЕН. НАД ЗАВАЛОМ ХОДИТ КРАН-БАЛКА.',done:gs=>!!gs.flags.east_crane},
+  {t:'НАСОСЫ ЯРУСА −41 СТОЯТ ТРЕТЬИ СУТКИ. ВВЕРХ ВЕДЁТ ГАЛЕРЕЯ ОБХОДЧИКОВ.',done:gs=>!!gs.visited.z1_charge},
+  {t:'НА ИСПЫТАТЕЛЬНОМ СТЕНДЕ — РЕЗАК И КЛАПАН. МЕХАНИЗМЫ СТЕНДА ЕЩЁ НА ИСПЫТАНИИ.',done:gs=>!!gs.flags.charge_test},
+  {t:'НАСОСНАЯ СТАНЦИЯ. ВОСТОЧНЫЙ КОРИДОР ЗАВАЛЕН, НАД ЗАВАЛОМ ХОДИТ КРАН-БАЛКА.',done:gs=>!!gs.flags.east_crane},
   {t:'ЗА КОРИДОРОМ — РЕМОНТНЫЙ ЦЕХ. РЕМОНТНИКИ НЕ ЛЮБЯТ ЧУЖИХ.',done:gs=>!!gs.flags.arena_cleared},
-  {t:'В ЦЕХУ ОСТАЛАСЬ ЗАРЯДНАЯ СТАНЦИЯ С РЕЗАКОМ.',done:gs=>gs.has('pulse')},
   {t:'ГРУЗОВОЙ ПУТЬ НАВЕРХ ДЕРЖИТ НАДСМОТРЩИК. ЕГО ГЕРМОЗОНА — ЗА СЕЙФ-КОМНАТОЙ.',done:gs=>!!gs.bosses.overseer},
-  {t:'КРАНОВЩИК НОСИЛ НА СЕБЕ КЛАПАН РЫВКА.',done:gs=>gs.has('dash')},
-  {t:'СЕВЕРНЫЙ ШЛЮЗ НАСОСНОЙ: ЗА ПРОПАСТЬЮ — ЛИФТ В ЖИЛЫЕ СОТЫ.',done:gs=>!!gs.visited.z2_escalator},
+  {t:'ГАРПУН КРАНОВЩИКА ЦЕПЛЯЕТСЯ ЗА РЫМЫ. НАД ПРОПАСТЬЮ ШЛЮЗА ИХ ЦЕЛЫЙ РЯД.',done:gs=>!!gs.visited.z2_escalator},
   {t:'В СОТАХ ВСЁ ВЕДЁТ ВВЕРХ ПО ГЛАДКИМ СТЕНАМ. В КВАРТИРАХ ЖИЛИ МОНТАЖНИКИ.',done:gs=>gs.has('claws')},
   {t:'ДАВЛЕНИЕ НА НАШ ЯРУС ИДЁТ ИЗ ТУРБИННОГО ЗАЛА. ТУДА — ЧЕРЕЗ ЛЕСТНИЧНУЮ КЛЕТЬ.',done:gs=>!!gs.visited.z2_turbine},
   {t:'ТУРБИНЫ ПЕРЕКРЫТЫ НА ДВУХ КЛАПАНАХ. ЭТО НЕ АВАРИЯ.',done:gs=>!!gs.flags.turbines_on,
     extra:gs=>((gs.flags.valve_l?1:0)+(gs.flags.valve_r?1:0))+'/2'},
-  {t:'ЛИФТ В САДЫ ЭДЕМА ДЕРЖИТ ЦЕНЗОР-ПРИМАРХ.',done:gs=>!!gs.bosses.primarch},
-  {t:'ЛИСТЬЯ РАСТУТ ТОЛЬКО В САДАХ ЭДЕМА. ТАМ ДОЛЖНЫ ЗНАТЬ, ОТКУДА ЭТОТ.',done:gs=>!!gs.visited.z3_greenhouse},
+  {t:'ДАВЛЕНИЕ ДЕРЖИТ НА СЕБЕ ЦЕНЗОР-ПРИМАРХ.',done:gs=>!!gs.bosses.primarch},
+  {t:'ЛИСТЬЯ РАСТУТ ТОЛЬКО В САДАХ ЭДЕМА. ШЛЮЗ — ЗА КАБИНЕТОМ ПРИМАРХА.',done:gs=>!!gs.visited.z3_greenhouse},
   {t:'САДЫ ПУСТЫ. ЕСЛИ КТО-ТО ОСТАЛСЯ — ТО ВНИЗУ, В ТЕХНИЧЕСКИХ КАНАЛАХ.',done:gs=>gs.has('magnet')},
-  {t:'САДОВНИК НЕ ЗНАЕТ ЭТОГО ЛИСТА. ВЫШЕ САДОВ — ТОЛЬКО КУПОЛ И ПЕЧАТЬ.',done:gs=>!!gs.visited.z3_dome},
+  {t:'САДОВНИК НЕ ЗНАЕТ ЭТОГО ЛИСТА. ЗА ЗАЛОМ ЛАМП-СОЛНЦ — САРАЙ КОРЧЕВАТЕЛЯ.',done:gs=>!!gs.bosses.uprooter},
+  {t:'ПРОБОЙНИК ВЫБИВАЕТ СВИНЕЦ. ПОДЪЁМНИК КУПОЛА ЗАПАЯН СВИНЦОМ.',done:gs=>!!gs.flags.lead_dome},
   {t:'КУПОЛ ВЕДЁТ К ШЛЮЗУ ПЕЧАТИ.',done:gs=>!!gs.visited.z4_antechamber},
-  {t:'ПЕЧАТЬ ПОДНИМАЮТ ТРИ МАГИСТРАЛИ ДАВЛЕНИЯ.',done:gs=>!!(gs.flags.gaugeA&&gs.flags.gaugeB&&gs.flags.gaugeC),
+  {t:'ПОДЪЁМНИК ПРЕДПЕЧАТЬЯ ЖДЁТ ДАВЛЕНИЯ ТРЁХ МАГИСТРАЛЕЙ.',done:gs=>!!gs.flags.seal_gauges,
     extra:gs=>((gs.flags.gaugeA?1:0)+(gs.flags.gaugeB?1:0)+(gs.flags.gaugeC?1:0))+'/3'},
-  {t:'ПЕЧАТЬ СТЕРЕЖЁТ АРХИВАРИУС СОВЕТА.',done:gs=>!!gs.flags.archivist_dead},
+  {t:'ХОД ПЕЧАТИ ЗАДАЁТ РЕГУЛЯТОР. ЕГО ЦИФЕРБЛАТ — НАВЕРХУ БАШНИ.',done:gs=>!!gs.bosses.regulator},
+  {t:'ЧАСЫ ВСТАЛИ. ЗА НИМИ — ВОРОТА В АРХИВ СОВЕТА.',done:gs=>!!gs.visited.z5_hall},
+  {t:'СОВЕТ ЗАСЕДАЕТ В ГЛУБИНЕ АРХИВА. ЕСЛИ ОН ЕЩЁ ЕСТЬ.',done:gs=>!!gs.flags.council_heard},
+  {t:'СОВЕТ — ЭТО ПЛАСТИНКИ. ПЕЧАТЬ СТЕРЕЖЁТ АРХИВАРИУС. ПОДЪЁМНИК — ЗА СКЛЕПОМ.',done:gs=>!!gs.flags.archivist_dead},
   {t:'КОЛЕСО ПЕЧАТИ СВОБОДНО.',done:gs=>!!gs.flags.wheel_turned},
   {t:'ЗА ПЕЧАТЬЮ — СВЕТ.',done:()=>false}
 ];
@@ -80,7 +83,10 @@ const OBJECTIVES=[
 function journalHTML(gs){let ci=OBJECTIVES.findIndex(o=>!o.done(gs));if(ci<0)ci=OBJECTIVES.length-1;
   let h='<div class="jh">ЗАПИСИ КУРЬЕРА</div>';
   for(let i=Math.max(0,ci-2);i<ci;i++)h+='<p class="old">'+OBJECTIVES[i].t+'</p>';
-  const o=OBJECTIVES[ci];h+='<p class="cur">'+o.t+(o.extra?' <b>'+o.extra(gs)+'</b>':'')+'</p>';return h;}
+  const o=OBJECTIVES[ci];h+='<p class="cur">'+o.t+(o.extra?' <b>'+o.extra(gs)+'</b>':'')+'</p>';
+  /* побочное: вещательный массив ждёт правды */
+  if(gs.visited.z5_broadcast&&!gs.flags.broadcast_done)h+='<p class="old">ВЕЩАТЕЛЬНЫЙ МАССИВ: ЗАПИСЕЙ <b>'+(gs.lore||0)+'/'+BROADCAST_N+'</b> — ТОГДА ПОВЕРЯТ.</p>';
+  return h;}
 function currentObjective(gs){for(const o of OBJECTIVES)if(!o.done(gs))return o.t+(o.extra?' · '+o.extra(gs):'');return '';}
 /* [[A,D],[←,→]] → [A][D] / [←][→] */
 function keysHTML(alts){

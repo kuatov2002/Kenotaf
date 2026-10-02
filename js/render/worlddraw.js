@@ -206,6 +206,7 @@ function drawWorldLive(c,R,t,gs){
   }
   game.lamps.drawLive(c,R,t);
   drawChalk(c,R,t);
+  drawHubNotes(c,game.world,t,gs);
   if(R.anchors&&R.anchors.length){const p=W.player,aim=p&&p.hookAim,has=game.gs.has('hook');
     for(const a of R.anchors){if(a.hidden)continue;drawAnchor(c,a,t,has,a===aim||(p&&p.hook&&p.hook.a===a));}}
   for(let i=0;i<W.interactables.length;i++)W.interactables[i].draw(c,t,gs);
@@ -270,6 +271,30 @@ function drawWorldLive(c,R,t,gs){
 }
 /* клапан-отбойник: латунная головка на трубе. Ударом вниз от неё отскакивают (как от шипов),
    поэтому её язык — тот же латунный, что у всего, с чем курьер взаимодействует */
+/* хабы обрастают правдой: почтмейстер переписывает сданные цилиндры и шлёт по ярусам —
+   вокруг станций пневмопочты листки (чем больше записей, тем гуще), с десятой — свечи,
+   с восемнадцатой — мелом «ПРОТИВ» (так голосовали те, кого записали в несогласные), после вещания — «МЫ СЛЫШАЛИ» */
+function drawHubNotes(c,W,t,gs){
+  const n=gs.flags.lore_given||0;if(!n&&!gs.flags.broadcast_done)return;
+  for(const it of W.interactables){if(it.def.kind!=='station')continue;
+    const sx=it.def.x,sy=it.def.y,r=rng(((sx*131)|0)+((sy*17)|0)+5),k=Math.min(14,n);
+    for(let i=0;i<k;i++){let x=sx-3.4+r()*6.8;const y=sy-4.5+r()*1.7,a=(r()-0.5)*0.34,tone=r();
+      if(Math.abs(x-sx)<0.9)x+=x<sx?-1.0:1.0;
+      c.save();c.translate(x,y);c.rotate(a);
+      c.fillStyle='rgba(0,0,0,.3)';c.fillRect(-0.29,-0.36,0.62,0.8);
+      c.fillStyle=tone<0.33?'#9a9280':tone<0.66?'#8e8470':'#88907e';c.fillRect(-0.32,-0.4,0.62,0.8);
+      c.fillStyle='rgba(30,24,16,.6)';for(let q=0;q<5;q++)c.fillRect(-0.24,-0.28+q*0.12,0.26+((q*7+i*3)%5)*0.05,0.03);
+      c.fillStyle='#8a2a1c';c.beginPath();c.arc(-0.01,-0.36,0.035,0,TAU);c.fill();
+      c.restore();}
+    if(n>=10)for(const dx of [-0.55,0.62]){const fl=0.7+0.3*Math.sin(t*9+dx*7);
+      c.fillStyle='#e8e0c8';c.fillRect(sx+dx-0.05,sy-0.32,0.1,0.32);
+      c.fillStyle=rgba('#ffcf7a',fl);c.beginPath();c.ellipse(sx+dx,sy-0.4,0.04,0.09,0,0,TAU);c.fill();
+      game.renderer.glowAdd(sx+dx,sy-0.42,0.7,'#ffcf7a',0.3*fl);}
+    const chalk=(txt,x,y,s)=>{c.save();c.translate(x,y);c.rotate(-0.04);c.fillStyle='rgba(225,225,212,.42)';c.font='600 '+s+'px Oswald';c.textAlign='center';c.fillText(txt,0,0);c.restore();};
+    if(n>=18)chalk('ПРОТИВ',sx-1.8,sy-5.2,0.62);
+    if(gs.flags.broadcast_done)chalk('МЫ СЛЫШАЛИ',sx+1.6,sy-5.0,0.5);
+  }
+}
 function drawPogo(c,q,t){
   const r=q.r||0.45,len=q.len===undefined?1.6:q.len,hit=q.hitT>0?q.hitT/0.25:0;
   if(len>0){c.fillStyle='#2b3035';c.fillRect(q.x-0.12,q.y,0.24,len);

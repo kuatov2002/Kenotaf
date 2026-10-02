@@ -25,7 +25,7 @@ window.ProgressProbe={
           oneway:d.oneway||null})),
         inters,
         push:R.pushables.filter(p=>!p.pushed).map(p=>({id:p.id,kind:p.kind,flag:p.flag||null})),
-        waves:!!R.waves,clearFlag:R.clearFlag||null,
+        waves:!!R.waves,clearFlag:R.clearFlag||null,guards:R.enemies.filter(e=>!e.amb).map(e=>e.variant||e.type),
         boss:R.boss?R.boss.type:null,trigger:R.bossTrigger||null};
     });
   },

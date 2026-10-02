@@ -7,14 +7,14 @@ const mtof=m=>440*Math.pow(2,(m-69)/12);
 const MUSIC={
   sump:{chords:[[45,52,57,60],[41,48,53,57],[43,50,55,59],[40,47,52,55]],dur:10,pad:850,padG:0.0105,
     bells:[57,60,62,64,67,69,72],bellEvery:[4,9],bellG:0.013,bed:{lp:170,g:0.05,lfo:0.06},drone:[33,0.02],
-    clank:[7,15],drip:[2.5,6]},
+    clank:[7,15],drip:[2.5,6],pump:1},
   hives:{chords:[[50,57,62,65],[46,53,58,62],[43,50,55,58],[45,52,57,61]],dur:12,pad:720,padG:0.0095,
     bells:[62,65,67,69,72,74,77],bellEvery:[3,7],bellG:0.012,bed:{lp:130,g:0.034,lfo:0.04},drone:[38,0.014],
-    creak:[9,18]},
+    creak:[9,18],knock:[10,22],whisper:[12,26]},
   eden:{chords:[[48,55,59,64],[45,52,55,60],[41,48,52,57],[41,48,50,56]],dur:10,pad:1250,padG:0.0085,
-    bells:[72,74,76,79,81,84],bellEvery:[3,6],bellG:0.0095,bed:{lp:300,g:0.016,lfo:0.08},air:0.005},
+    bells:[72,74,76,79,81,84],bellEvery:[3,6],bellG:0.0095,bed:{lp:300,g:0.016,lfo:0.08},air:0.005,leaves:[3,8],drip:[4,9],hum:0.006},
   seal:{chords:[[40,47,52,59],[41,48,53,57],[40,47,52,55],[38,45,50,57]],dur:14,pad:600,padG:0.008,
-    bells:[64,65,71,72,76],bellEvery:[6,12],bellG:0.01,bed:{lp:110,g:0.04,lfo:0.03},drone:[28,0.03],tick:0.5,clank:[6,13]},
+    bells:[64,65,71,72,76],bellEvery:[6,12],bellG:0.01,bed:{lp:110,g:0.04,lfo:0.03},drone:[28,0.03],tick:0.5,clank:[6,13],hiss:[7,15]},
   archive:{chords:[[38,45,50,57],[36,43,48,55]],dur:20,pad:420,padG:0.004,
     bells:[69,74,76],bellEvery:[14,26],bellG:0.006,bed:{lp:90,g:0.012,lfo:0.02},click:[5,14]},
   surface:{chords:[[48,55,60,64],[43,50,55,59],[45,52,57,60],[41,48,53,57]],dur:8,pad:1700,padG:0.0095,
@@ -216,8 +216,10 @@ class AudioSystem{
     setTimeout(kill,1900);
   }
   setZone(z){
-    if(!this.ready||this.zone===z)return;
-    this.zone=z;this.stopAmbient();
+    /* мир меняется — меняется и звук: турбины, сад, часы */
+    const F=(typeof game!=='undefined'&&game.gs&&game.gs.flags)||{},sig=(F.turbines_on?1:0)+(F.boss3_dead?2:0)+(F.boss4_dead?4:0);
+    if(!this.ready||(this.zone===z&&this.sig===sig))return;
+    this.zone=z;this.sig=sig;this.stopAmbient();
     const M=MUSIC[z];if(!M)return;
     const ctx=this.ctx,g=ctx.createGain();g.gain.value=0.0001;g.connect(this.mus);
     const send=ctx.createGain();send.gain.value=0.3;g.connect(send);send.connect(this.verb);
@@ -287,7 +289,29 @@ class AudioSystem{
         vg.gain.exponentialRampToValueAtTime(0.0001,t0+0.09);
         const w=ctx.createGain();w.gain.value=1;o.connect(vg);vg.connect(w);w.connect(this.verb);
         o.start(t0);o.stop(t0+0.12);own(o,[vg,w]);later(rnd(M.drip[0],M.drip[1]),drip);};later(rnd(1,3),drip);}
-    if(M.tick){let k=0;const tick=()=>{burst(k++%2?1050:1300,7,0.009,0.03,0.25);later(M.tick,tick);};later(0.5,tick);}
+    /* плавная волна шума: шёпот, листва, давление */
+    const swell=(freq,q,gain,att,dec,wet,sweep)=>{
+      const s=ctx.createBufferSource();s.buffer=this.noise;const t0=ctx.currentTime+0.02;
+      const f=ctx.createBiquadFilter();f.type='bandpass';f.Q.value=q;f.frequency.setValueAtTime(freq,t0);
+      if(sweep)f.frequency.linearRampToValueAtTime(sweep,t0+att+dec);
+      const vg=ctx.createGain();vg.gain.setValueAtTime(0.0001,t0);vg.gain.linearRampToValueAtTime(gain,t0+att);vg.gain.linearRampToValueAtTime(0.0001,t0+att+dec);
+      const w=ctx.createGain();w.gain.value=wet;s.connect(f);f.connect(vg);vg.connect(g);vg.connect(w);w.connect(this.verb);
+      s.start(t0,Math.random()*1.5);s.stop(t0+att+dec+0.1);own(s,[f,vg,w]);};
+    /* флаги мира — см. начало setZone */
+    /* насосы: пока турбины перекрыты — редкие, сбивчивые; давление вернули — ровный ход */
+    if(M.pump){const on=!!F.turbines_on;const pump=()=>{burst(rnd(70,95),1.2,on?0.05:0.028,0.5,0.2,40);later(0.38,()=>burst(rnd(120,150),2,on?0.024:0.012,0.3,0.15));
+        later(on?rnd(1.5,1.7):rnd(4,11),pump);};later(rnd(1,3),pump);}
+    if(M.knock){const knock=()=>{const n=Math.random()<0.6?2:3;for(let i=0;i<n;i++)later(i*rnd(0.17,0.26),()=>burst(rnd(480,680),5,0.022,0.09,0.5));
+        later(rnd(M.knock[0],M.knock[1]),knock);};later(rnd(5,11),knock);}
+    if(M.whisper){const wh=()=>{swell(rnd(2400,3400),1.4,0.0055,rnd(0.5,0.9),rnd(0.8,1.6),0.9,rnd(1700,2300));
+        if(Math.random()<0.5)later(rnd(0.9,1.6),()=>swell(rnd(2600,3400),1.4,0.004,0.5,1.0,0.9,rnd(1800,2400)));
+        later(rnd(M.whisper[0],M.whisper[1]),wh);};later(rnd(7,14),wh);}
+    if(M.leaves){const lv=()=>{swell(rnd(3200,4600),0.7,0.0065,rnd(0.3,0.6),rnd(0.6,1.2),0.4);later(rnd(M.leaves[0],M.leaves[1]),lv);};later(rnd(1,4),lv);}
+    if(M.hiss){const hs=()=>{swell(rnd(420,700),0.6,0.012,rnd(1.2,2),rnd(2,3.2),0.6,rnd(300,420));later(rnd(M.hiss[0],M.hiss[1]),hs);};later(rnd(3,7),hs);}
+    if(M.hum&&!F.boss3_dead){[[110,1],[220,0.4],[330,0.15]].forEach(p=>{const o=ctx.createOscillator();o.type='sine';o.frequency.value=p[0];
+        const og=ctx.createGain();og.gain.value=M.hum*p[1];o.connect(og);og.connect(g);o.start();A.nodes.push(o,og);});}
+    /* Регулятор разобран — часы Печати встали: тиканья больше нет */
+    if(M.tick&&!F.boss4_dead){let k=0;const tick=()=>{burst(k++%2?1050:1300,7,0.009,0.03,0.25);later(M.tick,tick);};later(0.5,tick);}
     if(M.click){const click=()=>{burst(rnd(1800,2600),9,0.012,0.025,0.6);if(Math.random()<0.4)later(0.12,()=>burst(rnd(1600,2200),9,0.008,0.02,0.6));
       later(rnd(M.click[0],M.click[1]),click);};later(rnd(2,5),click);}
     pad();later(rnd(1.5,3.5),bell);

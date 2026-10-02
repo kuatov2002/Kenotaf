@@ -10,7 +10,7 @@
 const path=require('path');
 const {serve,launch,openGame}=require('./lib');
 
-const ALL_AB=['pulse','dash','claws','magnet','filter'];
+const ALL_AB=['pulse','dash','hook','claws','filter','magnet','breaker','vjump'];
 const PAR=4;   /* параллельных вкладок */
 
 async function makeWorkers(url,n){
@@ -72,13 +72,14 @@ async function solve(ws,opts){
           if(it.flag)setFlag(it.flag,'flag '+it.flag+' ('+tag+')');
           if(it.upgrade)setFlag(it.upgrade,'+ upgrade '+it.upgrade+' ('+tag+')');
         }else if(it.kind==='talk'){
-          if(!st.flags.gh_beam)continue;   /* садовник под балкой: говорит, только когда балку сбили */
+          if(it.ability==='magnet'&&!st.flags.gh_beam)continue;   /* садовник под балкой: говорит, только когда балку сбили */
           if(it.ability&&!deny.has(it.ability)&&st.ab.indexOf(it.ability)<0){st.ab.push(it.ability);changed.add('@ab');
             events.push('+ '+it.ability.toUpperCase()+'  ('+tag+')');}
           if(it.flag&&!deny.has(it.ability))setFlag(it.flag,'flag '+it.flag+' ('+tag+')');
         }else if(it.kind==='lore'){if(!st.lore[it.loreId]){st.lore[it.loreId]=true;events.push('  цилиндр №'+it.loreId+' ('+room+')');}}
         else if(it.kind==='lever'||it.kind==='gauge'||it.kind==='valve'){setFlag(it.flag,'flag '+it.flag+' ('+tag+')');
-          if(st.flags.valve_l&&st.flags.valve_r)setFlag('turbines_on','flag turbines_on');}
+          if(st.flags.valve_l&&st.flags.valve_r)setFlag('turbines_on','flag turbines_on');
+          if(st.flags.gaugeA&&st.flags.gaugeB&&st.flags.gaugeC)setFlag('seal_gauges','flag seal_gauges (три магистрали)');}
         else if(it.kind==='wheel'){setFlag(it.flag,'КОЛЕСО ПЕЧАТИ ('+tag+')');setFlag('wheel_open','wheel_open');ending=true;}
       }
       /* цели импульса / удара */
@@ -92,12 +93,18 @@ async function solve(ws,opts){
         if(pb.kind==='counterweight')setFlag('blast_open','flag blast_open (импульс)');
         else if(pb.kind==='beam')setFlag('gh_beam','flag gh_beam (импульс по балке)');
         else if(pb.kind==='crate'&&pb.flag)setFlag(pb.flag,'flag '+pb.flag+' (импульс)');
+        else if(pb.kind==='lead'&&pb.flag&&st.ab.indexOf('breaker')>=0)setFlag(pb.flag,'flag '+pb.flag+' (пробойник)');
         else if(pb.kind==='core'){setFlag(pb.flag,'flag '+pb.flag);cores++;}
       }
       if(cores){const n=Object.keys(st.flags).filter(k=>/^core_\d$/.test(k)).length;
         if(n>=3&&!st.flags.cores_placed){st.flags.cores_placed=3;changed.add('cores_placed');events.push('flag cores_placed=3');}}
       /* волны и бои */
       if(info.waves&&info.clearFlag)setFlag(info.clearFlag,'арена '+room+' зачищена');
+      /* стражи комнаты (уроки, элита у алтаря): сварщика берёт только импульс в замах, панцирь — только рывок насквозь */
+      if(!info.waves&&info.clearFlag&&info.guards&&info.guards.length&&hasPulse){
+        if(info.guards.indexOf('welder')>=0)setFlag('charge_weld','сварщик разобран ('+room+')');
+        const needDash=info.guards.indexOf('shell')>=0;
+        if(!needDash||st.ab.indexOf('dash')>=0)setFlag(info.clearFlag,'стражи '+room+' разобраны');}
       const trig=(au.raw.targets||[]).find(t=>t.id==='boss');
       if(info.boss&&trig&&trig.hit){
         const b=info.boss,tr=info.trigger;
@@ -107,6 +114,8 @@ async function solve(ws,opts){
           if(p&&addEntry(room,p))dirty.add(room);};
         if(b==='overseer'&&hasPulse&&!st.bosses.overseer){st.bosses.overseer=true;changed.add('overseer');setFlag('boss1_dead','БОСС Надсмотрщик');await post();}
         if(b==='primarch'&&!st.bosses.primarch){st.bosses.primarch=true;changed.add('primarch');setFlag('boss2_dead','БОСС Примарх');setFlag('turbines_on','turbines_on');await post();}
+        if(b==='uprooter'&&hasPulse&&!st.bosses.uprooter){st.bosses.uprooter=true;changed.add('uprooter');setFlag('boss3_dead','БОСС Корчеватель');await post();}
+        if(b==='regulator'&&hasPulse&&!st.bosses.regulator){st.bosses.regulator=true;changed.add('regulator');setFlag('boss4_dead','БОСС Регулятор');await post();}
         if(b==='archivist'&&hasPulse&&!st.bosses.archivist){st.bosses.archivist=true;changed.add('archivist');setFlag('archivist_dead','БОСС Архивариус');await post();}
       }
     }
@@ -133,7 +142,7 @@ async function solve(ws,opts){
     const full=await solve(ws,{deny,log:s=>console.log(s)});
     console.log('\n=== '+(deny.length?'БЕЗ '+deny.join(', ').toUpperCase():'ПОЛНЫЙ ПРОГОН')+' ===');
     full.events.forEach(e=>console.log('  '+e));
-    console.log('способности: '+full.ab.join(', ')+'   цилиндров: '+full.lore+'/12');
+    console.log('способности: '+full.ab.join(', ')+'   цилиндров: '+full.lore+'/30');
     console.log('комнат достигнуто: '+full.visited.length+'   финал: '+(full.ending?'ДОСТИЖИМ':'недостижим'));
     if(full.warn.length)console.log('ПРЕДУПРЕЖДЕНИЯ:\n  '+[...new Set(full.warn)].join('\n  '));
     console.log('аудитов: '+full.audits+', итераций: '+full.iter+', '+Math.round((Date.now()-t0)/1000)+' с');

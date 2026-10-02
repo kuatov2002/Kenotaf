@@ -17,9 +17,10 @@ const STATION_ORDER=['hub','atrium','post','eden','seal','archive'];
 /* Почтмейстер: что сказать и что выдать сейчас. Цилиндры сдаются все сразу, награды — на порогах. */
 const POST_REWARDS=[
   {n:3,upgrade:'plate_post1',line:'ТРИ ЗАПИСИ. ДЕРЖИ ПЛАСТИНУ ДЛЯ КУРТКИ — СНЯЛА С КУРЬЕРА 38. ЕМУ УЖЕ НЕ НУЖНА.'},
-  {n:6,upgrade:'weld_kit',line:'ШЕСТЬ. СОВЕТ ВРАЛ АККУРАТНО, НО ВРАЛ. ВОТ СВАРОЧНЫЙ КОМПЛЕКТ — ШОВ ПОЙДЁТ ДАЛЬШЕ.'},
-  {n:9,upgrade:'plate_post2',line:'ДЕВЯТЬ. ЭТОГО ХВАТИТ, ЧТОБЫ ПОВЕРИЛИ. ЕЩЁ ПЛАСТИНА. ДОНЕСИ ЭТО ДО НЕБА.'},
-  {n:12,upgrade:null,flag:'post_truth',line:'ВСЕ ДВЕНАДЦАТЬ. ТЕПЕРЬ СКАЖУ, ОТКУДА ТВОЙ ЛИСТ.'}
+  {n:7,upgrade:'weld_kit',line:'СЕМЬ. СОВЕТ ВРАЛ АККУРАТНО, НО ВРАЛ. ВОТ СВАРОЧНЫЙ КОМПЛЕКТ — ШОВ ПОЙДЁТ ДАЛЬШЕ.'},
+  {n:12,upgrade:'plate_post2',line:'ДВЕНАДЦАТЬ. Я ПЕРЕПИСЫВАЮ ИХ ОТ РУКИ И ШЛЮ ПО ЯРУСАМ. ЕЩЁ ПЛАСТИНА — ТЕБЕ НУЖНЕЕ.'},
+  {n:18,upgrade:null,flag:'post_truth',line:'ВОСЕМНАДЦАТЬ. ЭТОГО ХВАТИТ, ЧТОБЫ ПОВЕРИЛИ. ТЕПЕРЬ СКАЖУ, ОТКУДА ТВОЙ ЛИСТ.'},
+  {n:30,upgrade:null,flag:'post_all',line:'ВСЕ ТРИДЦАТЬ. ВСЯ ЛОЖЬ — И ВСЕ, КТО ЕЙ НЕ ПОВЕРИЛ. ИХ БЫЛО БОЛЬШЕ, ЧЕМ НАМ ГОВОРИЛИ.'}
 ];
 function postmasterScene(gs){
   const L=[];const ups=[];const flags=[];
@@ -35,7 +36,7 @@ function postmasterScene(gs){
   if(have>had){
     L.push(have-had===1?'ЕЩЁ ОДИН ЦИЛИНДР. ПОСМОТРИМ…':'ЦИЛИНДРОВ: '+(have-had)+'. ПОСМОТРИМ…');
     for(const r of POST_REWARDS)if(had<r.n&&have>=r.n){L.push(r.line);if(r.upgrade)ups.push(r.upgrade);if(r.flag)flags.push(r.flag);
-      if(r.n===12)L.push('КАПСУЛЫ «ОТ ПЕЧАТИ» ПРИХОДЯТ СВЕРХУ, ЧЕРЕЗ ЗАБОРНИК №3. ТАМ КТО-ТО ЖИВ.',
+      if(r.flag==='post_truth')L.push('КАПСУЛЫ «ОТ ПЕЧАТИ» ПРИХОДЯТ СВЕРХУ, ЧЕРЕЗ ЗАБОРНИК №3. ТАМ КТО-ТО ЖИВ.',
         'ЦЕНЗУРА ЗАБИРАЕТ ИХ НЕВСКРЫТЫМИ. ТВОЮ Я НЕ СДАЛА.','Я ОТПРАВИЛА ЕЁ ТЕБЕ. ЛИСТ — ЭТО Я.');}
     gs.flags.lore_given=have;
   }else if(gs.flags.pm_met&&!L.length){
