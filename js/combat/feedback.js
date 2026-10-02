@@ -23,7 +23,7 @@ class CombatFX{
       ang:dir?(dir>0?0:PI):undefined,spread:dir?2.2:undefined});}
   /* удар по корпусу: лёгкий, глухой */
   bodyHit(x,y,mat,h,boss){const g=this.g;
-    g.hitstop(h.heavy?0.09:0.045);g.camera.addShake(h.heavy?0.45:0.22);
+    g.hitstop(h.heavy?0.09:0.05);g.camera.addShake(h.heavy?0.45:0.22);
     g.audio.mat(mat,h.heavy?1:0.75);this.sparks(x,y,mat,h.heavy?14:7,h.heavy?7:5,h.dir);this.chips(x,y,mat,h.heavy?5:2,4,h.dir);}
   /* удар по узлу: звонче; если узел только что треснул — хруст */
   nodeHit(x,y,mat,h,cracked,boss){const g=this.g;

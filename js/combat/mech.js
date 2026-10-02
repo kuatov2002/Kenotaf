@@ -260,6 +260,89 @@ class Mech extends Enemy{
       const m=this.spriteBounds();c.fillStyle='#ffe2c0';c.fillRect(m.x,m.y,m.w,m.h);c.restore();}
   }
 }
+/* ============================== MOB MECH ==============================
+   Рядовой механизм: чувства (зрение + шум), обход, общий цикл атаки
+   «подход → замах (телеграф узла) → удар → восстановление» с очередью атак.
+   Подкласс задаёт atk() — что у него сейчас есть для удара (по уцелевшим узлам):
+     {node, range, minR?, dy?, wind, hot, strike, rec, cd?}
+   и крючки: onWind(A), onStrike(A), strikeTick(dt,A), strikeBox(A), approach(dd,A), speed(). */
+class MobMech extends Mech{
+  constructor(world,def,x,y){super(world,def,x,y);this.patrolPause=0;this.hitDone=false;this.P={};}
+  /* зрение и слух; deaf/blind — по сломанным сенсорам */
+  sense(dt){
+    const p=this.world.player;
+    if(this.alert>0)this.alert-=dt;
+    const d=this.blind?-1:this.sensePlayer();
+    if(d>0){this.alert=4;this.investigate={x:p.cx,y:p.cy,t:4};}
+    else{
+      if(this.hearing&&p&&!p.dead&&p.noiseLevel>0.45&&dist(this.cx,this.cy,p.cx,p.cy)<CFG.noiseRun*this.hearing){
+        const err=this.blind?(Math.random()-0.5)*3:0;this.investigate={x:p.cx+err,y:p.cy,t:3};this.alert=Math.max(this.alert,2.5);}
+      if(this.investigate){this.investigate.t-=dt;if(this.investigate.t<=0)this.investigate=null;}}
+  }
+  hunting(){return this.alert>0||!!this.investigate;}
+  targetX(){const p=this.world.player;return this.investigate&&(this.blind||this.sensePlayer()<0)?this.investigate.x:p.cx;}
+  speed(){return 2.4;}
+  turnTime(){return 0.16;}
+  patrol_(dt,k){
+    this.releaseToken();
+    if(this.patrolPause>0){this.patrolPause-=dt;this.vx=damp(this.vx,0,6,dt);return;}
+    const pt=this.patrol;
+    if(this.cx<pt[0]-0.3&&this.face<0){this.face=1;this.patrolPause=0.7+Math.random();}
+    else if(this.cx>pt[1]+0.3&&this.face>0){this.face=-1;this.patrolPause=0.7+Math.random();}
+    else if(this.onGround&&(this.wall===this.face||!this.groundAhead())){this.face=-this.face;this.patrolPause=0.5;}
+    this.vx=damp(this.vx,this.face*this.speed()*(k||0.45),5,dt);
+  }
+  /* пол впереди есть (и нет ям/кислоты): обходчики не падают с карнизов */
+  groundAhead(){
+    const R=this.world.room,fx=this.face>0?this.x+this.w:this.x-0.16,ahead={x:fx,y:this.bottom+0.04,w:0.16,h:0.4};
+    if(!R.solids.some(s=>!s.hidden&&aabb(ahead,s)))return false;
+    return !(R.hazards||[]).some(h=>aabb({x:fx,y:this.y,w:0.16,h:this.h+0.4},h));
+  }
+  approach(dd,A){
+    if(A.minR&&dd<A.minR)return -this.face*this.speed()*0.7;
+    if(dd>A.range*0.85)return this.face*this.speed();
+    if(dd<A.range*0.4)return -this.face*this.speed()*0.5;
+    return 0;
+  }
+  fight(dt){
+    const p=this.world.player,A=this.atk();this.st+=dt;this.cd-=dt;
+    const tx=this.targetX(),dd=Math.abs(tx-this.cx),want=tx>this.cx?1:-1;
+    if(this.state!=='wind'&&this.state!=='strike'&&want!==this.face&&this.hunting()){
+      this.turnT+=dt;if(this.turnT>this.turnTime()){this.face=want;this.turnT=0;}}
+    else this.turnT=0;
+    switch(this.state){
+      case 'recover':this.vx=damp(this.vx,0,8,dt);if(this.st>(A?A.rec:0.6)){this.state='hunt';this.st=0;this.releaseToken();}break;
+      case 'wind':{if(!A){this.cancelAttack();break;}
+        const k=this.st/A.wind;this.vx=damp(this.vx,0,10,dt);
+        this.telegraph(A.node,k,this.st>A.wind-A.hot);
+        if(this.st>=A.wind){this.state='strike';this.st=0;this.hitDone=false;this.onStrike(A);}
+        break;}
+      case 'strike':{if(!A){this.state='recover';this.st=0;break;}
+        this.strikeTick(dt,A);
+        if(!this.hitDone){const hb=this.strikeBox(A);if(hb&&aabb(hb,p.rect())){this.hitDone=true;this.damagePlayer();}}
+        if(this.st>=A.strike){this.state='recover';this.st=0;this.cd=A.cd!==undefined?A.cd:0.8+Math.random()*0.7;}
+        break;}
+      default:{
+        if(!this.hunting()){this.state='idle';this.patrol_(dt);break;}
+        this.state='hunt';
+        if(!A){this.vx=damp(this.vx,-this.face*this.speed()*0.6,5,dt);break;}
+        let tv=this.approach(dd,A);
+        if(tv&&this.onGround&&!this.flying&&Math.sign(tv)===this.face&&(this.wall===this.face||!this.groundAhead()))tv=0;
+        const inRange=dd<A.range&&dd>(A.minR||0)*0.7&&Math.abs(p.cy-this.cy)<(A.dy||1.8);
+        if(inRange&&this.cd<=0&&this.face===want&&(this.flying||this.onGround)){
+          if(this.wantAttack()){this.state='wind';this.st=0;this.hitDone=false;this.vx=damp(this.vx,0,10,dt);this.onWind(A);break;}
+          tv=Math.sin(this.t*2.3+this.x)*this.speed()*0.18;if(dd<A.range*0.7)tv-=this.face*0.5;}
+        this.vx=damp(this.vx,tv,7,dt);
+      }
+    }
+  }
+  attackUses(n){const A=this.atk();return !!A&&A.node===n;}
+  onWind(A){}
+  onStrike(A){}
+  strikeTick(dt,A){this.vx=damp(this.vx,0,8,dt);}
+  strikeBox(A){return null;}
+  atk(){return null;}
+}
 /* ============================== MECH BOSS ==============================
    Босс-механизм: та же разборка по узлам, но жизнь — ядро (узел core, закрыт бронёй до
    поломки нескольких систем). Полоса босса показывает целостность всей конструкции. */

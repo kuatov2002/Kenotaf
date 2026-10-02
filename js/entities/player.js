@@ -86,9 +86,9 @@ class Player extends Body{
 
     /* 1. INPUT -> INTENT */
     if(inp.consume('jump')&&canAct)this.jumpBuf=C.jumpBuf;
-    const dashReq=inp.consume('dash')&&canAct;
-    const atkReq=inp.consume('attack')&&canAct;
-    const pulseReq=inp.consume('pulse')&&canAct;
+    /* буфер ввода: нажатие ждёт в очереди (до 220 мс), пока действие не станет доступным —
+       удар, нажатый за мгновение до конца восстановления, не теряется */
+    const dashReq=canAct&&!this.onCeil&&gs.has('dash')&&this.dashCd<=0&&(this.onGround||this.airDash>0)&&inp.consume('dash');
     const holdDn=inp.dn;
     /* РЕМОНТ: держать Q/I стоя на месте — сварка шва на куртке, ячейка за порцию РЕМОНТА */
     const healing=this.updateHeal(dt,inp,canAct&&!dashReq&&this.jumpBuf<=0);
@@ -149,7 +149,7 @@ class Player extends Body{
     }
 
     /* 4. DASH */
-    if(dashReq&&gs.has('dash')&&this.dashCd<=0&&(this.onGround||this.airDash>0)){
+    if(dashReq){
       if(!this.onGround)this.airDash--;
       this.dashT=C.dashTime;this.dashCd=0.1;this.dashId++;this.evAge=0;this.evIF=0;this.pfDone=false;
       this.chargeT=0;this.charged=false;if(this.atkPhase==='wind')this.atkPhase=null;
@@ -258,12 +258,12 @@ class Player extends Body{
 
     /* combat: направление удара — ↑ вверх, ↓ в воздухе вниз (отскок от того, что ударил), иначе вбок.
        Отклик в том же кадре — поза замаха; удар — через atkWind. Удержание после взмаха — тяжёлый удар */
-    if(atkReq&&this.atkCd<=0&&!sliding&&!healing&&this.atkPhase!=='wind'){
+    if(canAct&&this.atkCd<=0&&!sliding&&!healing&&this.atkPhase!=='wind'&&inp.consume('attack')){
       const dir=inp.up?'up':(!this.onGround&&holdDn?'down':'side');
       this.startSwing(dir,false);
     }
     this.updateSwing(dt,inp,canAct&&!sliding&&!healing);
-    if(pulseReq&&gs.has('pulse')&&this.pulseCd<=0&&!healing){
+    if(canAct&&gs.has('pulse')&&this.pulseCd<=0&&!healing&&inp.consume('pulse')){
       if(this.energy>=C.pulseCost){
         this.energy-=C.pulseCost;this.energyDelay=C.energyDelay;
         this.pulseCd=C.pulseCd;this.pulseT=0.28;

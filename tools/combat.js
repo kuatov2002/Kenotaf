@@ -87,6 +87,13 @@ S.limp=`${PRE()}
   const x0=e.x;LAB.step(120);
   return {ok:e.limp&&Math.abs(e.x-x0)<2.0&&Math.abs(e.x-x0)>0.3,info:{limp:e.limp,moved:Math.abs(e.x-x0)}};`;
 
+S.input_buffer=`${PRE()}
+  /* удар, нажатый до конца отката, не теряется: срабатывает, как только откат кончился */
+  const p=game.world.player;p.face=1;LAB.step(1,[],{0:['attack']});
+  LAB.until("p.atkCd>0&&p.atkCd<0.08",120);const cd=p.atkCd;LAB.step(1,[],{0:['attack']});
+  let again=false;for(let i=0;i<20;i++){LAB.step(1);if(p.atkPhase==='wind'){again=true;break;}}
+  return {ok:cd>0&&again,info:{cd:cd.toFixed(3),again}};`;
+
 /* ---------- Надсмотрщик: арена z1_boss (пол y=22), босс проснулся, атаки — вручную ---------- */
 const OV=(px)=>`LAB.setup('z1_boss',${px||8},22-1.68,['pulse','dash']);LAB.step(1);
   const b=game.world.boss;b.activated=true;b.woke=true;b.state='idle';b.st=0;b.cd=99;b.face=-1;LAB.step(2);const p=LAB.p();
@@ -158,6 +165,71 @@ S.ov_kill=`${OV()}
   for(const id of ['armR','armL','treads','sensor'])brk(id);LAB.step(30);brk('core');LAB.step(240);
   const W=game.world;
   return {ok:b.dead&&W.debris.some(d=>d.corpse)&&game.gs.bosses.overseer,info:{dead:b.dead,corpse:W.debris.some(d=>d.corpse),flag:!!game.gs.bosses.overseer}};`;
+
+/* ---------- рядовые механизмы: поломка меняет поведение ---------- */
+const MOB=(type,x,y)=>`${PRE()}const e=LAB.e(LAB.spawn('${type}',${x||36},${y||'11-2'}));e.cd=99;LAB.step(3);const p=game.world.player;
+  const brk=id=>{const n=e.node(id);e.breakNode(n,{dir:1,sx:n.wx,sy:n.wy});};`;
+
+S.mok_brush=`${MOB('mokrica',36,'11-0.62')}
+  const s0=e.safe();brk('brush');LAB.step(2);
+  return {ok:!s0&&e.safe()&&!e.threat(),info:{s0,safe:e.safe()}};`;
+
+S.lamp_rotor=`${MOB('lampada',36,6.5)}
+  brk('rotor');LAB.until("e.dead",600);
+  return {ok:e.dead&&game.world.debris.some(d=>d.corpse),info:{dead:e.dead,state:e.state}};`;
+
+S.ari_blind=`${MOB('aristocrat',37,'11-2.35')}
+  brk('visor');e.alert=0;e.investigate=null;
+  /* тихо стоять — не видит; бег рядом — слышит */
+  LAB.step(60);const calm=!e.hunting();p.noiseLevel=1;LAB.step(2);const heard=e.hunting();
+  return {ok:e.blind&&calm&&heard,info:{blind:e.blind,calm,heard}};`;
+
+S.cen_front_back=`${MOB('censor',36,'11-2.05')}
+  /* в лоб — отскок, броня цела; импульс в спину — баллон рвётся, страж оглушён */
+  p.face=1;p.x=e.cx-1.6;p.vx=0;e.face=-1;LAB.step(2);const a0=e.node('armor').hp;
+  LAB.step(1,[],{0:['attack']});LAB.step(30);const a1=e.node('armor').hp;
+  p.x=e.cx+1.2;p.face=-1;e.face=-1;LAB.step(2);LAB.step(1,[],{0:['pulse']});LAB.step(4);
+  return {ok:a1===a0&&!e.has('tank')&&e.stunT>0&&e.node('armor').exT>0,info:{a0,a1,tank:e.node('tank').state,stun:e.stunT.toFixed(2)}};`;
+
+S.gard_blade=`${MOB('gardener',36,'11-1.3')}
+  const k0=!!e.atk();brk('blade');
+  return {ok:k0&&!e.atk()&&e.safe(),info:{k0,atk:e.atk()}};`;
+
+S.clock_res=`${MOB('clockmaker',37,'11-1.9')}
+  const k0=e.atk().kind;brk('resonator');const k1=e.atk().kind;brk('spring');
+  return {ok:k0==='shard'&&k1==='hands'&&e.speed()<1.5,info:{k0,k1,spd:e.speed()}};`;
+
+/* ---------- Примарх: арена z2_boss (пол y=18) ---------- */
+const PR=`LAB.setup('z2_boss',8,18-1.68,['pulse','dash']);LAB.step(1);
+  const b=game.world.boss;b.activated=true;b.woke=true;b.state='idle';b.st=0;b.cd=99;b.face=-1;LAB.step(2);const p=LAB.p();
+  const brk=id=>{const n=b.node(id);b.breakNode(n,{dir:1,sx:n.wx,sy:n.wy});};`;
+
+S.pr_tankpop=`${PR}
+  p.x=b.cx+2.6;p.face=-1;LAB.step(4);b.face=-1;LAB.step(1,[],{0:['pulse']});LAB.step(3);
+  return {ok:b.state==='stun'&&b.node('armor').exT>0&&b.node('tank').damaged,info:{state:b.state,armor:b.node('armor').state,tank:b.node('tank').state}};`;
+
+S.pr_front_deflect=`${PR}
+  p.x=b.cx-2.6;p.face=1;p.vx=0;LAB.step(2);const a0=b.node('armor').hp,h0=b.integrity();
+  LAB.step(1,[],{0:['attack']});LAB.step(30);
+  return {ok:b.node('armor').hp===a0,info:{a0,a:b.node('armor').hp,integ:b.integrity().toFixed(3)}};`;
+
+S.pr_core=`${PR}
+  const l0=b.node('core').locked;brk('armor');LAB.step(2);
+  game.debugOpts.invuln=true;b.cd=99;let warn=false;for(let i=0;i<480;i++){LAB.step(1);if(game.world.room.hazards.some(h=>h.ctl==='primarch'&&(h.warn||h.active)))warn=true;}game.debugOpts.invuln=false;
+  return {ok:l0&&!b.node('core').locked&&b.phase===2&&warn,info:{l0,locked:b.node('core').locked,phase:b.phase,warn}};`;
+
+S.pr_kill=`${PR}
+  for(const id of ['armor','claw','tank'])brk(id);LAB.step(20);brk('core');LAB.step(240);
+  return {ok:b.dead&&game.gs.bosses.primarch&&game.world.debris.some(d=>d.corpse),info:{dead:b.dead,flag:!!game.gs.bosses.primarch}};`;
+
+/* ---------- Архивариус (старый босс): импульс без урона не должен сломать его бой ---------- */
+S.archivist_reflect=`LAB.setup('z4_antechamber',22,24-1.68,['pulse','dash','claws','magnet','filter'],['gaugeA','gaugeB','gaugeC']);LAB.step(2);
+  const b=game.world.boss;if(!b)return {ok:false,info:'no boss'};b.activated=true;b.shotT=0.05;const p=LAB.p();const hp0=b.hp;
+  game.debugOpts.invuln=true;let hit=false;
+  for(let i=0;i<600&&!hit;i++){LAB.step(1);const o=game.world.projectiles.find(q=>q.kind==='orb'&&!q.back);
+    if(o&&Math.hypot(o.x-p.cx,o.y-p.cy)<2.6){p.face=o.x>p.cx?1:-1;LAB.step(1,[],{0:['pulse']});LAB.step(240);hit=b.hp<hp0;}}
+  game.debugOpts.invuln=false;
+  return {ok:hit,info:{hp0,hp:b.hp}};`;
 
 (async()=>{
   const only=process.argv.slice(2);
