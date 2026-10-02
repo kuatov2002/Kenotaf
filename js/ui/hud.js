@@ -38,7 +38,7 @@ class HUD{
   syncHp(){const gs=this.game.gs,hp=gs.hp;if(this.cells.length!==gs.maxHp())this.buildHp();
     for(let i=0;i<this.cells.length;i++)this.cells[i].classList.toggle('off',i>=hp);}
   syncAbilities(){const gs=this.game.gs;
-    for(const k in this.abEls)this.abEls[k].classList.toggle('on',!!gs.has(k));
+    for(const k in this.abEls){const on=!!gs.has(k);this.abEls[k].classList.toggle('on',on);this.abEls[k].style.display=on?'':'none';}
     this.el.lore.textContent=gs.lore;}
   energy(v){this.el.en.style.width=clamp(v,0,100)+'%';}
   /* подкачка у фонаря: ячейка вспыхивает по очереди, вся полоса тёплая, пока шланг подцеплен */

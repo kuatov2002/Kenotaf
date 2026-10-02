@@ -1,5 +1,7 @@
 "use strict";
 /* ============================== WORLD ============================== */
+/* ярусы глубже — механизмы крепче */
+const ZONE_TIER={sump:0,hives:1,eden:2,seal:3,archive:4};
 class World{
   constructor(game){this.game=game;this.room=null;this.enemies=[];this.projectiles=[];
     this.pushables=[];this.interactables=[];this.time=0;this.boss=null;this.bossDoorClosed=false;
@@ -62,7 +64,7 @@ class World{
       const e=this.room.enemies[i],C=ENEMY_TYPES[e.type];if(!C)continue;
       const key=e.type+'@'+e.x+','+e.y,amb=e.amb||!this.room.clearFlag;
       if(amb&&sl[key])continue;
-      const en=new C(this,e,e.x,e.y);if(amb)en.key=key;this.enemies.push(en);}
+      const en=new C(this,e,e.x,e.y);if(amb)en.key=key;this.empower(en,e);this.enemies.push(en);}
     if(this.room.boss){
       const b=this.room.boss;
       const BC={overseer:Overseer,primarch:Primarch,archivist:Archivist,uprooter:Uprooter,regulator:Regulator}[b.type];
@@ -110,11 +112,21 @@ class World{
     return d;}
   respawn(){const g=this.game;g.gs.hp=g.gs.maxHp();this.slain={};
     this.load(g.gs.cp.room,g.gs.cp.x,g.gs.cp.y);g.hud.syncHp();}
+  /* глубже к Архиву — механизмы крепче и резче; элита — вдвое крепче, золотой контур, награда */
+  empower(en,d){const t=ZONE_TIER[this.room.zone]||0;
+    if(!en.isMech||en.isBoss)return;
+    if(t){const k=1+0.12*t;for(const n of en.nodes){n.hp*=k;n.max*=k;}en.hp*=k;en.maxHp*=k;en.tierW=1+0.04*t;}
+    if(d.elite){en.elite=true;const k=1.8;for(const n of en.nodes){n.hp*=k;n.max*=k;}en.hp*=k;en.maxHp*=k;
+      en.tierW=(en.tierW||1)*1.12;en.scrapOnDeath=14;en.eliteName=d.eliteName||'ЭЛИТА';}}
+  onEliteDown(e){const g=this.game,d=e.def||{};if(d.eliteFlag)g.gs.flag(d.eliteFlag);
+    g.hud.say(e.eliteName+' · РАЗОБРАН.','');
+    const rid=this.room.id;if(d.reward&&!g.gs.flags[d.reward.flag])this.later(900,()=>{if(this.room&&this.room.id===rid)this.interactables.push(new Interactable(Object.assign({kind:'salvage'},d.reward),this));});
+    g.gs.save();}
   spawnWave(i){
     const R=this.room,wv=R.waves[i];if(!wv)return;
     for(let k=0;k<wv.n;k++){
       const C=ENEMY_TYPES[wv.types[k]];if(!C)continue;
-      const e=new C(this,{type:wv.types[k],patrol:[wv.x[k]-5,wv.x[k]+5]},wv.x[k],(wv.y||18.2)-1.6);
+      const e=new C(this,{type:wv.types[k],patrol:[wv.x[k]-5,wv.x[k]+5]},wv.x[k],(wv.y||18.2)-1.6);this.empower(e,{});
       this.enemies.push(e);
       this.game.particles.burst(e.cx,e.cy,14,{kind:'steam',col:'#8a7a6a',spd:3,life:0.8,size:0.4,grow:0.8,drag:2});
     }
@@ -146,7 +158,8 @@ class World{
       if(I.move!==0||p.jumpBuf>0||!p.onGround||p.atkPhase||p.dashT>0||p.pulseT>0||p.crouch||p.healT>0)this.playerActed=true;}
     g.lamps.update(dt);
     this.updatePollen(dt);
-    for(let i=0;i<this.enemies.length;i++)this.enemies[i].update(dt);
+    for(let i=0;i<this.enemies.length;i++){const e=this.enemies[i];e.update(dt);
+      if(e.elite&&!e.announced&&!e.dead&&e.alert>0){e.announced=true;g.hud.say(e.eliteName,'ЭЛИТА');}}
     this.updateBoss(dt);
     for(let i=0;i<this.debris.length;i++)this.debris[i].update(dt);
     this.scrap.update(dt);
@@ -331,7 +344,7 @@ class World{
     const pr=p.rect(),inset=r=>({x:r.x+0.12,y:r.y+0.15,w:Math.max(0.1,r.w-0.24),h:Math.max(0.1,r.h-0.2)});
     for(let i=0;i<this.enemies.length;i++){
       const e=this.enemies[i];
-      if(e.dead||(e.safe&&e.safe())||this.calm(e))continue;
+      if(e.dead||(e.safe&&e.safe())||this.calm(e)||!Settings.diff().contact)continue;
       if(aabb(inset(e.rect()),pr)){g.combat.contactDamage(p,e,1);return;}
     }
     const b=this.boss;

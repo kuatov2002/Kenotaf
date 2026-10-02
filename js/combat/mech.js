@@ -16,7 +16,8 @@ class Mech extends Enemy{
     this.token=false;this.cd=0.9+Math.random()*0.7;this.lastImp=null;this.slamCd=0;
     this.walk=0;this.recoil=0;this.recoilDir=0;this.flying=!!def.flying;this.turnT=0;
   }
-  addNode(o){const n=new Node(o);n.owner=this;this.nodes.push(n);return n;}
+  /* сложность: узлы крепче/слабее (на всех механизмах, боссах тоже) */
+  addNode(o){const n=new Node(Object.assign({},o,{hp:(o.hp||40)*Settings.diff().node}));n.owner=this;this.nodes.push(n);return n;}
   /* границы попадания: корпус + узлы, вынесенные за него (стрелы, факел) — удар по выступающей детали засчитывается */
   hitBounds(){let x0=this.x,y0=this.y,x1=this.x+this.w,y1=this.y+this.h;
     for(const n of this.nodes){if(n.broken||n.hidden||n.locked)continue;
@@ -51,7 +52,8 @@ class Mech extends Enemy{
     else if(this.stunT>0){this.stunT-=dt;if(this.onGround)this.vx=damp(this.vx,0,7,dt);if(this.stunT<=0)this.onStunEnd();}
     else if(this.knockT>0){this.knockT-=dt;if(this.onGround)this.vx=damp(this.vx,0,this.fric||6,dt);}
     else if(this.openT>0){this.openT-=dt;this.vx=damp(this.vx,0,5,dt);if(this.openT<=0){this.state='recover';this.st=0;this.cd=Math.max(this.cd,0.5);}}
-    else this.ai(dt);
+    /* замах: на «легко» тянется дольше, на «сложно» — короче */
+    else this.ai(this.isWinding()?dt*(this.tierW||1)/Settings.diff().windup:dt);
     this.physics(dt);
     this.pose(dt);
     for(const n of this.nodes){n.wx=this.cx+this.face*n.lx;n.wy=this.bottom+n.ly;}
@@ -112,7 +114,7 @@ class Mech extends Enemy{
       if(n.broken||n.locked||n.hidden||n.core)continue;
       if(!(n.damaged||n.exT>0))continue;
       if(Math.abs(n.wy-p.cy)>1.4)continue;
-      n.markT=C.markT;n.markA=(Math.random()-0.5)*0.6;any=true;}
+      n.markT=C.markT*(this.world.game.gs.flags.mark_long?1.8:1);n.markA=(Math.random()-0.5)*0.6;any=true;}
     if(any)this.world.game.fx.mark(this.cx,this.cy);
     return any;
   }
@@ -121,7 +123,7 @@ class Mech extends Enemy{
     const C=CFG.combat,g=this.world.game;
     this.cancelAttack();
     n.hp=Math.min(n.hp,n.max*(C.damagedAt-0.08));n.exT=Math.max(n.exT,C.interruptOpen+0.2);n.hitT=0.22;
-    this.openT=C.interruptOpen;this.state='open';this.st=0;
+    this.openT=C.interruptOpen*(g.gs.flags.stun_long?1.4:1);this.state='open';this.st=0;
     g.fx.interrupt(n.wx,n.wy,n.mat,this.isBoss);
     this.onInterrupt(n,p);
   }
@@ -226,6 +228,7 @@ class Mech extends Enemy{
     W.scrap.spawn(this.cx,this.cy,this.scrapOnDeath||3,dir);
     g.fx.kill(this.cx,this.cy,this.bodyMat,this.isBoss);
     this.onDeath(h);
+    if(this.elite&&!this.isBoss)W.onEliteDown(this);
     W.checkClear();
   }
   hurt(dmg,kx,ky){this.takeHit({kind:'raw',dmg,hb:this.rect(),sx:this.cx,sy:this.cy,fromX:this.cx-(kx||0),dir:Math.sign(kx||0),ky:ky||0});}

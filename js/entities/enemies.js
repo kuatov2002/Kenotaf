@@ -4,7 +4,7 @@ class Enemy extends Body{
   constructor(world,def,x,y){
     super(x,y,def.w||0.9,def.h||1.6);
     this.world=world;this.type=def.type;this.def=def;
-    this.hp=def.hp;this.maxHp=def.hp;this.dmg=def.dmg||1;this.face=-1;
+    const dk=def.hp<900?Settings.diff().hp:1;this.hp=def.hp*dk;this.maxHp=def.hp*dk;this.dmg=def.dmg||1;this.face=-1;
     this.t=0;this.flash=0;this.dead=false;this.deadT=0;
     this.patrol=def.patrol||[x-4,x+4];this.alert=0;this.investigate=null;
     this.hearing=def.hearing||0;this.aggro=def.aggro||9;this.wind=0;this.swing=0;

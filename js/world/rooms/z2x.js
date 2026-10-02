@@ -117,7 +117,7 @@ z2_chapel:gs=>({id:'z2_chapel',zone:'hives',sub:'chapel',name:'ЧАСОВНЯ О
       P(28,24.6,5),P(34,22.2,5),P(28,19.8,5),P(34,17.4,5),P(28,15,5),P(34,12.6,4));
     R.doors=[RB.R(R,10.2,'z2_roofs','КРЫШИ СОТ')];
     R.clearFlag='chapel_clear';
-    if(!clear)R.enemies.push({type:'censor',variant:'elite',x:18,y:27-2.05,patrol:[12,26]});
+    if(!clear)R.enemies.push({type:'censor',variant:'elite',elite:true,eliteName:'СТАРШИЙ ЦЕНЗОР',x:18,y:27-2.05,patrol:[12,26]});
     else RB.salvage(R,gs,{upgrade:'plate_chapel',x:8,y:25.4,flag:'got_plate_chapel',title:'ПЛАСТИНА КУРТКИ',
       lines:['НА АЛТАРЕ, ПОД ПОКРОВОМ, — ЛАТУННАЯ ПЛАСТИНА С ГРАВИРОВКОЙ: «ЗА ВЕРНОСТЬ ЯРУСУ».','ТЕПЕРЬ ОНА ДЕРЖИТ ДАВЛЕНИЕ В КУРТКЕ ТОГО, КТО УШЁЛ С ЯРУСА.']});
     RB.lore(R,gs,17,14,27);

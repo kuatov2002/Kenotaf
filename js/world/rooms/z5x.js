@@ -27,7 +27,7 @@ z5_busts:gs=>({id:'z5_busts',zone:'archive',sub:'crypt',name:'ГАЛЕРЕЯ О�
     R.hazards=[{x:14,y:20.4,w:5,h:1.6,kind:'pit',back:{x:12.4,y:17.3},backs:[{minX:-99,x:12.4,y:17.3},{minX:16.5,x:19.4,y:17.3}]},
       {x:29,y:20.4,w:6,h:1.6,kind:'pit',back:{x:27.4,y:17.3},backs:[{minX:-99,x:27.4,y:17.3},{minX:32,x:35.4,y:17.3}]}];
     R.doors=[RB.L(19,'z5_hall','ПРИХОЖАЯ'),RB.R(R,19,'z5_stacks','ХРАНИЛИЩЕ ФОНОГРАММ')];
-    R.enemies.push({type:'censor',variant:'elite',x:45,y:19-2.05,patrol:[36,56],amb:true},{type:'clockmaker',x:24,y:19-2.1,patrol:[20,28],amb:true},
+    R.enemies.push({type:'censor',variant:'elite',elite:true,eliteName:'СТРАЖ КАТАЛОГА',x:45,y:19-2.05,patrol:[36,56],amb:true},{type:'clockmaker',x:24,y:19-2.1,patrol:[20,28],amb:true},
       {type:'lampada',x:32,y:8,amb:true});
     R.lights=[lit(9,12,6,'#ffcf8a',0.7),lit(23,12,6,'#ffcf8a',0.7),lit(41,12,6,'#ffcf8a',0.7),lit(51,12,6,'#ffcf8a',0.7)];
     R.emitters=[{type:'dust',rate:8}];
@@ -81,7 +81,7 @@ z5_council:gs=>({id:'z5_council',zone:'archive',sub:'council',name:'ЗАЛ СО�
         'ГОЛОС ПЕРВЫЙ: «ПРОТИВ». ВТОРОЙ: «ПРОТИВ». ТРЕТИЙ, ЧЕТВЁРТЫЙ, ПЯТЫЙ: «ПРОТИВ».',
         'ШЕСТОЙ: «ПРОТИВ». СЕДЬМОЙ — ДОЛГОЕ ШИПЕНИЕ, ПОТОМ: «ПРОТИВ».',
         'В КРЕСЛАХ НИКОГО. СОВЕТ — ЭТО ПЛАСТИНКИ. ЗАПИСАНЫ ДВЕСТИ ЛЕТ НАЗАД.']});
-    R.enemies.push({type:'censor',variant:'elite',x:10,y:25-2.05,patrol:[3,15],amb:true},{type:'censor',x:36,y:25-2.05,patrol:[30,43],amb:true});
+    R.enemies.push({type:'censor',variant:'elite',elite:true,eliteName:'СТРАЖ СОВЕТА',x:10,y:25-2.05,patrol:[3,15],amb:true},{type:'censor',x:36,y:25-2.05,patrol:[30,43],amb:true});
     R.lights=[lit(23,6,14,'#e8c96a',0.8),lit(11,18,6,'#ffcf8a',0.5),lit(35,18,6,'#ffcf8a',0.5)];
     R.emitters=[{type:'dust',rate:8}];
     R.extraGame=(c,L,r)=>{for(let i=0;i<7;i++){const a=PI+0.25+i/6*(PI-0.5),x=23+Math.cos(a)*14,y=24.6+Math.sin(a)*4;

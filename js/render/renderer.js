@@ -165,8 +165,14 @@ class WorldRenderer{
       const gr=fx.createRadialGradient(sx,sy,R*0.28,sx,sy,R);
       gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(1,'rgba(0,0,0,0)');
       fx.fillStyle=gr;fx.beginPath();fx.arc(sx,sy,R,0,TAU);fx.fill();
+      /* механизмы тоже не прячутся за передним планом: замах должен быть виден */
+      const W=g.world,list=W&&W.room===room?W.enemies.filter(e=>!e.dead):[];if(W&&W.boss&&!W.boss.dead&&W.room===room)list.push(W.boss);
+      for(const e of list){const ex=(e.cx-cam.cx)*s+g.vw/2,ey=(e.cy-cam.cy)*s+g.vh/2,er=(e.isBoss?5.5:2.6)*s;
+        if(ex<-er||ex>g.vw+er||ey<-er||ey>g.vh+er)continue;
+        const q=fx.createRadialGradient(ex,ey,er*0.3,ex,ey,er);q.addColorStop(0,'rgba(0,0,0,.92)');q.addColorStop(1,'rgba(0,0,0,0)');
+        fx.fillStyle=q;fx.beginPath();fx.arc(ex,ey,er,0,TAU);fx.fill();}
       fx.globalCompositeOperation='source-over';}
-    c.save();c.setTransform(1,0,0,1,0,0);c.globalAlpha=room.playerRef?0.8:0.96;c.drawImage(F,0,0);c.restore();
+    c.save();c.setTransform(1,0,0,1,0,0);c.globalAlpha=room.playerRef?0.74:0.96;c.drawImage(F,0,0);c.restore();
   }
   /* ---------- ЧИТАЕМОСТЬ: рисуется ПОСЛЕ light-multiply, темнота её не съедает ---------- */
   readability(c,room,cam,zoom,t){
@@ -297,7 +303,7 @@ class WorldRenderer{
     if(W.debris.length){this.worldTransform(c,cam,cam.zoom);for(const d of W.debris)d.draw(c,t);}
     for(const e of W.enemies){
       if(e.dead){if(e.deadT<=2.4){this.worldTransform(c,cam,cam.zoom);e.drawBody(c,t);}continue;}
-      const thr=e.threat();this.outlined(c,e.spriteBounds(),x=>e.drawBody(x,t),thr?hot:calm,thr?2.6:1.7);
+      const thr=e.threat();this.outlined(c,e.spriteBounds(),x=>e.drawBody(x,t),thr?hot:(e.elite?'rgba(232,201,106,.92)':calm),thr?2.6:(e.elite?2.4:1.7));
       if(e.drawOverlay){this.worldTransform(c,cam,cam.zoom);e.drawOverlay(c,t);}
     }
     const b=W.boss;

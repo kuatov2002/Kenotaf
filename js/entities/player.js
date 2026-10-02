@@ -347,7 +347,7 @@ class Player extends Body{
     if(held&&(this.atkPhase==='recover'||this.atkPhase===null)&&this.slashFace===this.face){
       const was=this.chargeT;this.chargeT+=dt;
       if(was<0.12&&this.chargeT>=0.12)g.audio.charge();
-      if(!this.charged&&this.chargeT>=C.heavyHold){this.charged=true;g.audio.chargeFull();
+      if(!this.charged&&this.chargeT>=C.heavyHold*(g.gs.flags.heavy_fast?0.6:1)){this.charged=true;g.audio.chargeFull();
         g.particles.spawn({kind:'ring',x:this.cx,y:this.cy,ringR:1.6,life:0.3,size:0.08,col:'#ffcf7a',add:true,a:0.8});}
       if(this.chargeT>0.12&&Math.random()<dt*30)g.particles.spawn({kind:'steam',x:this.cx-this.face*0.45,y:this.bottom-this.h*0.7,
         vx:-this.face*1.5,vy:-1.5,life:0.4,size:0.18,grow:0.5,col:'#dff0f6',drag:2,a:0.6});
@@ -576,7 +576,8 @@ class Player extends Body{
       if(!this.pfDone&&this.evAge<=perfectWin(g.gs))this.perfectEvade(srcX);
       return false;}
     if(this.invuln>0||this.dead||g.state!=='play')return false;
-    g.gs.hp--;this.invuln=CFG.player.invuln;this.hurtT=0.34;this.healT=0;
+    /* сложность: «сложно» — удар снимает две ячейки */
+    g.gs.hp=Math.max(0,g.gs.hp-Settings.diff().dmgTaken);this.invuln=CFG.player.invuln;this.hurtT=0.34;this.healT=0;
     this.atkPhase=null;this.chargeT=0;this.charged=false;this.hurtDir=this.cx<srcX?-1:1;
     this.vx=this.hurtDir*CFG.player.knock*1.15;
     this.vy=this.gravDir>0?-7.5:7.5;

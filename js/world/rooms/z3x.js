@@ -89,7 +89,10 @@ z3_herbarium:gs=>({id:'z3_herbarium',zone:'eden',sub:'herbarium',name:'ГЕРБ�
     R.solids.push(S(0,15,44,3,'marble'),S(10,13,4,2,'steel'),S(20,12,4,3,'steel'),S(30,13,4,2,'steel'));
     R.doors=[RB.L(15,'z3_canal','КАНАЛ'),RB.R(R,15,'z3_sunhall','ЗАЛ ЛАМП-СОЛНЦ')];
     RB.lamp(R,5,15);RB.lore(R,gs,18,22,12);
-    R.enemies.push({type:'gardener',x:26,y:15-1.8,patrol:[16,36],amb:true},{type:'pollinator',x:34,y:7,amb:true});
+    R.enemies.push({type:'pollinator',x:34,y:7,amb:true});
+    RB.elite(R,gs,{type:'gardener',x:26,y:15-1.8,patrol:[16,36],eliteName:'СТАРШИЙ САДОВНИК',eliteFlag:'elite_herb',
+      reward:{upgrade:'heavy_fast',x:22,y:12,flag:'got_heavy_fast',title:'ТЯЖЁЛАЯ РУКОЯТЬ',
+        lines:['РУКОЯТЬ САДОВОГО СЕКАТОРА, ЗАЛИТАЯ СВИНЦОМ: ЧТОБЫ РЕЗ ШЁЛ С ОДНОГО ЗАМАХА.','НА РЕЗАКЕ КУРЬЕРА ОНА ДЕРЖИТСЯ КАК РОДНАЯ: ЗАРЯЖЕННЫЙ УДАР КОПИТСЯ БЫСТРЕЕ.']}});
     R.lights=[lit(5,4,8,'#ffe6b0',0.7),lit(22,4,9,'#ffe6b0',0.75),lit(38,4,8,'#ffe6b0',0.7),lit(22,10,4,'#bfeee8',0.6)];
     R.emitters=[{type:'dust',rate:12}];
     R.extraGame=(c,L,r)=>{for(const [x,y,w,h] of [[10,13,4,2],[20,12,4,3],[30,13,4,2]]){c.fillStyle='rgba(190,220,210,.35)';c.fillRect(x+0.15,y+0.15,w-0.3,h-0.3);

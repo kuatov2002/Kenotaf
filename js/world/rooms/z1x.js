@@ -237,8 +237,11 @@ z1_foundry:gs=>({id:'z1_foundry',zone:'sump',sub:'foundry',name:'ЛИТЕЙНЫ�
       S(14,29.2,4,1,'rust'),S(30,29.2,4,1,'rust'),S(42,29.2,4,1,'rust'));
     R.doors=[RB.L(12,'z1_boiler','КОТЕЛЬНАЯ'),RB.L(27,'z1_canal','ОТСТОЙНЫЙ КАНАЛ')];
     RB.lamp(R,6,27);RB.lore(R,gs,29,35,12);
-    R.enemies.push({type:'bomber',x:23,y:27-1.55,patrol:[19,28.5],amb:true},{type:'repairer',x:36,y:12-1.55,patrol:[28,42],amb:true},
+    R.enemies.push({type:'bomber',x:23,y:27-1.55,patrol:[19,28.5],amb:true},
       {type:'bomber',x:58,y:12-1.55,patrol:[52,62],amb:true},{type:'lampada',x:46,y:18,amb:true});
+    RB.elite(R,gs,{type:'repairer',variant:'welder',x:36,y:12-1.55,patrol:[28,42],eliteName:'БРИГАДИР ЛИТЕЙКИ',eliteFlag:'elite_foundry',
+      reward:{upgrade:'mark_long',x:38,y:12,flag:'got_mark_long',title:'ЖИРНЫЙ МЕЛ',
+        lines:['В НАГРУДНОМ КАРМАНЕ БРИГАДИРА — БРУСОК ЖИРНОГО МЕЛА. ИМ РАЗМЕЧАЛИ БРАК.','ТЕПЕРЬ БРАК РАЗМЕЧАЕТ КУРЬЕР: СЛЕД РЫВКА НА ДЕТАЛИ ДЕРЖИТСЯ ДОЛЬШЕ.']}});
     R.lights=[lit(16,26,7,'#ff8a3a',1.1),lit(32,26,7,'#ff8a3a',1.1),lit(44,26,7,'#ff8a3a',1.1),
       lit(8,6,9,'#ffbe63',0.7),lit(30,6,9,'#ffbe63',0.7),lit(56,6,9,'#ffbe63',0.7),lit(6,24.6,5,'#ffcf7a',0.6),
       lit(23,18,8,'#ff7a3a',0.5,{flicker:0.7}),lit(1.2,25.6,3,'#8fd6ff',0.5),lit(1.2,10.6,3,'#8fd6ff',0.5)];

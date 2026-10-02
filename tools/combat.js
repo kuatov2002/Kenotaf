@@ -230,6 +230,18 @@ S.pr_kill=`${PR}
   return {ok:b.dead&&game.gs.bosses.primarch&&game.world.debris.some(d=>d.corpse),info:{dead:b.dead,flag:!!game.gs.bosses.primarch}};`;
 
 /* ---------- Архивариус (старый босс): импульс без урона не должен сломать его бой ---------- */
+/* опылитель: заходит, телеграфирует жалом, бросается; облако пыльцы — зона */
+S.pollinator=`LAB.setup('z3_herbarium',8,15-1.68,['pulse','dash','hook','claws','filter','magnet']);game.world.entryT=9;game.world.playerActed=true;
+  game.world.enemies.length=0;const e=LAB.e(LAB.spawn('pollinator',16,10));game.world.player.invuln=1e9;const seen={},tr=[];
+  for(let i=0;i<1500;i++){LAB.step(1);seen[e.state]=1;if(i%150===0)tr.push(e.state+'@'+e.cx.toFixed(1)+','+e.cy.toFixed(1)+' cd'+e.cd.toFixed(1)+' see'+e.sensePlayer()+' tok'+game.combat.requestToken(e));}game.world.player.invuln=0;
+  return {ok:!!(seen.wind&&seen.dart),info:Object.keys(seen).join(',')+' | '+tr.join(' ')};`;
+/* элита: золотой контур, разобрана — награда на месте и флаг */
+S.elite_reward=`LAB.setup('z3_herbarium',8,15-1.68,['pulse','dash','hook','claws','filter','magnet']);game.world.entryT=9;game.world.playerActed=true;
+  const W=game.world,d=W.room.enemies.find(q=>q.elite);if(!d)return {ok:false,info:'no elite def'};const e=new ENEMY_TYPES[d.type](W,d,d.x,d.y);W.empower(e,d);W.enemies.push(e);const hp=e.nodes[0].max;
+  for(const n of e.nodes)if(!n.broken&&!n.locked)e.breakNode(n,{dir:1,sx:n.wx,sy:n.wy});if(!e.dead){e.hp=0;e.die({dir:1});}
+  LAB.step(150);const it=game.world.interactables.find(q=>q.def.upgrade==='heavy_fast');
+  return {ok:e.dead&&!!game.gs.flags.elite_herb&&!!it&&hp>50,info:{dead:e.dead,flag:!!game.gs.flags.elite_herb,item:!!it,hp}};`;
+
 /* Архивариус: I — пломба, отбитая импульсом, бьёт в стекло (удар по стеклу — отскок);
    II — падение на пол, бросок в стену вскрывает решётку; III — колесо, свинец, ядро; смерть */
 const AR=`LAB.setup('z5_boss',12,30-1.68,['pulse','dash','hook','vjump','claws','magnet','filter','breaker']);LAB.step(1);

@@ -20,6 +20,8 @@ const RB={
   lamp(R,x,fy){R.checkpoint={x:x,y:fy,h:1.7};},
   lore(R,gs,id,x,fy){if(!gs.loreIds[id])R.interactables.push({kind:'lore',loreId:id,x:x,y:fy});},
   salvage(R,gs,o){if(!gs.flags[o.flag])R.interactables.push(Object.assign({kind:'salvage'},o));},
+  /* элита: пока не разобрана — стоит; разобрана — на её месте награда (до подбора) */
+  elite(R,gs,o){if(gs.flags[o.eliteFlag]){if(o.reward)RB.salvage(R,gs,o.reward);return;}R.enemies.push(Object.assign({elite:true},o));},
   /* рым для гарпуна: mount — откуда растёт кронштейн */
   ring(R,x,y,mount,len){(R.anchors=R.anchors||[]).push({x:x,y:y,mount:mount||'top',len:len});},
   /* свинцовая заглушка: импульс с пробойником выбивает (флаг — навсегда) */

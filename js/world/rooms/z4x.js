@@ -163,6 +163,9 @@ z4_counter:gs=>({id:'z4_counter',zone:'seal',sub:'gears',name:'ПРОТИВОВ�
     RB.salvage(R,gs,{upgrade:'plate_counter',x:28,y:8,flag:'got_plate_counter',title:'ПЛАСТИНА КУРТКИ',
       lines:['НА ВЕРХНЕЙ БАЛКЕ — ЛАТУННЫЙ КЛИН ПРОТИВОВЕСА, ТОНКИЙ, КАК ЛИСТ.','ОН ДЕРЖАЛ ВЕС ЧАСОВ ДВЕСТИ ЛЕТ. УДЕРЖИТ И ДАВЛЕНИЕ КУРТКИ.']});
     R.enemies.push({type:'lampada',x:10,y:14,amb:true});
+    RB.elite(R,gs,{type:'clockmaker',x:8,y:31-1.9,patrol:[2,14],eliteName:'МАСТЕР ХОДА',eliteFlag:'elite_counter',
+      reward:{upgrade:'stun_long',x:6,y:31,flag:'got_stun_long',title:'ЗУБИЛО ЧАСОВЩИКА',
+        lines:['В ФУТЛЯРЕ МАСТЕРА — ЗУБИЛО ДЛЯ ЗАКЛИНИВАНИЯ ХОДА. ИМ ОСТАНАВЛИВАЛИ ЧАСЫ НА РЕМОНТ.','С НИМ СОРВАННЫЙ ЗАМАХ ДЕРЖИТ МЕХАНИЗМ ОТКРЫТЫМ ДОЛЬШЕ.']}});
     R.lights=[lit(24,26,8,'#cfe6ff',0.5),lit(10,16,8,'#cfe6ff',0.5),lit(26,6,6,'#ffd9a0',0.7)];
     R.machines=[{kind:'chain',x:4,y:0.4,len:7,ph:0},{kind:'chain',x:9,y:0.4,len:6,ph:1}];
     R.extraGame=(c,L,r)=>{for(const x of [3,8])Kit.plate(c,x-1,7.6,2,2.4,'lead',(x*7)|0,{bolts:true});};
