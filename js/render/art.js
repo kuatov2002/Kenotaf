@@ -267,13 +267,13 @@ Art.bgEden=(c,L,R,r)=>{
   for(let k=0;k<4;k++){const y=L.h*(0.45+k*0.14);
     c.fillStyle='rgba(216,211,200,'+(0.45+k*0.1)+')';c.fillRect(0,y,L.w,L.h*0.055);
     for(let x=0;x<L.w;x+=3+r()*4){c.save();c.globalAlpha=0.4+k*0.12;
-      Kit.tree(c,x+r()*2,y,3+r()*3,(x*7+k)|0,{sick:r()>0.4});c.restore();}}
+      Kit.tree(c,x+r()*2,y,3+r()*3,(x*7+k)|0,{sick:R.wilt||r()>0.4});c.restore();}}
   c.fillStyle='rgba(207,214,162,.28)';c.fillRect(0,0,L.w,L.h);
 };
 Art.midEden=(c,L,R,r)=>{
   for(let i=0;i<Math.max(2,L.w/12);i++)Kit.column(c,i*12+r()*4,L.h*0.25+r()*2,L.h*0.5,0.42,{gold:r()>0.6});
   for(let i=0;i<3;i++)Kit.fountain(c,3+r()*(L.w-6),L.h-1-r()*3,1.6+r(),{dry:r()>0.55});
-  for(let i=0;i<Math.max(3,L.w/9);i++)Kit.tree(c,r()*L.w,L.h-0.5,4+r()*5,(i*29)|0,{sick:r()>0.45});
+  for(let i=0;i<Math.max(3,L.w/9);i++)Kit.tree(c,r()*L.w,L.h-0.5,4+r()*5,(i*29)|0,{sick:R.wilt||r()>0.45});
   for(let i=0;i<7;i++){const x=r()*L.w,pts=[[x,0]];let y=0;
     while(y<L.h*(0.3+r()*0.5)){y+=0.6+r();pts.push([x+(r()-0.5)*1.4,y]);}
     Kit.vine(c,pts,(i*11)|0);}
@@ -302,6 +302,7 @@ Art.gameEden=(c,L,R,r)=>{
     for(let k=0;k<5;k++)c.lineTo(x+(r()-0.5)*2.4,y+r()*2.2);c.stroke();}
   for(let i=0;i<34;i++){const x=r()*L.w,y=L.h-r()*1.6;
     c.fillStyle='rgba(90,122,74,'+(r()*0.3)+')';c.beginPath();c.ellipse(x,y,0.4+r()*0.6,0.16+r()*0.2,0,0,TAU);c.fill();}
+  if(R.wilt)for(const s of R.solids){if(s.ow||s.hidden||s.w>L.w||r()<0.4)continue;SA.wild(c,s.x+r()*s.w,s.y,4,r);}
   finishGameLayer(c,L,R,r,'eden');
 };
 Art.bgSeal=(c,L,R,r)=>{

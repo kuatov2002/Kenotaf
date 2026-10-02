@@ -104,6 +104,12 @@ function drawWorldDyn(c,R,t,gs){
       c.fillStyle='rgba(200,255,220,.35)';
       for(let k=0;k<8;k++){const x=h.x+((k*2.1+t*0.6)%h.w);c.fillRect(x,yy+Math.sin(t*2+k)*0.04,0.7,0.05);}
       game.renderer.glowAdd(h.x+h.w/2,yy+0.4,h.w*0.55,'#69d68f',0.55);
+    }else if(h.look==='water'){
+      const yy=h.y+Math.sin(t*1.1)*0.05,g=c.createLinearGradient(0,yy,0,h.y+h.h);
+      g.addColorStop(0,'rgba(170,230,230,.7)');g.addColorStop(.3,'rgba(60,140,150,.8)');g.addColorStop(1,'rgba(10,40,50,.95)');
+      c.fillStyle=g;c.fillRect(h.x,yy,h.w,h.h+0.4);
+      c.fillStyle='rgba(230,255,255,.35)';for(let k=0;k<10;k++){const x=h.x+((k*3.1+t*0.8)%h.w);c.fillRect(x,yy+Math.sin(t*2+k)*0.04,0.9,0.05);}
+      game.renderer.glowAdd(h.x+h.w/2,yy+0.3,h.w*0.5,'#7fe0d0',0.35);
     }else if(h.look==='molten'){
       const yy=h.y+Math.sin(t*0.9)*0.05,g=c.createLinearGradient(0,yy,0,h.y+h.h);
       g.addColorStop(0,'rgba(255,236,170,.95)');g.addColorStop(.25,'rgba(255,140,40,.95)');g.addColorStop(1,'rgba(120,30,8,.98)');
@@ -157,6 +163,14 @@ function drawWorldLive(c,R,t,gs){
     const h=hz[i];
     if(h.kind==='spikes'){Kit.spikes(c,h.x,h.y,h.w,h.h);
       c.fillStyle=rgba('#c8452f',0.16+0.06*Math.sin(t*3));c.fillRect(h.x,h.y+h.h*0.55,h.w,h.h*0.45);}
+    else if(h.kind==='steam'&&h.look==='heat'){
+      /* жар лампы-солнца: колонна марева, перед вспышкой — красная полоса на полу */
+      if(h.active){c.save();c.globalCompositeOperation='lighter';const g=c.createLinearGradient(h.x,0,h.x+h.w,0);
+        g.addColorStop(0,'rgba(255,220,140,0)');g.addColorStop(0.5,'rgba(255,240,190,.55)');g.addColorStop(1,'rgba(255,220,140,0)');c.fillStyle=g;c.fillRect(h.x-0.3,h.y,h.w+0.6,h.h);c.restore();
+        game.renderer.glowAdd(h.x+h.w/2,h.y+h.h*0.5,h.w*2,'#fff2c0',0.45);}
+      else if(h.warn){const p=0.5+0.5*Math.sin(t*18);c.fillStyle=rgba('#ff8a3a',0.25+0.3*p);c.fillRect(h.x-0.2,h.y+h.h-0.3,h.w+0.4,0.3);
+        c.strokeStyle=rgba('#ffcf7a',0.35*p);c.lineWidth=0.05;c.strokeRect(h.x,h.y,h.w,h.h);}
+    }
     else if(h.kind==='steam'){
       if(h.active){c.save();c.globalCompositeOperation='lighter';
         const g=c.createLinearGradient(h.x,h.y+h.h,h.x,h.y);

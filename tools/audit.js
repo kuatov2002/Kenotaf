@@ -108,8 +108,8 @@ const LevelAudit={
       }
       /* гарпун: с места или из прыжка (на разной высоте); после отпускания — цепочка к следующему рыму,
          рывок или выхлоп дальше по ходу */
-      if(has('hook')&&R.anchors&&R.anchors.length)for(const J of [-1,0,8,18,30])for(const after of ['none','dash','jump','chain'])pols.push({dir:d,max:700,fn:(f,p,I,s)=>{
-        H(I,true);
+      if(has('hook')&&R.anchors&&R.anchors.length)for(const J of [-1,0,8,18,30])for(const after of ['none','dash','jump','chain','flip'])pols.push({dir:d,max:700,fn:(f,p,I,s)=>{
+        I.h.L=s.dir<0;I.h.R=s.dir>0;
         if(J>=0&&f===0)I.p.jump=1;I.h.J=J>=0&&f<36;
         const at=J<0?2:J+1;
         if(!s.hk&&f>=at&&!p.hook){I.p.hook=1;s.hk=1;s.hf=f;return;}
@@ -119,7 +119,9 @@ const LevelAudit={
           if(after==='dash'&&f===s.rf+2&&has('dash'))I.p.dash=1;
           if(after==='jump'&&f===s.rf+3){I.p.jump=1;I.h.J=1;}
           if(after==='jump'&&f>s.rf+3&&f<s.rf+30)I.h.J=1;
-          if(after==='chain'&&(f-s.rf)%10===4&&(s.n||0)<4){I.p.hook=1;s.n=(s.n||0)+1;s.hk=1;}}
+          if(after==='chain'&&(f-s.rf)%10===4&&(s.n||0)<4){I.p.hook=1;s.n=(s.n||0)+1;s.hk=1;}
+          if(after==='flip'&&f===s.rf+2&&(s.n||0)<3){s.dir=-s.dir;s.n=(s.n||0)+1;}
+          if(after==='flip'&&f===s.rf+5&&(s.n||0)<=3){I.p.hook=1;s.hk=1;}}
         if(s.hk>=1&&f>at+6)s.done=true;}});
       /* выхлоп: второй прыжок в воздухе на разной высоте, иногда с рывком следом */
       if(has('vjump'))for(const J2 of [6,14,24,34])for(const dsh of (has('dash')?[false,true]:[false]))pols.push({dir:d,max:400,fn:(f,p,I,s)=>{

@@ -387,3 +387,125 @@ SUBART.laundry.emit=(c,L,R,r)=>{c.clearRect(0,0,L.w,L.h);for(let x=3;x<L.w;x+=8+
 /* световые столбы подзон (поверх фона, до света) */
 const SUBSHAFT={workshop:{n:3,col:'255,236,200',a:0.06,w:2.4},foundry:{n:3,col:'255,150,80',a:0.08,w:3},market:{n:4,col:'255,207,122',a:0.06,w:2},
   school:{n:4,col:'200,220,240',a:0.08,w:2.4},chapel:{n:2,col:'232,201,106',a:0.12,w:3.4},laundry:{n:4,col:'220,232,240',a:0.07,w:2.6},drains:{n:2,col:'140,255,190',a:0.05,w:2}};
+
+/* ---------- III · САДЫ ЭДЕМА ----------
+   После Корчевателя сад «из каталога» вянет (сереют кроны, никнут цветы), а дикие жёлтые цветы
+   из заборника №3 расползаются по трещинам: R.wilt. */
+SA.flower=(c,x,y,s,col,wilt)=>{c.strokeStyle=wilt?'#6a5a3a':'#4a7a3a';c.lineWidth=0.04*s;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+(wilt?0.2:0.05)*s,y-0.3*s,x+(wilt?0.25:0)*s,y-(wilt?0.35:0.5)*s);c.stroke();
+  const hx=x+(wilt?0.25:0)*s,hy=y-(wilt?0.35:0.5)*s;c.fillStyle=wilt?'#7a6a50':col;for(let k=0;k<5;k++){const a=k/5*TAU;c.beginPath();c.ellipse(hx+Math.cos(a)*0.08*s,hy+Math.sin(a)*0.08*s,0.07*s,0.04*s,a,0,TAU);c.fill();}
+  c.fillStyle=wilt?'#4a3a2a':'#f2d98c';c.beginPath();c.arc(hx,hy,0.04*s,0,TAU);c.fill();};
+SA.wild=(c,x,y,n,r)=>{for(let i=0;i<n;i++){const xx=x+(r()-0.5)*1.6,s=0.6+r()*0.6;c.strokeStyle='#5a8a3a';c.lineWidth=0.03;c.beginPath();c.moveTo(xx,y);c.lineTo(xx+(r()-0.5)*0.2,y-0.35*s);c.stroke();
+  c.fillStyle='#ffd83a';c.beginPath();c.arc(xx+(r()-0.5)*0.2,y-0.35*s,0.07*s,0,TAU);c.fill();}};
+SA.fruitTree=(c,x,y,h,r,wilt)=>{c.fillStyle='#4a3a2a';c.beginPath();c.moveTo(x-0.18,y);c.lineTo(x-0.08,y-h*0.55);c.lineTo(x+0.08,y-h*0.55);c.lineTo(x+0.18,y);c.closePath();c.fill();
+  c.strokeStyle='#4a3a2a';c.lineWidth=0.08;for(const s of [-1,1]){c.beginPath();c.moveTo(x,y-h*0.45);c.quadraticCurveTo(x+s*h*0.2,y-h*0.6,x+s*h*0.3,y-h*0.75);c.stroke();}
+  for(let i=0;i<9;i++){const a=r()*TAU,d=r()*h*0.28;c.fillStyle=wilt?['#7a7050','#8a7a58','#6a6040'][i%3]:['#5a8a3a','#6f9a4a','#4a7a32'][i%3];
+    c.beginPath();c.ellipse(x+Math.cos(a)*d,y-h*0.72+Math.sin(a)*d*0.7,h*0.16,h*0.12,0,0,TAU);c.fill();}
+  if(!wilt)for(let i=0;i<6;i++){c.fillStyle='#d86a3a';c.beginPath();c.arc(x+(r()-0.5)*h*0.5,y-h*0.65+(r()-0.5)*h*0.3,0.08,0,TAU);c.fill();}};
+/* САД: ряды фруктовых деревьев под лампами-солнцами, лестницы, корзины */
+SUBART.orchard={zone:{ambRGB:[214,206,170],haze:'#d8d2a0',void:'#2a2a1c',fogA:0.1},
+  far(c,L,R,r){SA.vgrad(c,L,[[0,'#e8e0b8'],[0.5,'#d8d2a8'],[1,'#a8b080']]);
+    for(let k=0;k<3;k++){const y=L.h*(0.45+k*0.17);c.fillStyle='rgba(150,150,110,'+(0.25+k*0.15)+')';c.fillRect(0,y,L.w,L.h*0.06);
+      for(let x=0;x<L.w;x+=2.4+r()*1.6){c.save();c.globalAlpha=0.3+k*0.18;SA.fruitTree(c,x,y,2+k*0.8,r,R.wilt);c.restore();}}
+    for(let i=0;i<4;i++)SA.glow(c,L.w*(0.15+i*0.25),L.h*0.08,L.h*0.3,'#fff2c0',0.5);},
+  bg(c,L,R,r){for(let x=1;x<L.w;x+=5+r()*3)SA.fruitTree(c,x,L.h-1,5+r()*2,r,R.wilt);
+    for(let i=0;i<L.w/8;i++){const x=r()*L.w;c.strokeStyle='#8a6d4a';c.lineWidth=0.1;c.beginPath();c.moveTo(x,L.h);c.lineTo(x+1.2,L.h-5);c.moveTo(x+0.7,L.h);c.lineTo(x+1.9,L.h-5);c.stroke();
+      for(let k=1;k<6;k++){c.beginPath();c.moveTo(x+k*0.24,L.h-k);c.lineTo(x+0.7+k*0.24,L.h-k);c.stroke();}}},
+  mid(c,L,R,r){for(let i=0;i<L.w/6;i++){const x=r()*L.w;c.fillStyle='#8a6d4a';rr(c,x,L.h-1.0,1.2,0.8,0.1);c.fill();c.strokeStyle='#5a4a30';c.lineWidth=0.04;
+      for(let k=0;k<4;k++){c.beginPath();c.moveTo(x+0.1,L.h-0.9+k*0.18);c.lineTo(x+1.1,L.h-0.9+k*0.18);c.stroke();}
+      if(!R.wilt)for(let k=0;k<4;k++){c.fillStyle='#d86a3a';c.beginPath();c.arc(x+0.25+k*0.25,L.h-1.05,0.1,0,TAU);c.fill();}}},
+  wall(c,L,R,r){c.clearRect(0,0,L.w,L.h);
+    for(let x=0;x<L.w;x+=6){Kit.column(c,x+0.4,L.h*0.15,L.h*0.85,0.32,{gold:r()>0.6});}
+    for(let i=0;i<L.w/3;i++)SA.flower(c,r()*L.w,L.h-0.2-r()*0.4,1.2+r()*0.6,['#e8a0b0','#f0f0e0','#c8a0e0'][(r()*3)|0],R.wilt);
+    if(R.wilt)for(let i=0;i<L.w/6;i++)SA.wild(c,r()*L.w,L.h-0.25,5,r);},
+  emitF:0.14,emit(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<4;i++){const x=L.w*(0.15+i*0.25);SA.glow(c,x,L.h*0.06,L.h*0.25,'#fff2c0',0.3);
+    c.fillStyle='rgba(255,250,220,.9)';rr(c,x-1,L.h*0.04,2,0.3,0.1);c.fill();}},
+  fgd(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<3;i++){const x=r()*L.w;c.save();c.globalAlpha=0.9;SA.fruitTree(c,x,L.h+1,L.h*0.5,r,R.wilt);c.restore();}}
+};
+/* ПАСЕКА: латунные соты-стены, ульи-ящики, янтарный свет, рой */
+SUBART.apiary={zone:{ambRGB:[200,170,110],haze:'#c89a4a',void:'#1e140a',fogA:0.1},
+  far(c,L,R,r){SA.vgrad(c,L,[[0,'#3a2810'],[1,'#6a4a1a']]);SA.honeycomb(c,0,0,L.w,L.h,1.6,'#5a3e14','rgba(255,200,90,.7)',r,0.3);},
+  bg(c,L,R,r){SA.vgrad(c,L,[[0,'rgba(80,56,20,.0)'],[1,'rgba(60,40,14,.6)']]);
+    for(let x=1;x<L.w;x+=3.2+r()*2){const n=2+(r()*4|0);for(let k=0;k<n;k++){const y=L.h-1-k*1.1;c.fillStyle=['#c9a227','#b08d3e','#e8c96a'][k%3];rr(c,x,y-1.0,2.2,1.0,0.1);c.fill();
+      c.fillStyle='#2a1a08';c.fillRect(x+0.9,y-0.3,0.4,0.1);}}},
+  mid(c,L,R,r){for(let i=0;i<120;i++){c.fillStyle='rgba(40,28,8,.8)';c.beginPath();c.ellipse(r()*L.w,r()*L.h*0.8,0.06,0.04,r()*3,0,TAU);c.fill();}},
+  wall(c,L,R,r){c.fillStyle='rgba(120,86,30,.9)';c.fillRect(0,0,L.w,L.h);SA.honeycomb(c,0,0,L.w,L.h,1.0,'rgba(150,110,40,.95)','rgba(255,200,90,.55)',r,0.08);
+    for(let i=0;i<L.w/8;i++)Kit.stencil(c,r()*(L.w-4),2+r()*4,['УЛЕЙ '+((r()*40|0)+1),'ТОЛЬКО КАТАЛОГ','МЁД — СОВЕТУ'][(r()*3)|0],0.42,'rgba(60,40,10,.5)',0.5);},
+  emitF:0.34,emit(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<L.w;i++){const x=r()*L.w,y=r()*L.h;if(r()<0.4){SA.glow(c,x,y,0.6,'#ffcf6a',0.25);}}},
+  fgd(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<3;i++){const x=r()*L.w;c.fillStyle='rgba(40,26,8,.95)';rr(c,x,L.h-3.5,2.6,3.5,0.2);c.fill();}}
+};
+/* ОРОСИТЕЛЬНЫЙ КАНАЛ: лотки с водой, шлюзовые затворы, трубы, холодный сине-зелёный свет */
+SUBART.irrigation={zone:{ambRGB:[140,176,170],haze:'#5a8a8a',void:'#0a1414',fogA:0.12},
+  far(c,L,R,r){SA.vgrad(c,L,[[0,'#142224'],[1,'#1e3a3a']]);
+    for(let x=0;x<L.w;x+=9){c.fillStyle='#0e1a1a';c.beginPath();c.moveTo(x,L.h);c.lineTo(x,L.h*0.3);c.arc(x+4.5,L.h*0.3,4.5,PI,0);c.lineTo(x+9,L.h);c.lineTo(x+8,L.h);c.lineTo(x+8,L.h*0.32);c.arc(x+4.5,L.h*0.32,3.5,0,PI,true);c.lineTo(x+1,L.h);c.closePath();c.fill();}
+    SA.band(c,L,L.h*0.85,L.h*0.12,'#5fc8c0',0.3);},
+  bg(c,L,R,r){for(let i=0;i<5;i++){const y=1+r()*L.h*0.4;Kit.pipe(c,[[0,y],[L.w,y+(r()-0.5)*2]],0.35,'#5d6067',{seed:i+300,rustN:0});}
+    for(let x=4;x<L.w;x+=14+r()*4){Kit.plate(c,x,L.h*0.45,3,L.h*0.55,'steel',(x*3)|0,{rust:0.3});Kit.valve(c,x+1.5,L.h*0.55,0.8,r()*TAU,'#b08d3e');}},
+  mid(c,L,R,r){for(let i=0;i<20;i++){const x=r()*L.w;c.strokeStyle='rgba(180,230,230,.18)';c.lineWidth=0.04;c.beginPath();c.moveTo(x,0);c.lineTo(x,r()*L.h*0.7);c.stroke();}},
+  wall(c,L,R,r){c.fillStyle='rgba(120,130,120,.6)';c.fillRect(0,0,L.w,L.h);c.save();c.globalAlpha=0.35;c.fillStyle=PAT(c,'marble');c.fillRect(0,0,L.w,L.h);c.restore();
+    for(let i=0;i<L.w*0.7;i++){const x=r()*L.w,y=r()*L.h*0.5,len=1+r()*5,g=c.createLinearGradient(0,y,0,y+len);g.addColorStop(0,'rgba(80,140,100,0)');g.addColorStop(0.5,'rgba(80,150,110,.25)');g.addColorStop(1,'rgba(80,140,100,0)');
+      c.fillStyle=g;c.fillRect(x,y,0.12+r()*0.2,len);}
+    for(let i=0;i<L.w/12;i++)Kit.stencil(c,r()*(L.w-4),2+r()*L.h*0.4,['ПОЛИВ ПО ГРАФИКУ','ЛОТОК '+((r()*9|0)+1),'ВОДА — СОВЕТУ'][(r()*3)|0],0.42,'rgba(40,70,60,.5)',0.5);},
+  emitF:0.14,emit(c,L,R,r){c.clearRect(0,0,L.w,L.h);SA.band(c,L,L.h*0.86,L.h*0.08,'#7fe0d0',0.22);},
+  fgd(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<3;i++){const x=r()*L.w;Kit.pipe(c,[[x,0],[x+(r()-0.5),L.h]],0.5,'#4a5058',{seed:i+330,rustN:0});}}
+};
+/* ГЕРБАРИЙ: стеклянные шкафы с засушенными листьями, латунные рамы, лампы для чтения */
+SUBART.herbarium={zone:{ambRGB:[196,192,170],haze:'#b8b48e',void:'#1a1a14',fogA:0.08},
+  far(c,L,R,r){SA.vgrad(c,L,[[0,'#2a2a20'],[1,'#3a3a2c']]);for(let x=0;x<L.w;x+=3){c.fillStyle='#1e1e16';c.fillRect(x,L.h*0.2,2.6,L.h*0.8);
+    for(let y=L.h*0.22;y<L.h;y+=1.2){c.fillStyle='rgba(200,210,180,.12)';c.fillRect(x+0.2,y,2.2,0.9);}}},
+  bg(c,L,R,r){for(let x=1;x<L.w;x+=4){Kit.plate(c,x,L.h*0.3,3.4,L.h*0.7,'brass',(x*5)|0,{});c.fillStyle='rgba(180,200,190,.35)';c.fillRect(x+0.2,L.h*0.32,3.0,L.h*0.66);
+    for(let y=L.h*0.36;y<L.h-0.6;y+=1.4)for(let k=0;k<2;k++){const lx=x+0.6+k*1.4,ly=y+0.5;c.fillStyle=['#7a8a4a','#9a8a5a','#6a7a3a'][((x+y+k)|0)%3];
+      c.beginPath();c.ellipse(lx,ly,0.35,0.18,(r()-0.5),0,TAU);c.fill();c.strokeStyle='rgba(60,50,30,.6)';c.lineWidth=0.02;c.beginPath();c.moveTo(lx-0.3,ly);c.lineTo(lx+0.3,ly);c.stroke();}}},
+  mid(c,L,R,r){for(let i=0;i<L.w/10;i++){const x=r()*L.w;c.fillStyle='#3a2a1a';c.fillRect(x,L.h-1.1,2.2,0.12);c.fillRect(x+0.1,L.h-1.1,0.1,1.1);c.fillRect(x+2,L.h-1.1,0.1,1.1);
+    c.fillStyle='#d8cdb6';c.fillRect(x+0.4,L.h-1.25,1.2,0.12);}},
+  wall(c,L,R,r){c.fillStyle='rgba(206,198,176,.9)';c.fillRect(0,0,L.w,L.h);c.save();c.globalAlpha=0.3;c.fillStyle=PAT(c,'marble');c.fillRect(0,0,L.w,L.h);c.restore();
+    for(let i=0;i<L.w/5;i++){const x=r()*(L.w-1.5),y=L.h*(0.2+r()*0.3);Kit.plate(c,x,y,1.3,1.6,'brass',(i*7)|0,{});c.fillStyle='#ece6d4';c.fillRect(x+0.12,y+0.12,1.06,1.36);
+      c.fillStyle=['#7a8a4a','#9a7a4a','#5a7a3a'][i%3];c.beginPath();c.ellipse(x+0.65,y+0.75,0.32,0.5,(r()-0.5)*0.6,0,TAU);c.fill();
+      c.fillStyle='rgba(60,50,40,.6)';c.font='400 0.12px Oswald';c.fillText('№'+((r()*400|0)+1),x+0.2,y+1.4);}},
+  emitF:0.34,emit(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<L.w/6;i++){const x=r()*L.w;SA.glow(c,x,L.h-1.5,1.4,'#ffe6b0',0.25);}},
+  fgd(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<2;i++){const x=r()*L.w;c.fillStyle='rgba(40,34,24,.95)';c.fillRect(x,0,1.2,L.h);}}
+};
+/* КОРНЕВАЯ ГАЛЕРЕЯ: земля и корни под садами, светящиеся грибы, капель — тёмный подсад */
+SUBART.roots={zone:{ambRGB:[70,92,96],haze:'#1e3438',void:'#030606',fogA:0.14,grain:0.05},
+  far(c,L,R,r){SA.vgrad(c,L,[[0,'#0a1212'],[1,'#122022']]);
+    for(let i=0;i<30;i++){let x=r()*L.w,y=0;c.strokeStyle='rgba(30,40,36,.9)';c.lineWidth=0.3+r()*0.6;c.beginPath();c.moveTo(x,y);
+      while(y<L.h){x+=(r()-0.5)*2;y+=0.8+r()*1.4;c.lineTo(x,y);}c.stroke();}},
+  bg(c,L,R,r){for(let i=0;i<40;i++){let x=r()*L.w,y=0;c.strokeStyle='#2a2a20';c.lineWidth=0.15+r()*0.4;c.beginPath();c.moveTo(x,y);
+      while(y<L.h*0.8){x+=(r()-0.5)*1.4;y+=0.5+r();c.lineTo(x,y);}c.stroke();}},
+  mid(c,L,R,r){for(let i=0;i<L.w/2;i++){const x=r()*L.w,y=r()*L.h;c.fillStyle=r()<0.5?'rgba(120,220,210,.6)':'rgba(190,140,230,.55)';
+    c.beginPath();c.ellipse(x,y,0.2,0.1,0,PI,TAU);c.fill();c.fillRect(x-0.03,y,0.06,0.18);}},
+  wall(c,L,R,r){c.fillStyle='rgba(28,30,24,.95)';c.fillRect(0,0,L.w,L.h);
+    for(let i=0;i<L.w*1.2;i++){let x=r()*L.w,y=r()*L.h*0.3;c.strokeStyle='rgba(60,54,40,.8)';c.lineWidth=0.05+r()*0.2;c.beginPath();c.moveTo(x,y);
+      for(let k=0;k<5;k++){x+=(r()-0.5)*1.2;y+=0.4+r()*0.8;c.lineTo(x,y);}c.stroke();}},
+  emitF:0.62,emit(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<L.w*0.8;i++){const x=r()*L.w,y=r()*L.h,col=r()<0.5?'#7fe0d0':'#c090f0';SA.glow(c,x,y,0.7,col,0.3);
+    c.fillStyle=rgba(col,0.85);c.beginPath();c.ellipse(x,y,0.14,0.07,0,PI,TAU);c.fill();}},
+  fgd(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<6;i++){let x=r()*L.w,y=0;c.strokeStyle='#0a0a08';c.lineWidth=0.5+r()*0.6;c.beginPath();c.moveTo(x,y);
+    while(y<L.h*0.6){x+=(r()-0.5)*2;y+=1+r();c.lineTo(x,y);}c.stroke();}}
+};
+/* ЗАЛ ЛАМП-СОЛНЦ: огромное искусственное солнце под сводом, рёбра-рефлекторы, пересвет и марево */
+SUBART.sunhall={zone:{ambRGB:[235,226,190],haze:'#fff2c8',void:'#3a3420',fogA:0.16,grain:0.025},
+  far(c,L,R,r){SA.vgrad(c,L,[[0,'#f8f0d0'],[0.5,'#e8dcb0'],[1,'#c8c090']]);
+    const cx=L.w/2,cy=L.h*0.12;for(let i=0;i<24;i++){const a=PI+i/23*PI;c.strokeStyle='rgba(160,140,90,.35)';c.lineWidth=0.3;c.beginPath();c.moveTo(cx,cy);c.lineTo(cx+Math.cos(a)*L.w*0.7,cy+Math.sin(a)*L.w*0.7);c.stroke();}
+    SA.glow(c,cx,cy,L.h*0.7,'#fff6d8',0.8);},
+  bg(c,L,R,r){for(let x=0;x<L.w;x+=8)Kit.column(c,x+1,L.h*0.2,L.h*0.8,0.5,{gold:true});},
+  mid(c,L,R,r){for(let i=0;i<L.w/5;i++)SA.fruitTree(c,r()*L.w,L.h-0.5,3+r()*2,r,true);},
+  wall(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<L.w/2;i++)SA.flower(c,r()*L.w,L.h-0.2,1.4,'#f0e0a0',true);
+    if(R.wilt)for(let i=0;i<L.w/5;i++)SA.wild(c,r()*L.w,L.h-0.25,4,r);},
+  emitF:0.14,emit(c,L,R,r){c.clearRect(0,0,L.w,L.h);const cx=L.w/2,cy=L.h*0.12;
+    const g=c.createRadialGradient(cx,cy,0,cx,cy,L.h*0.32);g.addColorStop(0,'rgba(255,255,240,1)');g.addColorStop(0.2,'rgba(255,248,210,.8)');g.addColorStop(1,'rgba(255,240,190,0)');
+    c.fillStyle=g;c.beginPath();c.arc(cx,cy,L.h*0.32,0,TAU);c.fill();},
+  fgd(c,L,R,r){c.clearRect(0,0,L.w,L.h);for(let i=0;i<2;i++){const x=r()*L.w;Kit.column(c,x,0,L.h,0.8,{gold:true});}}
+};
+SUBART.shed={zone:{ambRGB:[176,150,116],haze:'#7a6a4a',void:'#140e08',fogA:0.08},
+  far:SUBART.orchard.far,
+  bg(c,L,R,r){SA.vgrad(c,L,[[0,'#3a2a1a'],[1,'#2a1e12']]);for(let x=0;x<L.w;x+=0.6){c.fillStyle=((x*5)|0)%2?'#3a2a1a':'#33251a';c.fillRect(x,0,0.58,L.h);}},
+  mid(c,L,R,r){},
+  wall(c,L,R,r){c.fillStyle='rgba(70,50,30,.95)';c.fillRect(0,0,L.w,L.h);for(let x=0;x<L.w;x+=0.5){c.fillStyle='rgba(0,0,0,'+(0.1+r()*0.15)+')';c.fillRect(x,0,0.04,L.h);}
+    for(let i=0;i<L.w/2;i++){const x=r()*L.w,y=L.h*(0.25+r()*0.25);c.strokeStyle=['#8a9299','#6a5a40','#b08d3e'][i%3];c.lineWidth=0.08;c.beginPath();c.moveTo(x,y);c.lineTo(x+(r()-0.5)*0.4,y+0.9+r()*0.6);c.stroke();}},
+  emitF:0.34,emit(c,L,R,r){c.clearRect(0,0,L.w,L.h);}
+};
+(()=>{const C={orchard:{kind:'arch',every:12,w:5,y0:3,y1:14},irrigation:{kind:'arch',every:11,w:5,y0:3,y1:14},herbarium:{kind:'window',every:10,w:3,y0:2,y1:9,bars:2},
+  apiary:{kind:'rect',every:12,w:4,y0:3,y1:10},roots:{kind:'arch',every:14,w:6,y0:2,y1:14}};
+  for(const k in C){const S0=SUBART[k],base=S0.wall,o=C[k];S0.wall=(c,L,R,r)=>{base(c,L,R,r);if(!R.noCut)SA.cut(c,L,R,r,Object.assign({},o,R.cut||{}));};}
+  Object.assign(SUBFILL,{orchard:['#fff2c0',0.35],apiary:['#ffcf6a',0.35],irrigation:['#bfeee8',0.3],herbarium:['#ffe6b0',0.35],roots:['#7fe0d0',0.2],sunhall:['#fff6d8',0.5],shed:['#ffd9a0',0.35]});
+  Object.assign(SUBSHAFT,{orchard:{n:4,col:'255,246,214',a:0.12,w:3.4},sunhall:{n:6,col:'255,250,220',a:0.16,w:3.8},herbarium:{n:3,col:'255,240,200',a:0.08,w:2.4},
+    irrigation:{n:3,col:'200,240,240',a:0.07,w:2.4},apiary:{n:3,col:'255,210,120',a:0.08,w:2.6}});})();

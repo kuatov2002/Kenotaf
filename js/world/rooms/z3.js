@@ -62,7 +62,7 @@ z3_greenhouse:gs=>({id:'z3_greenhouse',zone:'eden',name:'ОРАНЖЕРЕИ-ТЕ
     R.solids=[S(-2,-3,56,3,'marble'),S(-2,0,2,34,'marble'),S(52,0,2,34,'marble'),S(0,30,52,4,'marble'),
       P(4,27.2,13,0.4,'marble'),P(20,27.2,13,0.4,'marble'),P(36,27.2,12,0.4,'marble'),
       P(12,24.4,13,0.4,'marble'),P(28,24.4,13,0.4,'marble'),
-      P(4,21.6,13,0.4,'marble'),P(20,21.6,13,0.4,'marble'),P(36,21.6,16,0.4,'marble'),
+      P(0,21.6,17,0.4,'marble'),P(20,21.6,13,0.4,'marble'),P(36,21.6,16,0.4,'marble'),
       S(14,18.8,16,0.8,'marble'),
       P(6,16.2,12,0.4,'marble'),P(24,16.2,12,0.4,'marble'),
       P(16,13.6,12,0.4,'marble'),S(42,12.4,10,0.6,'marble'),
@@ -75,7 +75,8 @@ z3_greenhouse:gs=>({id:'z3_greenhouse',zone:'eden',name:'ОРАНЖЕРЕИ-ТЕ
       {x:50.8,y:27.9,w:1.2,h:2.1,to:'z3_collector',link:'col_low',label:'КОЛЛЕКТОР'},
       {x:50.6,y:19.5,w:1.4,h:2.1,to:'z3_collector',link:'col_short',label:'СОЛЯРИЙ',latch:'col_latch',msg:'ЗАСОВ — С ТОЙ СТОРОНЫ.'},
       {x:49.6,y:10.3,w:2.4,h:2.1,to:'z3_dome',label:'КУПОЛЬНЫЙ ПОДЪЁМ'},
-      {x:0.0,y:8.3,w:1.2,h:2.1,to:'z3_intake',label:'ЗАБОРНИК №3'}];
+      {x:0.0,y:8.3,w:1.2,h:2.1,to:'z3_intake',label:'ЗАБОРНИК №3'},
+      RB.L(21.6,'z3_orchard','ФРУКТОВЫЙ САД')];
     R.signs=[{x:22.2,y:10.6,keys:['SPACE'],text:'ДЕРЖАТЬ',need:'magnet'},
       {x:22.2,y:10.6,keys:[],text:'ТРАВЕРСА · ДОПУСК: МАГНИТНЫЕ ПОДКОВЫ',needNot:'magnet'}];
     R.checkpoint={x:4,y:30,h:1.7,lit:gs.cp.room==='z3_greenhouse'};
@@ -135,7 +136,8 @@ z3_collector:gs=>({id:'z3_collector',zone:'eden',name:'ЗАТОПЛЕННЫЙ К
     R.air=[{x:25,y:1,w:2.4,h:15}];
     R.amb=[96,108,92];
     R.doors=[{x:0.0,y:13.9,w:1.2,h:2.1,to:'z3_greenhouse',link:'col_low',label:'ОРАНЖЕРЕИ'},
-      {x:58.6,y:13.9,w:1.4,h:2.1,to:'z3_greenhouse',link:'col_short',label:'ОРАНЖЕРЕИ · ТЕРРАСА',latch:'col_latch',latchHere:true}];
+      {x:58.6,y:13.9,w:1.4,h:2.1,to:'z3_greenhouse',link:'col_short',label:'ОРАНЖЕРЕИ · ТЕРРАСА',latch:'col_latch',latchHere:true},
+      RB.hatch(55.4,16,'z3_canal','ОРОСИТЕЛЬНЫЙ КАНАЛ')];
     R.signs=[{x:26.2,y:7.4,keys:[],text:'ВЕНТКОЛОННА · ПРОДУВКА ФИЛЬТРОВ'}];
     R.pushables=[{x:50,y:14.7,w:4.2,h:1.3,id:'beam',kind:'beam',pushed:beam}];
     R.interactables=[];
@@ -204,17 +206,18 @@ z3_dome:gs=>({id:'z3_dome',zone:'eden',name:'КУПОЛЬНЫЙ ПОДЪЁМ',w:
     /* подъём ПО СВОДУ: три траверсы над пропастью, между ними — площадки отдыха.
        Пролёты 13–14 м: прыжком с рывком не взять, только вниз головой по клёпкам */
     R.solids=[S(-2,-3,66,3,'marble'),S(-2,0,2,30,'marble'),S(62,0,2,30,'marble'),
-      S(0,26,9,4,'marble'),P(5,23.6,4,0.4,'marble'),P(1,21.2,4,0.4,'marble'),P(5,18.8,4,0.4,'marble'),
+      S(0,26,9,4,'marble'),P(5,23.6,4,0.4,'marble'),P(0,21.2,5,0.4,'marble'),P(5,18.8,4,0.4,'marble'),
       P(23,17.4,3,0.4,'marble'),P(39.5,16.0,3,0.4,'marble'),S(55.8,14,6.2,0.6,'marble')];
     R.magnetRects=[{x:8,y:13.8,w:15,h:0.7},{x:24.5,y:12.5,w:15,h:0.7},{x:41,y:11.1,w:16,h:0.7}];
     for(const m of R.magnetRects)R.solids.push(S(m.x,m.y,m.w,m.h,'steel'));
     R.hazards=[{x:9,y:28.4,w:53,h:1.6,kind:'pit',back:{x:2.6,y:24.32},
       backs:[{minX:23,x:23.9,y:15.72},{minX:39.5,x:40.4,y:14.32}]}];
     R.doors=[{x:0.0,y:23.9,w:1.2,h:2.1,to:'z3_greenhouse',label:'ОРАНЖЕРЕИ'},
-      {x:60.6,y:11.9,w:1.4,h:2.1,to:'z4_antechamber',label:'ПЕЧАТЬ',elevator:true}];
+      {x:60.6,y:11.9,w:1.4,h:2.1,to:'z4_antechamber',label:'ПЕЧАТЬ',elevator:true,reqFlag:'lead_dome',reqMsg:'ПОДЪЁМНИК ЗАПАЯН СВИНЦОМ'},
+      RB.L(21.2,'z3_vineyard','ВИНОГРАДНЫЕ ТЕРРАСЫ')];
+    if(!gs.flags.lead_dome)R.pushables.push({kind:'lead',x:59.6,y:11.4,w:2.4,h:2.6,id:'dome_lead',flag:'lead_dome'});
     R.checkpoint={x:3,y:26,h:1.7,lit:gs.cp.room==='z3_dome'};
-    R.interactables=gs.loreIds[11]?[]:[{kind:'lore',loreId:11,x:24.5,y:17.4,title:'ЦИЛИНДР №11 · ПРОТОКОЛ СОВЕТА',
-      text:'«ВОПРОС: ВСКРЫТИЕ ПЕЧАТИ. ЗА — 0. ПРОТИВ — 7. ЗАСЕДАНИЕ № 1904. СЛЕДУЮЩЕЕ — ЧЕРЕЗ МЕСЯЦ.»'}];
+    R.interactables=[];
     R.enemies.push({type:'lampada',x:14,y:19,amb:true});
     R.lights=[lit(14,13,7,'#f2d98c',0.8),lit(31,11.6,7,'#f2d98c',0.85),lit(48,10.2,7,'#f2d98c',0.8),
       lit(31,3,14,'#fff2cf',0.95),lit(5,23,8,'#ffe6a8',0.7),lit(24.5,16,5,'#ffe6a8',0.65),lit(41,14.6,5,'#ffe6a8',0.65),

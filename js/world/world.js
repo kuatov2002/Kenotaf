@@ -205,7 +205,9 @@ class World{
       const cyc=(this.time+(h.off||0))%(h.per||2.4);
       h.active=cyc<(h.on||0.7);
       h.warn=!h.active&&cyc>(h.per||2.4)-0.5;
-      if(h.active&&Math.random()<0.7)
+      if(h.active&&h.look==='heat'){if(Math.random()<0.5)this.game.particles.spawn({kind:'dust',x:h.x+Math.random()*h.w,y:h.y+Math.random()*h.h,
+        vx:0,vy:-2-Math.random()*2,life:0.8,size:0.06,col:'#fff2c0',drag:0.4,a:0.8,add:true});}
+      else if(h.active&&Math.random()<0.7)
         this.game.particles.spawn({kind:'steam',x:h.x+Math.random()*h.w,y:h.y+h.h,
           vx:(Math.random()-0.5)*1.4,vy:-7-Math.random()*4,life:0.9,size:0.5,grow:1.5,col:'#e8e0d0',drag:0.7});
     }

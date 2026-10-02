@@ -8,6 +8,8 @@ class Room{
     this.bossTrigger=null;this.bossDoor=null;this.checkpoint=null;
     this.art=base.art||{bg:Art.bgSump,mid:Art.midSump,game:Art.gameSump};
     Object.assign(this,base);
+    /* мир меняется: после Корчевателя сад из каталога вянет, дикие цветы расползаются */
+    this.wilt=this.zone==='eden'&&!!(gs.bosses&&gs.bosses.uprooter);
     this.playerRef=null;this.t=0;
     if(this.build)this.build(this);
     if(typeof subFill==="function")subFill(this);
@@ -43,5 +45,8 @@ function doorArrival(R,d){
   /* не появляться внутри завала/штабеля: сдвиг к центру комнаты */
   for(let k=0;k<20;k++){const p={x:x,y:bottom-ph,w:pw,h:ph};
     if(!R.solids.some(s=>!s.ow&&!s.hidden&&aabb(p,s)))break;x+=face*0.5;}
-  return {x:x,y:bottom-ph,face:face};
+  /* люк в своде: появиться под ним, а не в толще перекрытия */
+  let y=bottom-ph;
+  for(let k=0;k<24;k++){const p={x:x,y:y,w:pw,h:ph};if(!R.solids.some(s=>!s.ow&&!s.hidden&&aabb(p,s)))break;y+=0.25;}
+  return {x:x,y:y,face:face};
 }
