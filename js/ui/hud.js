@@ -108,5 +108,9 @@ class HUD{
       }
     }
     this.prompt(pr);
+    /* подсказка клавиши — под то устройство, которым играют сейчас */
+    {const pad=g.input.usingPad();if(this._pad!==pad){this._pad=pad;
+      const k=document.querySelector('#prompt kbd'),c=document.querySelector('#caption .k b');
+      if(k)k.textContent=pad?'Y':'E';if(c)c.textContent=pad?'A':'E';}}
   }
 }

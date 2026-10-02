@@ -21,6 +21,7 @@ class Game{
     this.tutorial=new TutorialSystem(this);
     this.map=new WorldMap(this);
     this.travel=new TravelMenu(this);
+    this.menuNav=new MenuNav(this);
     this.debug=new DebugUI(this);
     this.debugOpts={invuln:false,collision:false,gates:false,bounds:false,collider:false};
     this.state='menu';this.timeScale=1;this.hitstopT=0;this.acc=0;this.last=0;this.fps=60;
@@ -194,6 +195,7 @@ class Game{
     let dt=(ts-this.last)/1000;this.last=ts;
     dt=Math.min(dt,0.05);
     this.fps=lerp(this.fps,1/Math.max(dt,0.0001),0.08);
+    this.input.pollPad();this.menuNav.sync();
     /* transition (механические шторки) */
     if(this.transitionT>=0){
       this.transitionT+=dt;
