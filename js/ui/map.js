@@ -18,6 +18,7 @@ class WorldMap{
   }
   shown(id){const gs=this.game.gs,r=ROOMDEFS[id];if(!MAPLAYOUT[id]||!r)return false;
     if(gs.visited[id])return true;
+    if(MAPSECRET[id])return false;
     return !!gs.flags['map_'+this.region(id)];}
   zoneOf(id){const c=this.cache[id];if(c)return c.zone;
     return id[1]==='1'?'sump':id[1]==='2'?'hives':id[1]==='3'?(id==='z3_airlock'?'seal':'eden'):id[1]==='4'?'seal':'surface';}

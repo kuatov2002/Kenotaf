@@ -162,6 +162,8 @@ class World{
     const R=this.room,p=this.player,g=this.game,gs=g.gs,cap=this.filterCap();
     if(this.filter===undefined||this.filter>cap)this.filter=cap;
     if(!p||p.dead){this.inPollen=false;return;}
+    /* сцена (сальваж, разговор) — фильтр не тратится: задохнуться, читая записку, было бы нечестно */
+    if(g.cinematic.active){this.chokeT=0;return;}
     const head={x:p.cx-0.1,y:p.y+0.2,w:0.2,h:0.5};
     const inAir=(R.air||[]).some(a=>aabb(head,a));
     const inP=!inAir&&(R.pollen||[]).some(z=>aabb(head,z));

@@ -129,7 +129,7 @@ function drawWorldLive(c,R,t,gs){
   /* облака пыльцы и продувочные колонны — читаются в любом свете */
   for(const z of (R.pollen||[])){
     const g2=c.createLinearGradient(0,z.y,0,z.y+z.h);
-    g2.addColorStop(0,'rgba(190,204,110,0)');g2.addColorStop(0.3,'rgba(190,204,110,.2)');g2.addColorStop(1,'rgba(160,178,80,.3)');
+    g2.addColorStop(0,'rgba(190,204,110,0)');g2.addColorStop(0.3,'rgba(190,204,110,.2)');g2.addColorStop(Math.max(0.31,1-1.2/z.h),'rgba(160,178,80,.3)');g2.addColorStop(1,'rgba(160,178,80,.16)');
     c.fillStyle=g2;c.fillRect(z.x,z.y,z.w,z.h);
     const n=Math.min(90,Math.round(z.w*z.h*0.5));c.fillStyle='rgba(226,236,140,.6)';
     for(let i=0;i<n;i++){const sx=z.x+((i*7.13+t*0.35*(1+i%3))%z.w),sy=z.y+(((i*3.71+Math.sin(t*0.7+i)*0.8)%z.h)+z.h)%z.h;

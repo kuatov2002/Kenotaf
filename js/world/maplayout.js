@@ -11,11 +11,13 @@ const MAPLAYOUT={
   z2_escalator:[186,362],z2_atrium:[232,330],z2_apartment:[232,311],z2_stairwell:[270,346],
   z2_turbine:[292,352],z2_boss:[348,354],z2_post:[182,318],z2_overgrown:[196,345],
   /* ЗОНА III · САДЫ ЭДЕМА */
-  z3_airlock:[392,290],z3_greenhouse:[424,262],z3_collector:[478,278],z3_dome:[478,240],
+  z3_airlock:[392,290],z3_greenhouse:[424,262],z3_collector:[478,278],z3_dome:[478,240],z3_intake:[398,240],
   /* ЗОНА IV · ПЕЧАТЬ */
   z4_antechamber:[544,196],z4_exam_a:[544,180],z4_exam_b:[590,160],z4_exam_c:[590,198],
   /* СНАРУЖИ */
   z5_surface:[560,120]
 };
+/* тайники: на скопированной схеме зоны их нет, пока курьер сам туда не войдёт (у двери — обрубок с «?») */
+const MAPSECRET={z1_drain:1,z2_overgrown:1,z3_intake:1};
 /* цвет заливки комнаты на схеме по зоне */
 const MAPTINT={sump:'#5a4636',hives:'#5c3a34',eden:'#6f7a46',seal:'#4e5868',surface:'#6f8ea6'};

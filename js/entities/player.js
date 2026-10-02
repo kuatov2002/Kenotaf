@@ -9,7 +9,7 @@ class Player extends Body{
     this.coyote=0;this.jumpBuf=0;this.didJump=false;this.jumpCutDone=true;
     this.wasGrounded=false;this.justLanded=false;this.justLeftGround=false;this.fallV=0;
     this.crouch=false;this.slideT=0;this.slideCd=0;
-    this.dashT=0;this.dashCd=0;this.airDash=1;
+    this.dashT=0;this.dashCd=0;this.airDash=this.airDashes();
     this.atkT=0;this.atkCd=0;this.pulseCd=0;this.pulseT=0;
     this.invuln=0;this.hurtT=0;this.dead=false;this.deadT=0;
     this.energy=CFG.player.energy;this.energyDelay=0;this.noiseLevel=0;
@@ -19,6 +19,8 @@ class Player extends Body{
     this.healT=0;this.slashT=0;this.slashDir='side';this.slashFace=1;this.pogoT=0;this.lookT=0;this.lookV=0;
   }
   maxEnergy(){return this.world.game.gs.flags.energy_cap?150:CFG.player.energy;}
+  /* рывков в воздухе: клапан MK-II (заборник №3) даёт второй */
+  airDashes(){const w=this.world;return w&&w.game&&w.game.gs.flags.dash_mk2?2:1;}
   setH(nh){
     if(Math.abs(nh-this.h)<1e-4)return true;
     const ny=this.bottom-nh;
@@ -31,7 +33,7 @@ class Player extends Body{
     const C=CFG.player,g=this.world.game;
     this.vy=-C.jumpV*this.gravDir;
     this.onGround=false;this.coyote=0;this.jumpBuf=0;this.didJump=true;
-    this.jumpCutDone=false;this.jumpStretch=0.14;this.airDash=1;
+    this.jumpCutDone=false;this.jumpStretch=0.14;this.airDash=this.airDashes();
     g.audio.jump();
     this.noiseLevel=Math.max(this.noiseLevel,0.3);
     g.particles.burst(this.cx,this.onCeil?this.y:this.bottom,9,
@@ -41,7 +43,7 @@ class Player extends Body{
     const C=CFG.player,g=this.world.game;
     this.vy=-C.wallJumpY;this.vx=-dir*C.wallJumpX;this.face=-dir;
     this.jumpBuf=0;this.didJump=true;this.coyote=0;this.jumpCutDone=false;
-    this.wallT=0;this.wallLock=C.wallLock;this.airDash=1;this.jumpStretch=0.12;
+    this.wallT=0;this.wallLock=C.wallLock;this.airDash=this.airDashes();this.jumpStretch=0.12;
     g.audio.jump();
     g.particles.burst(this.cx+dir*0.35,this.cy,12,{kind:'spark',col:'#ffd27a',spd:5,life:0.4,size:0.05,add:true,g:10});
   }
@@ -182,7 +184,7 @@ class Player extends Body{
     this.justLanded=!wasG&&this.onGround;
     this.justLeftGround=wasG&&!this.onGround;
     this.wasGrounded=this.onGround;
-    if(this.onGround){this.coyote=C.coyote;this.airDash=1;this.wallT=0;}
+    if(this.onGround){this.coyote=C.coyote;this.airDash=this.airDashes();this.wallT=0;}
     else{
       if(this.justLeftGround&&!this.didJump)this.coyote=C.coyote;
       else if(!this.didJump)this.coyote-=dt;
@@ -311,7 +313,7 @@ class Player extends Body{
   /* отскок от удара вниз: фиксированная высота, освежает рывок в воздухе */
   pogo(){
     const g=this.world.game,C=CFG.player;
-    this.vy=-C.pogoV*this.gravDir;this.jumpCutDone=true;this.coyote=0;this.airDash=1;this.pogoT=0.18;
+    this.vy=-C.pogoV*this.gravDir;this.jumpCutDone=true;this.coyote=0;this.airDash=this.airDashes();this.pogoT=0.18;
     this.dashT=0;g.audio.pogo();g.camera.addShake(0.12);
     g.particles.burst(this.cx,this.bottom+0.2,10,{kind:'spark',col:'#ffe6a3',spd:4,life:0.3,size:0.05,add:true,g:10,ang:PI/2,spread:PI*0.9});
   }

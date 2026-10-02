@@ -65,14 +65,17 @@ z3_greenhouse:gs=>({id:'z3_greenhouse',zone:'eden',name:'ОРАНЖЕРЕИ-ТЕ
       P(4,21.6,13,0.4,'marble'),P(20,21.6,13,0.4,'marble'),P(36,21.6,16,0.4,'marble'),
       S(14,18.8,16,0.8,'marble'),
       P(6,16.2,12,0.4,'marble'),P(24,16.2,12,0.4,'marble'),
-      P(16,13.6,12,0.4,'marble'),S(42,12.4,10,0.6,'marble')];
-    R.magnetRects=[{x:27,y:8.6,w:17.4,h:0.7}];
+      P(16,13.6,12,0.4,'marble'),S(42,12.4,10,0.6,'marble'),
+      /* уступ под сводом слева: дверь заборника №3 (дневной свет и пыльца из щели) */
+      S(0,10.4,3.8,0.6,'marble')];
+    R.magnetRects=[{x:27,y:8.6,w:17.4,h:0.7},{x:4,y:6.8,w:12,h:0.7}];
     for(const m of R.magnetRects)R.solids.push(S(m.x,m.y,m.w,m.h,'steel'));
     R.pollen=[{x:40,y:23.4,w:12,h:6.6}];
     R.doors=[{x:0.0,y:27.9,w:1.2,h:2.1,to:'z3_airlock',label:'ТАМБУР'},
       {x:50.8,y:27.9,w:1.2,h:2.1,to:'z3_collector',link:'col_low',label:'КОЛЛЕКТОР'},
       {x:50.6,y:19.5,w:1.4,h:2.1,to:'z3_collector',link:'col_short',label:'СОЛЯРИЙ',latch:'col_latch',msg:'ЗАСОВ — С ТОЙ СТОРОНЫ.'},
-      {x:49.6,y:10.3,w:2.4,h:2.1,to:'z3_dome',label:'КУПОЛЬНЫЙ ПОДЪЁМ'}];
+      {x:49.6,y:10.3,w:2.4,h:2.1,to:'z3_dome',label:'КУПОЛЬНЫЙ ПОДЪЁМ'},
+      {x:0.0,y:8.3,w:1.2,h:2.1,to:'z3_intake',label:'ЗАБОРНИК №3'}];
     R.signs=[{x:22.2,y:10.6,keys:['SPACE'],text:'ДЕРЖАТЬ',need:'magnet'},
       {x:22.2,y:10.6,keys:[],text:'ТРАВЕРСА · ДОПУСК: МАГНИТНЫЕ ПОДКОВЫ',needNot:'magnet'}];
     R.checkpoint={x:4,y:30,h:1.7,lit:gs.cp.room==='z3_greenhouse'};
@@ -83,12 +86,13 @@ z3_greenhouse:gs=>({id:'z3_greenhouse',zone:'eden',name:'ОРАНЖЕРЕИ-ТЕ
     R.clearFlag='gh_clear';
     R.interactables=gs.loreIds[9]?[]:[{kind:'lore',loreId:9,x:5.6,y:21.6,title:'ЦИЛИНДР №9 · ДНЕВНИК БОТАНИКА',
       text:'«ПОД ЛАМПАМИ-СОЛНЦАМИ САД ЧАХНЕТ ДВЕСТИ ЛЕТ. ПО КАТАЛОГУ — 412 ВИДОВ. ЖИВЫХ ОСТАЛОСЬ СОРОК.»'}];
-    R.enemies.push({type:'lampada',x:14,y:6,amb:true});
+    R.enemies.push({type:'lampada',x:21,y:3.4,amb:true});
     R.lights=[lit(26,4,18,'#f2d98c',1.15),lit(10,14,12,'#fff2cf',0.7),lit(42,14,12,'#fff2cf',0.7),
       lit(8,28,9,'#ffe6a8',0.6),lit(26,28,10,'#ffe6a8',0.6),lit(44,28,9,'#ffe6a8',0.6),
       lit(16,20,8,'#dff0b0',0.5),lit(38,20,8,'#dff0b0',0.5),
-      lit(1.4,28.6,4,'#fff2cf',0.6),lit(35,9.6,7,'#ffe6a3',0.6),lit(47,11,6,'#fff2cf',0.7)];
-    R.emitters=[{type:'pollen',rate:30},{type:'leaf',rate:5},{type:'mist',rate:9},
+      lit(1.4,28.6,4,'#fff2cf',0.6),lit(35,9.6,7,'#ffe6a3',0.6),lit(47,11,6,'#fff2cf',0.7),
+      lit(1.6,9.2,4.5,'#eaf4ff',0.8,{flicker:0.4})];
+    R.emitters=[{type:'pollen',rate:30},{type:'leaf',rate:5},{type:'mist',rate:9},{type:'pollen',x:1.4,y:9.0,rate:4,sw:1.2},
       {type:'drip',x:18,y:21.4,rate:0.5},{type:'drip',x:40,y:26.4,rate:0.7}];
     R.extraGame=(c,L,r)=>{
       const cx=26,cy=2,rad=26;
@@ -240,4 +244,89 @@ z3_dome:gs=>({id:'z3_dome',zone:'eden',name:'КУПОЛЬНЫЙ ПОДЪЁМ',w:
       Kit.stencil(c,55.8,10.6,'ШЛЮЗ · ПЕЧАТЬ',0.36,'rgba(120,110,70,.65)',0.65);
     };
   }}),
+});
+/* ============================== ВОЗДУХОЗАБОРНИК №3 ============================== */
+/* Тайник Эдема над оранжереями (дверь под сводом — только по магнитной траверсе). Тот самый
+   заборник №3, через который сверху приходят капсулы «ОТ ПЕЧАТИ» и пыльца (цилиндр №10).
+   Его заварили по приказу — сварщик Цензуры так и остался у решётки. Камин на кошках уходит
+   в пыльцу (фильтр), наверху — дневной свет сквозь заваренную решётку, клапан MK-II сварщика
+   и капсула, застрявшая в решётке: письмо с поверхности. */
+Object.assign(ROOMDEFS,{
+z3_intake:gs=>({id:'z3_intake',zone:'eden',name:'ВОЗДУХОЗАБОРНИК №3',w:26,h:34,
+  art:{bg:Art.bgEden,mid:Art.midEden,game:Art.gameEden},
+  build(R){
+    const F=gs.flags;
+    R.solids=[S(-2,-2,30,2.4,'steel'),S(-2,0,2,34,'steel'),S(26,0,2,34,'steel'),S(0,32,26,2,'rust'),
+      /* камин: рифлёные грани внутрь, 3.2 м; под правой стенкой — проход с пола */
+      S(5,12,1.2,20,'rust',{grip:'r'}),S(9.4,10,1.2,19.4,'rust',{grip:'l'}),
+      /* площадка сварщика слева, ступени к решётке справа */
+      S(0,9.6,5,0.6,'steel'),P(11.4,7.6,2.4,0.34,'steel'),P(15,5.4,3.2,0.34,'steel')];
+    R.pollen=[{x:0,y:0.4,w:26,h:18.6}];
+    R.amb=[150,156,128];
+    R.doors=[{x:24.8,y:29.9,w:1.2,h:2.1,to:'z3_greenhouse',label:'ОРАНЖЕРЕИ'}];
+    R.interactables=[];
+    if(!F.dash_mk2)R.interactables.push({kind:'salvage',upgrade:'dash_mk2',x:2.6,y:9.6,flag:'dash_mk2_got',
+      title:'СВАРЩИК ЦЕНЗУРЫ',lines:['СВАРЩИК В МАСКЕ СИДИТ У РЕШЁТКИ. ШОВ ДОВЕДЁН ДО КОНЦА — ФИЛЬТР НА НЁМ ПУСТОЙ.',
+        'ОН ЗАВАРИЛ ЗАБОРНИК И ОСТАЛСЯ ПО ЭТУ СТОРОНУ. НА РАНЦЕ — КЛАПАН DASH ВТОРОЙ СЕРИИ.',
+        'КЛАПАН ВСТАЁТ НА МЕСТО СТАРОГО. В ВОЗДУХЕ ТЕПЕРЬ ДВА РЫВКА.']});
+    if(!F.got_letter)R.interactables.push({kind:'salvage',x:16.6,y:5.4,flag:'got_letter',title:'КАПСУЛА В РЕШЁТКЕ',
+      lines:['КАПСУЛА ЗАСТРЯЛА МЕЖДУ ПРУТЬЯМИ. МЕТКА «ОТ ПЕЧАТИ» — НО ПОЧЕРК НЕ ЦЕНЗУРЫ.',
+        '«ЕСЛИ ВЫ ЭТО ЧИТАЕТЕ — ЗАБОРНИК ЕЩЁ ДЫШИТ. ВОЗДУХ НАВЕРХУ ЧИСТЫЙ. ДАВНО.»',
+        '«МЫ ШЛЁМ СЕМЕНА И ЛИСТЬЯ, ЧТОБЫ ВЫ ПОВЕРИЛИ. ОТКРОЙТЕ ПЕЧАТЬ. МЫ ЖДЁМ ПО ТУ СТОРОНУ.»']});
+    R.lights=[lit(14,3,13,'#eaf4ff',1.15),lit(8,14,8,'#dfe8c0',0.55),lit(2.6,8.4,4,'#ffcf7a',0.45,{flicker:1.1}),
+      lit(16.6,4.6,3,'#e8c96a',0.55),lit(20,28,8,'#b8c46a',0.45),lit(24.6,30.6,3,'#fff2cf',0.5)];
+    R.emitters=[{type:'pollen',x:14,y:2,rate:16,sw:12},{type:'pollen',x:13,y:14,rate:5,sw:16},
+      {type:'leaf',x:14,y:1,rate:0.6,sw:8},{type:'mist',x:13,y:10,rate:3,sw:20},{type:'drip',x:20,y:20,rate:0.4}];
+    /* лучи дневного света сквозь решётку: медленно «дышат», в них плывёт пыльца */
+    R.dyn=(c,t,W)=>{
+      c.save();c.globalCompositeOperation='lighter';
+      for(let i=0;i<5;i++){const x0=9+i*2.4,sk=-2.6-i*0.4,a=0.06+0.03*Math.sin(t*0.5+i*1.3);
+        const g=c.createLinearGradient(0,0.4,0,22);g.addColorStop(0,'rgba(240,248,255,'+(a*2.2)+')');g.addColorStop(1,'rgba(240,248,255,0)');
+        c.fillStyle=g;c.beginPath();c.moveTo(x0,0.4);c.lineTo(x0+1.3,0.4);c.lineTo(x0+1.3+sk+3.4,22);c.lineTo(x0+sk,22);c.closePath();c.fill();}
+      c.restore();
+      game.renderer.glowAdd(14,1.6,6,'#f4f8ff',0.4+0.08*Math.sin(t*0.7));
+      /* капсула поблёскивает, пока не вскрыта */
+      if(!F.got_letter){const p=0.5+0.5*Math.sin(t*2.2);c.fillStyle='#c9a227';rr(c,16.0,4.6,1.2,0.62,0.28);c.fill();
+        c.fillStyle='rgba(255,255,255,'+(0.3+0.3*p)+')';c.fillRect(16.2,4.72,0.8,0.08);
+        c.fillStyle='#7a2418';c.fillRect(16.5,4.9,0.2,0.2);}
+    };
+    R.extraGame=(c,L,r)=>{
+      /* короб заборника: рёбра, потёки, осевшая пыльца */
+      c.fillStyle='rgba(40,46,40,.7)';c.fillRect(0,0.4,26,31.6);
+      for(let y=2;y<32;y+=2.2){c.fillStyle='rgba(120,130,110,.16)';c.fillRect(0,y,26,0.16);}
+      for(let x=1.2;x<26;x+=3.2){c.fillStyle='rgba(20,24,20,.5)';c.fillRect(x,0.4,0.24,31.6);}
+      for(let i=0;i<30;i++){c.fillStyle='rgba(200,210,120,'+(0.05+r()*0.12)+')';c.fillRect(r()*26,r()*31,0.12+r()*0.4,0.05);}
+      /* небо за решёткой и стоящий вентилятор заборника */
+      const sky=c.createLinearGradient(0,0,0,2.4);sky.addColorStop(0,'#cfe4f4');sky.addColorStop(1,'#8fb0cc');
+      c.fillStyle=sky;c.fillRect(7.6,0.4,13,2.0);
+      c.save();c.beginPath();c.rect(7.6,0.4,13,2.0);c.clip();
+      c.translate(14,0.2);c.fillStyle='rgba(60,66,60,.85)';
+      for(let i=0;i<7;i++){c.save();c.rotate(i/7*TAU+0.3);c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(2.6,-0.9,5.6,-0.2);c.lineTo(5.6,0.6);c.quadraticCurveTo(2.6,0.4,0,0.3);c.closePath();c.fill();c.restore();}
+      c.fillStyle='#3a3e38';c.beginPath();c.arc(0,0,0.9,0,TAU);c.fill();c.restore();
+      /* заваренная решётка: прутья и светящиеся швы */
+      for(let x=7.8;x<20.6;x+=0.7){c.fillStyle='#2b302c';c.fillRect(x,0.4,0.16,2.2);}
+      c.fillStyle='#2b302c';c.fillRect(7.6,2.3,13,0.34);c.fillRect(7.6,1.2,13,0.18);
+      c.fillStyle='rgba(255,170,90,.55)';for(let x=8;x<20.4;x+=1.4)c.fillRect(x,2.22,0.6,0.08);
+      Kit.stencil(c,8,3.4,'ЗАБОРНИК №3 · ЗАВАРЕН ПО ПРИКАЗУ СОВЕТА',0.32,'rgba(200,69,47,.7)',0.7);
+      Kit.hazardTape(c,7.6,2.64,13,0.22);
+      /* осевшая пыльца и бледные ростки внизу */
+      for(let i=0;i<9;i++)Kit.tree(c,12+i*1.4,32-0.05,1.2+r()*1.6,(i*53)|0,{sick:true});
+      c.fillStyle='rgba(216,224,122,.25)';c.fillRect(10.6,31.6,15.4,0.4);
+      Kit.stencil(c,12.4,27.6,'ВОЗДУХОВОД · ВВЕРХ',0.36,'rgba(150,170,120,.6)',0.6);
+      /* сварщик: маска, баллон, горелка; рядом — пустая кассета фильтра */
+      c.save();c.translate(2.6,9.6);
+      c.fillStyle='#3a3a34';c.beginPath();c.ellipse(0,-0.32,0.75,0.3,0,PI,TAU);c.fill();
+      c.fillStyle='#4a4a42';rr(c,-0.6,-1.2,1.0,0.9,0.2);c.fill();
+      c.fillStyle='#5c646b';rr(c,-0.9,-1.4,0.42,1.0,0.16);c.fill();c.fillStyle='#8a6d2a';c.fillRect(-0.9,-1.0,0.42,0.08);
+      c.fillStyle='#2b2b26';rr(c,-0.24,-1.62,0.62,0.52,0.12);c.fill();
+      c.fillStyle='rgba(120,200,160,.35)';c.fillRect(-0.12,-1.46,0.4,0.14);
+      c.strokeStyle='#5c646b';c.lineWidth=0.06;c.beginPath();c.moveTo(0.3,-0.7);c.lineTo(1.0,-0.2);c.stroke();
+      c.fillStyle='#8a8d7a';c.fillRect(1.0,-0.26,0.3,0.1);
+      c.fillStyle='#4a5560';rr(c,1.5,-0.32,0.4,0.3,0.05);c.fill();
+      c.restore();
+      Kit.stencil(c,0.4,8.6,'ЦЕНЗУРА · СВАРЩИК 7',0.24,'rgba(216,204,178,.55)',0.55);
+      Kit.vine(c,[[0.4,12],[1.6,16],[0.8,22]],2101);Kit.vine(c,[[25.6,6],[24.4,12],[25.4,20]],2102);
+      Kit.lampCage(c,24.6,29.2,0.26,{glass:'#e8c07a'});
+    };
+  }})
 });
