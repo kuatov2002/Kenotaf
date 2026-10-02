@@ -68,6 +68,7 @@ node tools/bosslab.js z5_boss 40 out.png --kill   # бой с боссом бе�
 node tools/reach.js z4_exam_b:pulse,dash,vjump     # достижимость дверей и предметов в комнате
 node tools/perf.js --gpu   # FPS настоящего цикла на 1920×1080 и утечки на переходах
 node tools/maplayout.js    # схема мира: пересечения комнат (--fix раздвигает)
+node tools/verify.js       # финальная проверка: меню, тряска, фонарь, первые 10 комнат, два босса, обе концовки + снимки
 ```
 
 ## Публикация на itch.io

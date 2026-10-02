@@ -47,9 +47,9 @@ class Camera{
     let px=0,py=0;
     if(this.shT>0){
       this.shT=Math.max(0,this.shT-dt);
-      const k=this.shDur>0?this.shT/this.shDur:0,a=this.shAmp*k*k;
-      /* два-три качания за толчок, а не дрожь */
-      px=Math.sin(this.shakeT*70+this.shPh)*a;py=Math.cos(this.shakeT*57+this.shPh*1.3)*a*0.8;
+      /* толчок в одну сторону и откат: качание на каждом кадре, амплитуда спадает линейно (1–3 пикселя, 0.08–0.1 с) */
+      const k=this.shDur>0?this.shT/this.shDur:0,a=this.shAmp*k,e=this.shDur-this.shT,sw=Math.cos(e*Math.PI*60);
+      px=Math.cos(this.shPh)*a*sw;py=Math.sin(this.shPh)*a*sw*0.8;
       if(this.shT<=0)this.shAmp=0;
     }
     px+=this.impulseX;py+=this.impulseY;
