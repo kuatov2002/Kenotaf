@@ -9,15 +9,20 @@
      лапы сломаны  → волочится на брюхе, высекая искры, еле ползёт. */
 class Mokrica extends Mech{
   constructor(world,def,x,y){
-    super(world,Object.assign({w:1.1,h:0.62,hp:40,dmg:1,aggro:6,mass:0.8,bodyMat:'rust',blood:'#5a4a30'},def),x,y);
+    const sh=def.variant==='shell';
+    super(world,Object.assign(sh?{w:1.5,h:0.95,hp:90,dmg:1,aggro:6,mass:3,bodyMat:'steel',blood:'#3a3a36',bodyArmor:0}
+      :{w:1.1,h:0.62,hp:40,dmg:1,aggro:6,mass:0.8,bodyMat:'rust',blood:'#5a4a30'},def),x,y);
+    this.shell=sh;this.S=sh?1.38:1;
     this.face=def.face||(rng(x*17+3)()<0.5?-1:1);
-    this.addNode({id:'brush',hp:26,r:0.25,mat:'steel',coreDmg:14,scrap:2});
-    this.addNode({id:'legs',hp:30,r:0.26,mat:'steel',coreDmg:14,scrap:2});
+    this.addNode({id:'brush',hp:26,r:0.25*this.S,mat:'steel',coreDmg:14,scrap:2,deflect:sh});
+    this.addNode({id:'legs',hp:30,r:0.26*this.S,mat:'steel',coreDmg:14,scrap:2,deflect:sh});
+    if(sh){const n=this.addNode({id:'plate',hp:60,r:0.3,mat:'iron',backOnly:true,coreDmg:999,scrap:4});n.hp=n.max*0.42;}
     this.leg=Math.random()*TAU;this.brushA=0;this.skT=0;this.curl=0;this.P={};this.pose(0);
   }
-  safe(){return super.safe()||!this.has('brush')||this.curl>0;}
+  safe(){return super.safe()||(!this.shell&&!this.has('brush'))||this.curl>0;}
+  onBreak(n,h){if(n.id==='plate'&&!this.dead){this.hp=0;this.die(h);}}
   threat(){return this.alert>0&&this.has('brush')&&this.curl<=0&&!super.safe();}
-  react(h,k){super.react(h,k);if(!this.dead)this.curl=0.42;}
+  react(h,k){super.react(h,k);if(!this.dead&&!this.shell)this.curl=0.42;}
   ai(dt){
     const p=this.world.player,R=this.world.room;
     if(this.alert>0)this.alert-=dt;
@@ -33,7 +38,7 @@ class Mokrica extends Mech{
     }
     /* без щётки — пятится от курьера */
     if(!this.has('brush')&&p&&!p.dead&&Math.abs(p.cx-this.cx)<3.2&&Math.abs(p.cy-this.cy)<2&&(p.cx-this.cx)*this.face>0)this.face=-this.face;
-    const spd=legs?(this.alert>0?2.5:1.5):0.4;
+    const spd=this.shell?1.15:(legs?(this.alert>0?2.5:1.5):0.4);
     this.vx=damp(this.vx,this.face*spd,8,dt);
     this.leg+=Math.abs(this.vx)*dt*7;
     this.brushA+=dt*(this.has('brush')?(this.alert>0?24:10):0);
@@ -44,10 +49,32 @@ class Mokrica extends Mech{
   pose(dt){
     const P=this.P,cu=this.curl>0?clamp(this.curl/0.42,0,1):0,legs=this.has('legs');
     P.cu=cu;P.sag=legs?0:0.12;P.bob=legs?Math.abs(Math.sin(this.leg))*0.015:0;
-    const bn=this.node('brush');if(bn){bn.lx=0.47;bn.ly=-0.2+P.sag*0.5;}
-    const ln=this.node('legs');if(ln){ln.lx=-0.06;ln.ly=-0.13+P.sag*0.5;}
+    const k=this.S||1;
+    const bn=this.node('brush');if(bn){bn.lx=0.47*k;bn.ly=(-0.2+P.sag*0.5)*k;}
+    const ln=this.node('legs');if(ln){ln.lx=-0.06*k;ln.ly=(-0.13+P.sag*0.5)*k;}
+    const pn=this.node('plate');if(pn){pn.lx=-0.42*k;pn.ly=-0.42*k;}
   }
   draw(c,t){
+    if(this.shell){c.save();c.scale(this.S,this.S);this.drawBase(c,t);c.restore();this.drawShell(c,t);return;}
+    this.drawBase(c,t);
+  }
+  /* панцирник: поверх обычной мокрицы — клёпаный бронекожух и треснувший люк на корме */
+  drawShell(c,t){const k=this.S;
+    c.save();c.scale(k,k);
+    c.beginPath();c.moveTo(-0.56,-0.12);c.quadraticCurveTo(-0.5,-0.62,0.0,-0.64);c.quadraticCurveTo(0.42,-0.62,0.5,-0.26);c.lineTo(0.5,-0.12);c.closePath();
+    c.fillStyle=MK.plateGrad(c,'steel',-0.56,-0.64,1.06,0.52);c.fill();c.strokeStyle=MAT.steel.ed;c.lineWidth=0.03;c.stroke();
+    for(let i=0;i<6;i++)MK.bolt(c,-0.42+i*0.17,-0.5+Math.abs(i-2.5)*0.03,0.022,'steel');
+    /* лобовой щиток над щёткой */
+    MK.box(c,0.3,-0.42,0.26,0.3,0.04,'steel',{bolts:0.02});
+    c.restore();
+    const pn=this.node('plate');
+    if(pn&&!pn.broken){c.save();c.translate(pn.lx,pn.ly);
+      MK.box(c,-0.2,-0.2,0.34,0.36,0.04,'iron',{tex:'rust',texA:0.4});
+      MK.cracks(c,-0.03,-0.02,0.24,pn.seed,0.8);
+      c.fillStyle=rgba('#ffb45a',0.4+0.3*Math.sin(t*6));c.fillRect(-0.12,0.0,0.18,0.03);c.restore();
+      if(Math.random()<0.08)this.world.game.particles.spawn({kind:'steam',x:this.cx+this.face*pn.lx,y:this.bottom+pn.ly,vx:-this.face*0.6,vy:-0.8,life:0.8,size:0.16,grow:0.5,col:'#e8e0d0',drag:1,a:0.5});}
+  }
+  drawBase(c,t){
     const P=this.P,cu=P.cu,y0=P.sag-P.bob;
     /* лапки: шесть, тонкие стальные; сломаны — обрубки волочатся */
     c.lineCap='round';
@@ -74,12 +101,12 @@ class Mokrica extends Mech{
     for(const s of [0,1]){const a=-0.5-s*0.35+Math.sin(t*3+s)*0.12;c.beginPath();c.moveTo(0.42,-0.38+y0);c.quadraticCurveTo(0.6,-0.5+y0,0.42+Math.cos(a)*0.32,-0.38+y0+Math.sin(a)*0.3);c.stroke();}
     /* щётка-валик: латунная ступица, щетина вращается */
     const bn=this.node('brush');
-    if(this.has('brush')){c.save();c.translate(bn.lx,bn.ly);
+    if(this.has('brush')){const K=this.S||1;c.save();c.translate(bn.lx/K,bn.ly/K);
       c.fillStyle='#2a241c';c.beginPath();c.arc(0,0,0.19,0,TAU);c.fill();
       c.strokeStyle='#6b5a3a';c.lineWidth=0.025;
       for(let i=0;i<12;i++){const a=this.brushA+i/12*TAU;c.beginPath();c.moveTo(Math.cos(a)*0.08,Math.sin(a)*0.08);c.lineTo(Math.cos(a)*0.2,Math.sin(a)*0.2);c.stroke();}
       MK.joint(c,0,0,0.08,'brass');c.restore();}
-    else MK.stump(c,bn.lx-0.06,bn.ly,0.07,0,bn.seed,t,'steel');
+    else MK.stump(c,bn.lx/(this.S||1)-0.06,bn.ly/(this.S||1),0.07,0,bn.seed,t,'steel');
   }
   partDebris(n){
     if(n.id==='brush')return {w:0.36,h:0.36,mass:0.3,mat:'steel',draw:(c,t)=>{c.fillStyle='#2a241c';c.beginPath();c.arc(0,0,0.17,0,TAU);c.fill();
@@ -99,6 +126,6 @@ class Mokrica extends Mech{
       c.strokeStyle='#3a332b';c.lineWidth=0.04;c.lineCap='round';
       for(let i=0;i<6;i++){const x=-0.38+i*0.15;c.beginPath();c.moveTo(x,-0.12);c.lineTo(x+0.04,-0.24-((i*3)%2)*0.04);c.stroke();}}};
   }
-  spriteBounds(){return {x:this.cx-1.4,y:this.bottom-1.3,w:2.8,h:1.6};}
+  spriteBounds(){const k=this.S||1;return {x:this.cx-1.4*k,y:this.bottom-1.3*k,w:2.8*k,h:1.6*k};}
 }
 Object.assign(ENEMY_TYPES,{mokrica:Mokrica});

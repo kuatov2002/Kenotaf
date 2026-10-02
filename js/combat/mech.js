@@ -93,14 +93,14 @@ class Mech extends Enemy{
     this.lastImp={src,t:this.world.time};
   }
   /* импульс резака: ни единицы урона — только позиция, траектория и срыв замаха */
-  applyPulse(p,dir){
-    const C=CFG.combat;if(this.dead)return;
+  applyPulse(p,dir,pw){
+    const C=CFG.combat;if(this.dead)return;pw=pw||1;
     const tn=this.nodes.find(n=>n.teleHot&&!n.broken);
     if(tn)this.interrupt(tn,p);
     const m=this.mass;
-    if(m>=3){this.vx+=dir*C.pulseImpulse*0.22;this.knockT=Math.max(this.knockT,0.28);this.lastImp={src:'pulse',t:this.world.time};
+    if(m>=3){this.vx+=dir*C.pulseImpulse*0.22*pw;this.knockT=Math.max(this.knockT,0.28);this.lastImp={src:'pulse',t:this.world.time};
       this.recoil=1;this.recoilDir=dir;}
-    else this.impulse(dir*C.pulseImpulse/m,-C.pulseLift/Math.max(1,m),'pulse');
+    else this.impulse(dir*C.pulseImpulse*pw/m,-C.pulseLift/Math.max(1,m),'pulse');
     if(!tn&&this.isWinding())this.cancelAttack();
     this.alert=6;
   }
@@ -179,6 +179,7 @@ class Mech extends Enemy{
   hitBody(h){
     const C=CFG.combat,g=this.world.game;
     const open=this.openT>0||this.pinT>0||this.stunT>0;
+    if(this.bodyArmor<=0&&!open){g.fx.deflect(clamp(h.sx,this.x,this.x+this.w),clamp(h.sy,this.y,this.bottom),this.bodyMat);this.react(h,0.3);return 'deflect';}
     const d=h.dmg*(open?1:this.bodyArmor)*(h.heavy?C.heavyMul:1)*(h.bonus?C.bonusMul:1);
     this.hp-=d;this.flash=0.12;
     g.fx.bodyHit(clamp(h.sx,this.x,this.x+this.w),clamp(h.sy,this.y,this.bottom),this.bodyMat,h,this.isBoss);

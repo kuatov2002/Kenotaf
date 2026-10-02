@@ -21,7 +21,10 @@ class Player extends Body{
     this.atkPhase=null;this.atkPT=0;this.atkDir='side';this.atkHeavy=false;this.chargeT=0;this.charged=false;
     /* уклонение: возраст рывка/подката, флаг идеального уклонения, бонус к следующему удару */
     this.dashId=0;this.evAge=9;this.evIF=0;this.pfDone=false;this.empowerT=0;this.slideAge=9;this.hitHeavyT=0;
+    /* гарпун (трос к рыму) и выхлоп (прыжок в воздухе) */
+    this.hook=null;this.hookCd=0;this.hookMiss=0;this.airJump=this.airJumps();this.vjT=0;
   }
+  airJumps(){const w=this.world;return w&&w.game&&w.game.gs.has('vjump')?1:0;}
   maxEnergy(){return this.world.game.gs.flags.energy_cap?150:CFG.player.energy;}
   /* рывков в воздухе: клапан MK-II (заборник №3) даёт второй */
   airDashes(){const w=this.world;return w&&w.game&&w.game.gs.flags.dash_mk2?2:1;}
@@ -37,7 +40,7 @@ class Player extends Body{
     const C=CFG.player,g=this.world.game;
     this.vy=-C.jumpV*this.gravDir;
     this.onGround=false;this.coyote=0;this.jumpBuf=0;this.didJump=true;
-    this.jumpCutDone=false;this.jumpStretch=0.14;this.airDash=this.airDashes();
+    this.jumpCutDone=false;this.jumpStretch=0.14;this.airDash=this.airDashes();this.airJump=this.airJumps();
     g.audio.jump();
     this.noiseLevel=Math.max(this.noiseLevel,0.3);
     g.particles.burst(this.cx,this.onCeil?this.y:this.bottom,9,
@@ -47,7 +50,7 @@ class Player extends Body{
     const C=CFG.player,g=this.world.game;
     this.vy=-C.wallJumpY;this.vx=-dir*C.wallJumpX;this.face=-dir;
     this.jumpBuf=0;this.didJump=true;this.coyote=0;this.jumpCutDone=false;
-    this.wallT=0;this.wallLock=C.wallLock;this.airDash=this.airDashes();this.jumpStretch=0.12;
+    this.wallT=0;this.wallLock=C.wallLock;this.airDash=this.airDashes();this.airJump=this.airJumps();this.jumpStretch=0.12;
     g.audio.jump();
     g.particles.burst(this.cx+dir*0.35,this.cy,12,{kind:'spark',col:'#ffd27a',spd:5,life:0.4,size:0.05,add:true,g:10});
   }
@@ -63,6 +66,7 @@ class Player extends Body{
     if(this.pulseT>0)this.pulseT-=dt;
     if(this.slideCd>0)this.slideCd-=dt;
     if(this.dashCd>0)this.dashCd-=dt;
+    if(this.hookCd>0)this.hookCd-=dt;if(this.hookMiss>0)this.hookMiss-=dt;if(this.vjT>0)this.vjT-=dt;
     if(this.wallLock>0)this.wallLock-=dt;
     if(this.grabbed>0)this.grabbed-=dt;
     if(this.landT>0)this.landT-=dt;
@@ -89,6 +93,7 @@ class Player extends Body{
     /* буфер ввода: нажатие ждёт в очереди (до 220 мс), пока действие не станет доступным —
        удар, нажатый за мгновение до конца восстановления, не теряется */
     const dashReq=canAct&&!this.onCeil&&gs.has('dash')&&this.dashCd<=0&&(this.onGround||this.airDash>0)&&inp.consume('dash');
+    if(dashReq&&this.hook)this.hook=null;
     const holdDn=inp.dn;
     /* РЕМОНТ: держать Q/I стоя на месте — сварка шва на куртке, ячейка за порцию РЕМОНТА */
     const healing=this.updateHeal(dt,inp,canAct&&!dashReq&&this.jumpBuf<=0);
@@ -98,7 +103,7 @@ class Player extends Body{
     this.lookT=still&&(inp.up||this.crouch)?(this.lookT||0)+dt:0;
     this.lookV=this.lookT>0.42?(inp.up?-1:1):0;
 
-    if(this.onCeil){this.magnetUpdate(dt,inp,mv);return;}
+    if(this.onCeil){this.hook=null;this.magnetUpdate(dt,inp,mv);return;}
 
     /* 2. CROUCH / SLIDE (bottom фиксирован) */
     if(this.onGround&&holdDn&&!this.crouch&&this.slideCd<=0){
@@ -125,8 +130,8 @@ class Player extends Body{
     }else if(this.h!==C.h)this.setH(C.h);
 
     /* 3. HORIZONTAL */
-    const sliding=this.slideT>0;
-    if(this.dashT<=0&&!sliding){
+    const sliding=this.slideT>0,pulled=!!(this.hook&&this.hook.mode==='pull');
+    if(this.dashT<=0&&!sliding&&!pulled){
       if(mv!==0){
         const opp=(mv>0)!==(this.vx>0)&&Math.abs(this.vx)>0.35;
         const a=this.onGround?(opp?C.turnAccel:C.accel):(opp?C.airTurnAccel:C.airAccel);
@@ -166,11 +171,16 @@ class Player extends Body{
       this.dashT-=dt;this.vy=0;
       if(Math.random()<0.9)g.particles.spawn({kind:'steam',x:this.cx-this.face*0.5,y:this.cy+(Math.random()-0.5)*0.7,
         vx:-this.face*3,vy:(Math.random()-0.5),life:0.32,size:0.24,grow:0.5,col:'#cfe6ee',drag:2.2});
-      if(this.dashT<=0){this.vx*=C.dashEnd;this.dashCd=C.dashCd;}
+      if(this.dashT<=0){this.vx*=C.dashEnd;this.dashCd=C.dashCd*(gs.flags.dash_cd?0.55:1);}
     }
 
+    /* 4b. ГАРПУН: трос к латунному рыму, лебёдка тянет курьера к нему */
+    if(canAct&&gs.has('hook')&&this.hookCd<=0&&!this.onCeil&&!healing&&!this.hook&&inp.consume('hook'))this.fireHook();
+    if(this.hook)this.updateHook(dt);
+    this.hookAim=gs.has('hook')&&!this.hook&&!this.onCeil?this.hookTarget():null;
+    const pulling=!!(this.hook&&this.hook.mode==='pull');
     /* 5. GRAVITY */
-    if(this.dashT<=0){
+    if(this.dashT<=0&&!pulling){
       let gr=CFG.gravity*this.gravDir;
       if(!this.onGround&&holdDn&&!sliding)gr*=C.fastFall;
       if(this.wallT>0&&this.vy>0)gr*=0.28;
@@ -184,6 +194,7 @@ class Player extends Body{
     if(this.jumpBuf>0&&canAct){
       if(this.onGround||this.coyote>0)this.doJump();
       else if(this.wallT>0&&gs.has('claws')&&!sliding)this.doWallJump(this.wallDir||this.wall||this.face);
+      else if(this.airJump>0&&!this.onCeil&&!this.hook&&this.dashT<=0)this.doAirJump();
     }
     if(!this.jumpCutDone&&!inp.jumpHeld){
       this.jumpCutDone=true;
@@ -199,7 +210,7 @@ class Player extends Body{
     this.justLanded=!wasG&&this.onGround;
     this.justLeftGround=wasG&&!this.onGround;
     this.wasGrounded=this.onGround;
-    if(this.onGround){this.coyote=C.coyote;this.airDash=this.airDashes();this.wallT=0;}
+    if(this.onGround){this.coyote=C.coyote;this.airDash=this.airDashes();this.airJump=this.airJumps();this.wallT=0;}
     else{
       if(this.justLeftGround&&!this.didJump)this.coyote=C.coyote;
       else if(!this.didJump)this.coyote-=dt;
@@ -357,6 +368,54 @@ class Player extends Body{
       vx:(this.cx<srcX?-1:1)*(2+Math.random()*4),vy:(Math.random()-0.5)*3,life:0.35,size:0.045,col:'#dff4ff',add:true});
     const gh=HeroArt.snap(this);this.ghosts=gh?[Object.assign(gh,{a:0.85})]:[];
   }
+  /* выхлоп ранца: второй прыжок в воздухе — струя пара вниз */
+  doAirJump(){
+    const C=CFG.player,g=this.world.game;
+    this.vy=-C.jumpV*0.9;this.airJump--;this.jumpBuf=0;this.didJump=true;this.jumpCutDone=false;this.jumpStretch=0.14;this.vjT=0.3;
+    g.audio.vjump();this.noiseLevel=Math.max(this.noiseLevel,0.5);
+    g.particles.spawn({kind:'ring',x:this.cx,y:this.bottom,ringR:1.5,life:0.32,size:0.08,col:'#dff0f6',add:true,a:0.7});
+    for(let i=0;i<12;i++)g.particles.spawn({kind:'steam',x:this.cx+(Math.random()-0.5)*0.5,y:this.bottom-0.2,vx:(Math.random()-0.5)*4,vy:4+Math.random()*5,
+      life:0.45,size:0.26,grow:0.9,col:'#dff0f6',drag:2.6,a:0.75});
+  }
+  /* гарпун: лучший рым впереди/сверху в пределах троса и в прямой видимости */
+  hookTarget(){
+    const A=this.world.room.anchors;if(!A||!A.length)return null;
+    let best=null,bs=1e9;
+    for(const a of A){if(a.hidden)continue;const dx=a.x-this.cx,dy=a.y-this.cy,d=Math.hypot(dx,dy);
+      if(d>HOOK.reach||d<1.0)continue;
+      if(dx*this.face<-1.0&&Math.abs(dx)>1.0)continue;
+      if(!losCheck(this.world,this.cx,this.cy-0.3,a.x,a.y))continue;
+      const s=d-Math.max(0,-dy)*0.3-(dx*this.face>0?0.8:0);
+      if(s<bs){bs=s;best=a;}}
+    return best;
+  }
+  fireHook(){
+    const g=this.world.game,a=this.hookTarget();this.hookCd=0.28;
+    if(!a){this.hookMiss=0.2;g.audio.hookMiss();return;}
+    this.dashT=0;this.slideT=0;if(this.crouch&&this.setH(CFG.player.h))this.crouch=false;
+    this.hook={a,mode:'fly',t:0,len:0,d0:Math.hypot(a.x-this.cx,a.y-this.cy),stuck:0};
+    this.face=a.x>=this.cx?1:-1;g.audio.harpoon();this.noiseLevel=Math.max(this.noiseLevel,0.5);
+    g.tutorial.notify('hook');
+  }
+  /* полёт троса → лебёдка тянет к рыму; у рыма — отпускает с подбросом; прыжок — отпустить раньше */
+  updateHook(dt){
+    const g=this.world.game,H=this.hook,C=CFG.player;H.t+=dt;
+    if(H.mode==='fly'){H.len+=dt*72;
+      if(H.len>=H.d0){H.mode='pull';H.t=0;g.audio.hookBite();
+        g.particles.burst(H.a.x,H.a.y,10,{kind:'spark',col:'#ffe6a3',spd:4,life:0.3,size:0.05,add:true,g:8});}
+      return;}
+    const tx=H.a.x,ty=H.a.y+0.95,dx=tx-this.cx,dy=ty-this.cy,d=Math.hypot(dx,dy)||1e-3;
+    const rel=pop=>{this.hook=null;this.hookCd=0.22;this.airDash=this.airDashes();this.airJump=this.airJumps();
+      if(pop){this.vy=Math.min(this.vy*0.4,-8.5);this.vx*=0.9;}g.audio.snap();};
+    if(this.jumpBuf>0){this.jumpBuf=0;rel(false);this.vy=-C.jumpV*0.86;this.didJump=true;this.jumpCutDone=false;g.audio.jump();return;}
+    if(d<0.75||H.t>1.1){rel(true);return;}
+    const sp=Math.min(HOOK.speed,11+H.t*70);
+    this.vx=damp(this.vx,dx/d*sp,20,dt);this.vy=damp(this.vy,dy/d*sp,20,dt);this.face=dx>=0?1:-1;
+    /* упёрся (стена, край) — трос не тянет сквозь сталь */
+    const prog=(H.pd===undefined?d:H.pd)-d;H.pd=d;
+    if(prog<sp*dt*0.15&&H.t>0.12){H.stuck+=dt;if(H.stuck>0.12){rel(true);return;}}else H.stuck=0;
+    if(Math.random()<dt*40)g.particles.spawn({kind:'spark',x:this.cx,y:this.cy,vx:-dx/d*3,vy:-dy/d*3,life:0.2,size:0.035,col:'#ffe6a3',add:true});
+  }
   /* сварка шва: стоя, не в рывке, есть порция РЕМОНТА и есть что латать. Урон прерывает (порция не тратится) */
   updateHeal(dt,inp,ok){
     const g=this.world.game,gs=g.gs,C=CFG.player;
@@ -368,7 +427,7 @@ class Player extends Body{
     this.vx=damp(this.vx,0,14,dt);
     if(Math.random()<dt*40)g.particles.spawn({kind:'spark',x:this.cx+this.face*0.32+(Math.random()-0.5)*0.2,y:this.bottom-this.h*0.62+(Math.random()-0.5)*0.3,
       vx:(Math.random()-0.5)*5,vy:-1-Math.random()*4,life:0.3,size:0.04,col:Math.random()<0.5?'#ffe6a3':'#9fe0ff',add:true,g:14});
-    if(this.healT>=C.healTime){
+    if(this.healT>=C.healTime*(gs.flags.heal_fast?0.55:1)){
       this.healT=0;gs.weld-=C.healCost;gs.hp=Math.min(gs.maxHp(),gs.hp+1);g.hud.syncHp();
       g.audio.heal();g.camera.addShake(0.15);
       g.particles.spawn({kind:'ring',x:this.cx,y:this.cy,ringR:2.2,life:0.45,size:0.1,col:'#ffcf7a',add:true,a:0.8});
@@ -378,7 +437,7 @@ class Player extends Body{
   /* отскок от удара вниз: фиксированная высота, освежает рывок в воздухе */
   pogo(){
     const g=this.world.game,C=CFG.player;
-    this.vy=-C.pogoV*this.gravDir;this.jumpCutDone=true;this.coyote=0;this.airDash=this.airDashes();this.pogoT=0.18;
+    this.vy=-C.pogoV*this.gravDir;this.jumpCutDone=true;this.coyote=0;this.airDash=this.airDashes();this.airJump=this.airJumps();this.pogoT=0.18;
     this.dashT=0;g.audio.pogo();g.camera.addShake(0.12);
     g.particles.burst(this.cx,this.bottom+0.2,10,{kind:'spark',col:'#ffe6a3',spd:4,life:0.3,size:0.05,add:true,g:10,ang:PI/2,spread:PI*0.9});
   }
@@ -514,7 +573,7 @@ class Player extends Body{
     /* рывок = уклонение: на время рывка (и первые мгновения подката) курьер неуязвим.
        Если удар пришёлся на самое начало уклонения — идеальное уклонение */
     if(!this.dead&&g.state==='play'&&(this.dashT>0||this.evIF>0)){
-      if(!this.pfDone&&this.evAge<=CFG.combat.perfectWin)this.perfectEvade(srcX);
+      if(!this.pfDone&&this.evAge<=perfectWin(g.gs))this.perfectEvade(srcX);
       return false;}
     if(this.invuln>0||this.dead||g.state!=='play')return false;
     g.gs.hp--;this.invuln=CFG.player.invuln;this.hurtT=0.34;this.healT=0;
@@ -522,7 +581,7 @@ class Player extends Body{
     this.vx=this.hurtDir*CFG.player.knock*1.15;
     this.vy=this.gravDir>0?-7.5:7.5;
     if(this.onCeil)this.detach(true);
-    this.dashT=0;this.slideT=0;
+    this.dashT=0;this.slideT=0;this.hook=null;
     g.audio.hurt();g.camera.addShake(0.75);g.hitstop(0.09);g.flash(0.32,'#8a1a10');
     g.particles.burst(this.cx,this.cy,16,{kind:'spark',col:'#c8452f',spd:6,life:0.5,size:0.06,add:true,g:14});
     g.hud.syncHp();
@@ -606,6 +665,17 @@ class Player extends Body{
   }
   drawFx(c,t){
     const g=this.world.game,h=this.h;
+    /* трос гарпуна: от наруча к крюку (в полёте — до головы троса) */
+    if(this.hook||this.hookMiss>0){const H=this.hook,ox=this.cx+this.face*0.25,oy=this.bottom-h*0.62;
+      let ex,ey;if(H){const a=H.a,k=H.mode==='fly'?clamp(H.len/H.d0,0,1):1;ex=lerp(ox,a.x,k);ey=lerp(oy,a.y,k);}
+      else{const k=Math.sin(clamp(this.hookMiss/0.2,0,1)*PI);ex=ox+this.face*3.2*k;ey=oy-2.4*k;}
+      c.strokeStyle='#2b2620';c.lineWidth=0.07;c.beginPath();c.moveTo(ox,oy);c.lineTo(ex,ey);c.stroke();
+      c.strokeStyle='rgba(255,230,170,.75)';c.lineWidth=0.025;c.beginPath();c.moveTo(ox,oy-0.02);c.lineTo(ex,ey-0.02);c.stroke();
+      c.fillStyle='#c9a227';c.beginPath();c.moveTo(ex,ey-0.14);c.lineTo(ex+0.12,ey+0.08);c.lineTo(ex-0.12,ey+0.08);c.closePath();c.fill();
+      g.renderer.glowAdd(ex,ey,0.6,'#ffe6a3',0.4);}
+    if(this.vjT>0){c.save();c.globalCompositeOperation='lighter';const k=this.vjT/0.3;
+      const gr=c.createLinearGradient(0,this.bottom,0,this.bottom+1.4);gr.addColorStop(0,rgba('#e8f6ff',0.6*k));gr.addColorStop(1,'rgba(160,210,240,0)');
+      c.fillStyle=gr;c.beginPath();c.moveTo(this.cx-0.18,this.bottom-0.1);c.lineTo(this.cx+0.18,this.bottom-0.1);c.lineTo(this.cx+0.45,this.bottom+1.4);c.lineTo(this.cx-0.45,this.bottom+1.4);c.closePath();c.fill();c.restore();}
     if(!this.onCeil&&this.wasGrounded){
       c.save();c.globalCompositeOperation='lighter';
       c.fillStyle='rgba(255,206,140,.10)';

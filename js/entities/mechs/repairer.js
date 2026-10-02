@@ -15,16 +15,32 @@ class Repairer extends Mech{
   constructor(world,def,x,y){
     super(world,Object.assign({w:0.95,h:1.55,hp:66,dmg:1,aggro:11,mass:1,bodyMat:'iron',blood:'#6b4a3a'},def),x,y);
     this.thrower=def.type==='wrench';
-    this.weapon=this.thrower?'hopper':'torch';
-    this.addNode({id:this.weapon,hp:52,r:0.3,mat:'brass',coreDmg:8,scrap:3});
-    this.addNode({id:'drive',hp:58,r:0.3,mat:'steel',coreDmg:8,scrap:2});
-    this.addNode({id:'tank',hp:30,r:0.3,mat:'brass',backOnly:true,coreDmg:26,scrap:3});
+    this.variant=def.variant||(def.type==='bomber'?'bomber':null);
+    this.weapon=this.variant==='bomber'?'charge':(this.thrower?'hopper':'torch');
+    if(this.variant==='bomber'){
+      /* РЕМОНТНИК-САМОУБИЙЦА: на груди — раскалённый баллон-заряд. Видит курьера — шипит
+         (кольцо на заряде), потом бежит и рвётся вплотную. Разбить заряд до рывка — механизм гаснет;
+         сорвать разбег импульсом — заряд вскрыт */
+      this.addNode({id:'charge',hp:28,r:0.3,mat:'copper',coreDmg:0,scrap:2});
+      this.addNode({id:'drive',hp:40,r:0.3,mat:'steel',coreDmg:10,scrap:2});
+      this.addNode({id:'tank',hp:30,r:0.3,mat:'brass',backOnly:true,coreDmg:26,scrap:3});
+    }else if(this.variant==='welder'){
+      this.addNode({id:'torch',hp:40,r:0.34,mat:'brass',coreDmg:0,scrap:3,deflect:true});
+      this.addNode({id:'drive',hp:58,r:0.3,mat:'steel',deflect:true,scrap:0});
+      this.addNode({id:'tank',hp:30,r:0.3,mat:'brass',locked:true,scrap:0});
+      this.tx0=x+0.475;this.face=def.face||1;this.bodyArmor=0;
+    }else{
+      this.addNode({id:this.weapon,hp:52,r:0.3,mat:'brass',coreDmg:8,scrap:3});
+      this.addNode({id:'drive',hp:58,r:0.3,mat:'steel',coreDmg:8,scrap:2});
+      this.addNode({id:'tank',hp:30,r:0.3,mat:'brass',backOnly:true,coreDmg:26,scrap:3});}
     this.limp=false;this.weakFlame=false;this.hitDone=false;this.flameK=0.1;this.claw=0;
     this.P={};this.legPh=Math.random()*TAU;this.idleT=0;this.patrolPause=0;this.lastTurn=0;this.headPop=null;
     this.pose(0);
   }
   /* --- параметры атак по тому, что уцелело --- */
   atk(){
+    if(this.variant==='bomber')return {kind:'rush',range:8.5,wind:0.75,hot:0.36,strike:1.5,rec:0.6,node:this.node('charge')};
+    if(this.variant==='welder')return {kind:'torch',range:2.3,wind:1.15,hot:0.5,strike:0.4,rec:0.9,node:this.node('torch')};
     if(this.has('torch'))return {kind:'torch',range:this.weakFlame?1.25:1.85,wind:0.62,hot:0.3,strike:0.32,rec:0.5,node:this.node('torch')};
     if(this.has('hopper'))return {kind:'throw',range:9,minR:3.2,wind:0.56,hot:0.3,strike:0.12,rec:0.55,node:this.node('hopper')};
     if(this.limp)return {kind:'swipe',range:1.05,wind:0.5,hot:0.28,strike:0.16,rec:0.6,node:this.node('drive')||null};
@@ -67,11 +83,17 @@ class Repairer extends Mech{
         this.telegraph(A.node,k,this.st>A.wind-A.hot);
         if(A.kind==='torch')this.flameK=lerp(0.12,0.5,k);
         if(this.st>=A.wind){this.state='strike';this.st=0;this.hitDone=false;
+          if(A.kind==='rush'){g.audio.dash();g.audio.steam(0.8);this.vx=this.face*4;}
           if(A.kind==='torch'){g.audio.steam(1);g.audio.nz(0.32,500,0.5,0.06,'lowpass');}
           else if(A.kind==='throw')this.throwNut(p);
           else{g.audio.melee();this.vx=A.kind==='lunge'?this.face*7.5:this.face*1.5;}}
         break;}
       case 'strike':{
+        if(A.kind==='rush'){this.vx=damp(this.vx,this.face*(this.limp?3.5:7.8),8,dt);
+          if(Math.random()<dt*40)g.particles.spawn({kind:'spark',x:this.cx+this.face*0.3,y:this.bottom-0.9,vx:-this.face*3,vy:-1-Math.random()*2,life:0.3,size:0.045,col:'#ff8a3a',add:true,g:10});
+          const pd=Math.hypot(p.cx-this.cx,p.cy-this.cy);
+          if(pd<1.3||this.wall===this.face||this.st>=A.strike){this.explode();return;}
+          break;}
         if(A.kind==='torch'){this.flameK=1;this.vx=damp(this.vx,this.face*0.6,6,dt);
           const L=A.range+0.15,b=this.flameBox(L);
           if(!this.hitDone&&aabb(b,p.rect())){this.hitDone=true;this.damagePlayer();}
@@ -84,6 +106,9 @@ class Repairer extends Mech{
         break;}
     }
     if(this.state!=='wind'&&this.state!=='strike')this.flameK=damp(this.flameK,0.1,6,dt);
+    if(this.variant==='welder'&&this.state==='idle'){this.face=this.def.face||1;
+      if(Math.random()<dt*24)g.particles.spawn({kind:'spark',x:this.cx+this.face*(this.P.tipX||0.6),y:this.bottom+(this.P.tipY||-0.9),
+        vx:(Math.random()-0.5)*4,vy:-1-Math.random()*3,life:0.35,size:0.04,col:Math.random()<0.5?'#ffe6a3':'#9fe0ff',add:true,g:14});}
   }
   patrol_(dt){
     this.releaseToken();
@@ -101,8 +126,31 @@ class Repairer extends Mech{
     g.audio.melee();this.claw=1;
   }
   /* --- последствия --- */
+  /* взрыв заряда: курьера и соседей бьёт, сам механизм — в куски */
+  explode(){
+    if(this.dead)return;
+    const g=this.world.game,W=this.world,p=W.player,x=this.cx+this.face*0.3,y=this.bottom-0.9;
+    g.audio.explosion();g.audio.steamBurst();g.camera.addShake(0.9);g.hitstop(0.06);
+    g.particles.burst(x,y,30,{kind:'spark',col:'#ffb45a',spd:11,life:0.6,size:0.07,add:true,g:16});
+    g.particles.burst(x,y,22,{kind:'smoke',col:'#3a2a20',spd:4,life:1.4,size:0.6,grow:1.2,drag:1.4,a:0.6});
+    g.particles.spawn({kind:'shock',x,y,ringR:2.6,life:0.35,size:0.1,col:'#ffcf7a',add:true,a:0.9});
+    g.renderer.glowAdd(x,y,3.2,'#ff8a3a',1);
+    if(p&&!p.dead&&Math.hypot(p.cx-x,p.cy-y)<2.3){if(g.combat.damagePlayer(1,x)){p.vx+=Math.sign(p.cx-x||1)*9;p.vy=Math.min(p.vy,-6);}}
+    for(const e of W.enemies){if(e===this||e.dead||!e.isMech||Math.hypot(e.cx-x,e.cy-y)>2.6)continue;
+      e.takeHit({kind:'explosion',dmg:40,hb:e.rect(),sx:x,sy:y,fromX:x,dir:Math.sign(e.cx-x)||1,ky:-3});
+      e.impulse(Math.sign(e.cx-x)*8/e.mass,-4,'pulse');}
+    const n=this.node('charge');if(n)n.broken=true;
+    this.die({dir:0});
+  }
+  /* сварщик прикован к рельсу: дальше цепи не уходит */
+  physics(dt){super.physics(dt);
+    if(this.tx0!==undefined){const d=this.cx-this.tx0;if(Math.abs(d)>0.6){this.x-=d-Math.sign(d)*0.6;this.vx=0;}}}
   onBreak(n,h){
     const g=this.world.game;
+    if(this.variant==='welder'&&n.id==='torch'){this.flameK=0;g.audio.steam(0.8);this.die(h);return;}
+    /* заряд разбит до разбега: шипит и гаснет, механизм оседает */
+    if(this.variant==='bomber'&&n.id==='charge'){g.audio.steamBurst();
+      g.particles.burst(n.wx,n.wy,20,{kind:'steam',col:'#efe8dc',spd:5,life:1,size:0.4,grow:1.2,drag:1.5,a:0.7});this.die(h);return;}
     if(n.id==='torch'||n.id==='hopper'){this.flameK=0;g.audio.steam(0.8);}
     if(n.id==='drive'){this.limp=true;g.audio.clatter('steel',1);}
     if(n.id==='tank')this.burstTank();
@@ -198,7 +246,9 @@ class Repairer extends Mech{
     P.legs=legs;
     /* узлы следуют за деталями */
     const tn=this.node(this.weapon);
-    if(tn){if(this.weapon==='torch'){tn.lx=(P.wrX+P.tipX)/2;tn.ly=(P.wrY+P.tipY)/2;}else{const hp=tp(0.2,-0.7);tn.lx=hp.x;tn.ly=hp.y;}}
+    if(tn){if(this.weapon==='torch'){tn.lx=(P.wrX+P.tipX)/2;tn.ly=(P.wrY+P.tipY)/2;}
+      else if(this.weapon==='charge'){const cp=tp(0.42,-0.3);tn.lx=cp.x;tn.ly=cp.y;}
+      else{const hp=tp(0.2,-0.7);tn.lx=hp.x;tn.ly=hp.y;}}
     const dn=this.node('drive');if(dn){dn.lx=(legs[0].kx+legs[1].kx)/2;dn.ly=(legs[0].ky+legs[1].ky)/2;}
     const kn=this.node('tank');if(kn){kn.lx=tk.x;kn.ly=tk.y;}
   }
@@ -308,6 +358,18 @@ class Repairer extends Mech{
     if(!this.has(w)){
       MK.joint(c,P.elX,P.elY,0.07,'steel');
       MK.stump(c,P.elX,P.elY,0.06,P.nozA+0.6,this.node(w).seed,t,'brass');return;}
+    if(w==='charge'){
+      /* заряд в обеих лапах у груди: медный шар с раскалённым швом; на замахе и разбеге — чаще мигает */
+      MK.seg(c,P.elX,P.elY,P.wrX,P.wrY,0.1,'steel',{});MK.joint(c,P.elX,P.elY,0.07,'steel');
+      const cn=this.node('charge'),hot=this.state==='wind'||this.state==='strike',f=0.5+0.5*Math.sin(t*(hot?30:6));
+      c.save();c.translate(cn.lx,cn.ly);
+      const g=c.createRadialGradient(-0.08,-0.08,0,0,0,0.3);g.addColorStop(0,'#ffd8b4');g.addColorStop(0.5,'#a0603a');g.addColorStop(1,'#3a1a0c');
+      c.fillStyle=g;c.beginPath();c.arc(0,0,0.28,0,TAU);c.fill();
+      c.strokeStyle=rgba('#ff8a3a',0.6+0.4*f);c.lineWidth=0.05;c.beginPath();c.arc(0,0,0.28,-0.3,PI+0.3,true);c.stroke();
+      c.fillStyle='#2b2824';c.fillRect(-0.05,-0.36,0.1,0.1);
+      c.restore();
+      this.world.game.renderer.glowAdd(this.cx+this.face*cn.lx,this.bottom+cn.ly,hot?1.0:0.5,'#ff8a3a',(hot?0.5:0.2)*f+0.1);
+      return;}
     if(w==='torch'){
       MK.seg(c,P.elX,P.elY,P.wrX,P.wrY,0.11,'brass',{ribs:3});
       MK.joint(c,P.elX,P.elY,0.07,'steel');
@@ -347,6 +409,8 @@ class Repairer extends Mech{
     if(n.id==='torch')return {w:0.62,h:0.2,mass:0.6,mat:'brass',draw:(c,t)=>{
       MK.seg(c,-0.3,0,0.02,0,0.11,'brass',{ribs:3});MK.box(c,0.0,-0.07,0.2,0.14,0.04,'brass',{});MK.seg(c,0.18,0,0.32,0,0.06,'steel',{});
       MK.wires(c,-0.3,0,PI,n.seed,t,3);}};
+    if(n.id==='charge')return {w:0.5,h:0.5,mass:0.5,mat:'copper',draw:(c,t)=>{c.fillStyle='#5c3420';c.beginPath();c.arc(0,0,0.24,0,TAU);c.fill();
+      c.fillStyle='#0d0c0b';c.beginPath();c.moveTo(-0.2,-0.05);c.lineTo(0.0,0.08);c.lineTo(0.18,-0.06);c.lineTo(0.2,0.12);c.lineTo(-0.2,0.12);c.closePath();c.fill();}};
     if(n.id==='hopper')return {w:0.32,h:0.28,mass:0.6,mat:'brass',draw:(c,t)=>{MK.box(c,-0.15,-0.13,0.3,0.26,0.05,'brass',{bolts:0.022});}};
     if(n.id==='tank')return {w:0.3,h:0.5,mass:0.5,mat:'brass',flat:false,draw:(c,t)=>{
       MK.cyl(c,-0.15,-0.3,0.3,0.6,'brass',{bands:[[0.2,0.06,'copper']]});
@@ -369,4 +433,4 @@ class Repairer extends Mech{
       c.restore();}};
   }
 }
-Object.assign(ENEMY_TYPES,{repairer:Repairer,wrench:Repairer});
+Object.assign(ENEMY_TYPES,{repairer:Repairer,wrench:Repairer,bomber:Repairer});

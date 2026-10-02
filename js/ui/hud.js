@@ -25,9 +25,12 @@ class HUD{
       dash:'<svg viewBox="0 0 24 24" fill="none" stroke="#e8c96a" stroke-width="1.6"><path d="M4 8h10M4 12h14M4 16h8"/><path d="M18 6l4 6-4 6"/></svg>',
       claws:'<svg viewBox="0 0 24 24" fill="none" stroke="#e8c96a" stroke-width="1.6"><path d="M6 3v8a6 6 0 0012 0V3M10 3v7M14 3v7"/></svg>',
       magnet:'<svg viewBox="0 0 24 24" fill="none" stroke="#e8c96a" stroke-width="1.6"><path d="M5 4v9a7 7 0 0014 0V4h-5v9a2 2 0 01-4 0V4z"/></svg>',
-      filter:'<svg viewBox="0 0 24 24" fill="none" stroke="#e8c96a" stroke-width="1.6"><circle cx="12" cy="13" r="6"/><path d="M9 7V4h6v3M12 10v6M9 13h6"/></svg>'};
+      filter:'<svg viewBox="0 0 24 24" fill="none" stroke="#e8c96a" stroke-width="1.6"><circle cx="12" cy="13" r="6"/><path d="M9 7V4h6v3M12 10v6M9 13h6"/></svg>',
+      hook:'<svg viewBox="0 0 24 24" fill="none" stroke="#e8c96a" stroke-width="1.6"><circle cx="17" cy="6" r="3"/><path d="M15 8L5 18M5 18v-4M5 18h4"/></svg>',
+      breaker:'<svg viewBox="0 0 24 24" fill="none" stroke="#e8c96a" stroke-width="1.6"><rect x="4" y="4" width="16" height="16"/><path d="M12 4l-2 6 4 3-3 7M4 12l6-2M20 9l-6 4"/></svg>',
+      vjump:'<svg viewBox="0 0 24 24" fill="none" stroke="#e8c96a" stroke-width="1.6"><path d="M12 3l-5 6h3v5h4V9h3z"/><path d="M8 18c1 2 3 2 4 0s3-2 4 0M7 21h10"/></svg>'};
     this.el.ab.innerHTML='';this.abEls={};
-    for(const k of ['pulse','dash','claws','magnet','filter']){
+    for(const k of ABILITY_ORDER){
       const d=document.createElement('div');d.className='ab';
       d.innerHTML=icons[k]+'<span>'+ABILITIES[k].short+'</span>';d.title=ABILITIES[k].name;
       this.el.ab.appendChild(d);this.abEls[k]=d;}
@@ -54,8 +57,8 @@ class HUD{
   caption(t,s){if(!t){this.el.cap.classList.remove('on');return;}
     this.el.capT.textContent=t;this.el.capS.textContent=s||'';this.el.cap.classList.add('on');this.capT0=999;}
   showLore(text,title){this.say(text,title||'ЦИЛИНДР ЛОРА');this.capT0=9;this.syncAbilities();}
-  showAbilityCard(key){const ab=ABILITIES[key];if(!ab)return;const el=this.el.abc;
-    el.querySelector('.k').textContent='МОДУЛЬ УСТАНОВЛЕН';
+  showAbilityCard(key,o){const ab=Object.assign({},ABILITIES[key]||{},o||{});if(!ab.name)return;const el=this.el.abc;
+    el.querySelector('.k').textContent=ab.kicker||'МОДУЛЬ УСТАНОВЛЕН';
     el.querySelector('.n').textContent=ab.name;el.querySelector('.keys').innerHTML=keysHTML(ab.keys);
     el.querySelector('.d').textContent=ab.desc;el.classList.add('on');this.abT=5.5;}
   showUpgradeCard(u){if(!u)return;const el=this.el.abc;

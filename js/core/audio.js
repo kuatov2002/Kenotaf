@@ -184,6 +184,9 @@ class AudioSystem{
   /* гарпун: выстрел троса, свист разматывающейся лебёдки; обрыв троса */
   harpoon(){if(!this.ready||this.muted)return;this.tone(150,0.16,'triangle',0.09,60);this.nz(0.08,2400,1.5,0.045);
     this.tone(520,0.4,'sawtooth',0.018,1500);}
+  hookMiss(){this.nz(0.1,2200,1.5,0.03);this.tone(420,0.12,'triangle',0.02,260);}
+  hookBite(){this.tone(1300,0.18,'sine',0.02,1200);this.nz(0.04,2600,2,0.03);this.tone(150,0.1,'triangle',0.04,90);}
+  vjump(){this.nz(0.22,700,0.7,0.06);this.nz(0.12,2400,1.2,0.025);this.tone(180,0.16,'triangle',0.04,320);}
   snap(){this.nz(0.06,3200,2,0.05);this.tone(1800,0.14,'sine',0.02,700);this.tone(120,0.12,'triangle',0.04,70);}
   /* лампада: замах — нарастающий вой винта, пике — свист; мокрица — сухой стрёкот лапок */
   lampWind(){this.tone(380,0.58,'sawtooth',0.026,1250);this.nz(0.58,2000,3,0.018);}

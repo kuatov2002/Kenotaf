@@ -104,6 +104,13 @@ function drawWorldDyn(c,R,t,gs){
       c.fillStyle='rgba(200,255,220,.35)';
       for(let k=0;k<8;k++){const x=h.x+((k*2.1+t*0.6)%h.w);c.fillRect(x,yy+Math.sin(t*2+k)*0.04,0.7,0.05);}
       game.renderer.glowAdd(h.x+h.w/2,yy+0.4,h.w*0.55,'#69d68f',0.55);
+    }else if(h.look==='molten'){
+      const yy=h.y+Math.sin(t*0.9)*0.05,g=c.createLinearGradient(0,yy,0,h.y+h.h);
+      g.addColorStop(0,'rgba(255,236,170,.95)');g.addColorStop(.25,'rgba(255,140,40,.95)');g.addColorStop(1,'rgba(120,30,8,.98)');
+      c.fillStyle=g;c.fillRect(h.x,yy,h.w,h.h+0.4);
+      c.fillStyle='rgba(60,20,8,.55)';for(let k=0;k<6;k++){const x=h.x+((k*2.7+t*0.25)%h.w);c.beginPath();c.ellipse(x,yy+0.12,0.6,0.08,0,0,TAU);c.fill();}
+      game.renderer.glowAdd(h.x+h.w/2,yy+0.2,h.w*0.6,'#ff8a3a',0.7);
+      if(Math.random()<0.15)game.particles.spawn({kind:'spark',x:h.x+Math.random()*h.w,y:yy,vx:(Math.random()-0.5)*1.5,vy:-2-Math.random()*3,life:0.7,size:0.04,col:'#ffcf7a',add:true,g:10});
     }else if(h.kind==='pit'){
       const g=c.createLinearGradient(0,h.y-3,0,h.y+h.h);
       g.addColorStop(0,'rgba(4,6,8,0)');g.addColorStop(1,'rgba(2,3,4,.98)');
@@ -166,6 +173,9 @@ function drawWorldLive(c,R,t,gs){
     }
   }
   game.lamps.drawLive(c,R,t);
+  drawChalk(c,R,t);
+  if(R.anchors&&R.anchors.length){const p=W.player,aim=p&&p.hookAim,has=game.gs.has('hook');
+    for(const a of R.anchors){if(a.hidden)continue;drawAnchor(c,a,t,has,a===aim||(p&&p.hook&&p.hook.a===a));}}
   for(let i=0;i<W.interactables.length;i++)W.interactables[i].draw(c,t,gs);
   if(R.weights&&W.boss&&!W.boss.dead){
     for(let i=0;i<R.weights.length;i++){
@@ -318,6 +328,23 @@ function drawPostmaster(c,x,dy,t,look){
   c.fillStyle='#2f6b44';c.beginPath();c.moveTo(x-1.05,dy-0.95);c.lineTo(x-0.55,dy-0.95);c.lineTo(x-0.65,dy-1.15);c.lineTo(x-0.95,dy-1.15);c.closePath();c.fill();
   c.fillStyle='rgba(255,236,170,.9)';c.fillRect(x-0.98,dy-0.96,0.36,0.04);
   game.renderer.glowAdd(x-0.8,dy-0.85,1.1,'#ffe6a3',0.35);
+}
+function drawAnchor(c,a,t,has,aim){
+  const x=a.x,y=a.y,m=a.mount||'top';
+  c.strokeStyle='#2b2620';c.lineWidth=0.1;c.beginPath();
+  if(m==='top'){c.moveTo(x,y-0.36);c.lineTo(x,y-(a.len||0.9));}
+  else if(m==='left'){c.moveTo(x-0.34,y);c.lineTo(x-(a.len||0.8),y);}
+  else if(m==='right'){c.moveTo(x+0.34,y);c.lineTo(x+(a.len||0.8),y);}
+  c.stroke();
+  if(m==='top'){c.fillStyle='#3a332b';c.fillRect(x-0.22,y-(a.len||0.9)-0.08,0.44,0.14);}
+  const p=0.5+0.5*Math.sin(t*4+x);
+  c.strokeStyle=has?'#e8c96a':'#a8842a';c.lineWidth=0.1;c.beginPath();c.arc(x,y,0.3,0,TAU);c.stroke();
+  c.strokeStyle='rgba(255,246,214,.7)';c.lineWidth=0.03;c.beginPath();c.arc(x,y,0.3,PI*1.1,PI*1.7);c.stroke();
+  if(aim){c.save();c.globalCompositeOperation='lighter';
+    c.strokeStyle=rgba('#ffe6a3',0.55+0.4*p);c.lineWidth=0.05;
+    const R2=0.62+0.1*p;for(let i=0;i<4;i++){const a0=i*PI/2+t*1.5;c.beginPath();c.arc(x,y,R2,a0,a0+0.7);c.stroke();}
+    c.restore();game.renderer.glowAdd(x,y,1.3,'#ffe6a3',0.45+0.25*p);}
+  else game.renderer.glowAdd(x,y,0.6,'#e8c96a',has?0.18:0.08);
 }
 function drawLightShafts(c,R,t){
   if(R.zone!=='eden'&&R.zone!=='sump')return;

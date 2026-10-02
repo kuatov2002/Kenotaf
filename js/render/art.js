@@ -1,6 +1,9 @@
 "use strict";
 /* ============================== ROOM ART ============================== */
 const Art={};
+/* облик комнаты: зона + поправки подзоны (свет, дымка, пустота) */
+function zoneLook(R){if(R._zl)return R._zl;const SB=R.sub&&SUBART[R.sub];
+  return R._zl=Object.assign({},ZONES[R.zone]||ZONES.sump,SB&&SB.zone||{},R.look||{});}
 function drawSolids(c,R,zoneKey){
   const r=rng(R.id+'solids');
   const body=READ[zoneKey]&&READ[zoneKey].body;
@@ -111,6 +114,7 @@ Art.midSump=(c,L,R,r)=>{
   decorSump(c,L,R,r);
 };
 Art.gameSump=(c,L,R,r)=>{
+  {const SB=R.sub&&SUBART[R.sub];if(SB&&SB.wall){c.clearRect(0,0,L.w,L.h);SB.wall(c,L,R,r);finishGameLayer(c,L,R,r,'sump');return;}}
   c.clearRect(0,0,L.w,L.h);
   const g=c.createLinearGradient(0,0,0,L.h);
   g.addColorStop(0,'rgba(20,17,14,.92)');g.addColorStop(.5,'rgba(28,23,18,.86)');g.addColorStop(1,'rgba(18,15,12,.92)');
@@ -184,6 +188,7 @@ Art.midHives=(c,L,R,r)=>{
     c.lineTo(x+0.4,y+0.8+r()*1.4);c.lineTo(x+0.1,y+0.6+r());c.fill();}
 };
 Art.gameHives=(c,L,R,r)=>{
+  {const SB=R.sub&&SUBART[R.sub];if(SB&&SB.wall){c.clearRect(0,0,L.w,L.h);SB.wall(c,L,R,r);finishGameLayer(c,L,R,r,'hives');return;}}
   c.clearRect(0,0,L.w,L.h);
   const g=c.createLinearGradient(0,0,0,L.h);
   g.addColorStop(0,'rgba(16,11,12,.9)');g.addColorStop(.6,'rgba(28,20,20,.86)');g.addColorStop(1,'rgba(14,10,10,.92)');
@@ -236,6 +241,7 @@ Art.midEden=(c,L,R,r)=>{
     c.beginPath();c.arc(r()*L.w,r()*L.h,0.03+r()*0.05,0,TAU);c.fill();}
 };
 Art.gameEden=(c,L,R,r)=>{
+  {const SB=R.sub&&SUBART[R.sub];if(SB&&SB.wall){c.clearRect(0,0,L.w,L.h);SB.wall(c,L,R,r);finishGameLayer(c,L,R,r,'eden');return;}}
   c.clearRect(0,0,L.w,L.h);
   const g=c.createLinearGradient(0,0,0,L.h);
   g.addColorStop(0,'rgba(240,236,220,.5)');g.addColorStop(.6,'rgba(221,216,200,.44)');g.addColorStop(1,'rgba(182,179,162,.5)');
@@ -287,6 +293,7 @@ Art.midSeal=(c,L,R,r)=>{
   for(let i=0;i<Math.floor(L.h/7)+1;i++)Kit.lightStrip(c,L.w*0.1,2+i*7,L.w*0.8,0.16);
 };
 Art.gameSeal=(c,L,R,r)=>{
+  {const SB=R.sub&&SUBART[R.sub];if(SB&&SB.wall){c.clearRect(0,0,L.w,L.h);SB.wall(c,L,R,r);finishGameLayer(c,L,R,r,'seal');return;}}
   c.clearRect(0,0,L.w,L.h);
   c.fillStyle='rgba(14,16,19,.86)';c.fillRect(0,0,L.w,L.h);
   c.save();c.globalAlpha=0.5;c.fillStyle=PAT(c,'lead');c.fillRect(0,0,L.w,L.h);c.restore();

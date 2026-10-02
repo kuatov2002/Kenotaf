@@ -23,6 +23,10 @@ class Cinematic{
       this.lt=this.lineDur(lines[this.li]);return;}
     this.phase='out';this.lt=0.8;
     g.hud.caption('','');document.getElementById('caption').classList.remove('skip');
+    if(d.abilities){for(const a of d.abilities)g.abilities.grant(a);
+      g.particles.burst(d.x,d.y-0.8,44,{kind:'spark',col:'#ffe6a3',spd:9,life:1.1,size:0.07,add:true,g:12});
+      g.particles.spawn({kind:'ring',x:d.x,y:d.y-0.8,ringR:5,life:0.8,size:0.1,col:'#ffcf7a',add:true,a:0.9});
+      g.hud.showAbilityCard(d.abilities[0],d.card);}
     if(d.ability){
       g.abilities.grant(d.ability);
       g.camera.addShake(0.6);

@@ -72,7 +72,7 @@ class World{
     if(!soft){
       g.camera.reset(clamp(px+0.3,1,Math.max(1,this.room.w-1)),clamp(py-1,1,Math.max(1,this.room.h-1)),1);
       g.particles.clear();
-      g.hud.roomCard(ZONES[this.room.zone].num+' · '+ZONES[this.room.zone].name,this.room.name);
+      const Z=ZONES[this.room.zone]||ZONES.sump;g.hud.roomCard(Z.num+' · '+Z.name,this.room.name);
     }
     g.audio.setZone(this.room.zone);
     g.hud.syncAbilities();g.hud.syncHp();
@@ -248,13 +248,13 @@ class World{
         /* сброшенные грузы проломили перекрытие у выхода: обратно — только рывком */
         this.later(1300,()=>{
           g.audio.explosion();g.camera.addShake(1.6);g.hitstop(0.12);
-          for(let i=0;i<40;i++)g.particles.spawn({kind:'debris',x:4+Math.random()*10.5,y:22+Math.random()*0.6,
+          for(let i=0;i<40;i++)g.particles.spawn({kind:'debris',x:2.4+Math.random()*15,y:22+Math.random()*0.6,
             vx:(Math.random()-0.5)*5,vy:-2-Math.random()*6,g:30,life:1.4,size:0.12+Math.random()*0.2,col:'#6b4a3a',
             rot:Math.random()*6,vr:(Math.random()-0.5)*10});
           g.particles.burst(9,22,20,{kind:'smoke',col:'#3a322a',spd:3,life:2.2,size:0.8,grow:1.2,drag:1.2,a:0.5});
           g.hud.say('ПЕРЕКРЫТИЕ НЕ ВЫДЕРЖАЛО ГРУЗОВ.','');
           const p=this.player;
-          if(p.bottom>20.5&&p.cx>3.5&&p.cx<15){p.x=15.6;p.vy=-9;p.vx=4;}
+          if(p.bottom>20.5&&p.cx>2&&p.cx<17.9){p.x=18;p.vy=-9;p.vx=4;}
         });
       }
       else if(b.type==='archivist'){g.gs.bosses.archivist=true;g.gs.flag('archivist_dead');

@@ -46,7 +46,8 @@ const LevelAudit={
       const hd={x:p.cx-0.1,y:p.y+0.2,w:0.2,h:0.5};
       return !air.some(a=>aabb(hd,a))&&pollen.some(z=>aabb(hd,z));};
     const FI={h:{},p:{},consume(a){if(this.p[a]){this.p[a]=0;return true;}return false;},
-      get move(){return (this.h.R?1:0)-(this.h.L?1:0);},get dn(){return !!this.h.D;},get up(){return !!this.h.U;},healHeld:false,get jumpHeld(){return !!this.h.J;}};
+      get move(){return (this.h.R?1:0)-(this.h.L?1:0);},get dn(){return !!this.h.D;},get up(){return !!this.h.U;},healHeld:false,get jumpHeld(){return !!this.h.J;},
+      attackHeld:false,usingPad(){return false;}};
     const sim=(sx,sy,pol)=>{
       const p=new Player(W,sx,sy);W.player=p;R.playerRef=p;FI.h={};FI.p={};
       for(let i=0;i<10;i++)p.update(DT,FI);
@@ -105,6 +106,28 @@ const LevelAudit={
           if(!p.onGround&&p.gripDir!==0&&s.cool===0){I.p.jump=1;if(flip)s.dir=-p.gripDir;s.cool=7;}
           if(f-s.fj>8)s.done=true;}});
       }
+      /* гарпун: с места или из прыжка (на разной высоте); после отпускания — цепочка к следующему рыму,
+         рывок или выхлоп дальше по ходу */
+      if(has('hook')&&R.anchors&&R.anchors.length)for(const J of [-1,0,8,18,30])for(const after of ['none','dash','jump','chain'])pols.push({dir:d,max:700,fn:(f,p,I,s)=>{
+        H(I,true);
+        if(J>=0&&f===0)I.p.jump=1;I.h.J=J>=0&&f<36;
+        const at=J<0?2:J+1;
+        if(!s.hk&&f>=at&&!p.hook){I.p.hook=1;s.hk=1;s.hf=f;return;}
+        if(s.hk===1&&p.hook)s.hk=2;
+        if(s.hk===2&&!p.hook){s.hk=3;s.rf=f;}
+        if(s.hk===3&&!p.onGround){
+          if(after==='dash'&&f===s.rf+2&&has('dash'))I.p.dash=1;
+          if(after==='jump'&&f===s.rf+3){I.p.jump=1;I.h.J=1;}
+          if(after==='jump'&&f>s.rf+3&&f<s.rf+30)I.h.J=1;
+          if(after==='chain'&&(f-s.rf)%10===4&&(s.n||0)<4){I.p.hook=1;s.n=(s.n||0)+1;s.hk=1;}}
+        if(s.hk>=1&&f>at+6)s.done=true;}});
+      /* выхлоп: второй прыжок в воздухе на разной высоте, иногда с рывком следом */
+      if(has('vjump'))for(const J2 of [6,14,24,34])for(const dsh of (has('dash')?[false,true]:[false]))pols.push({dir:d,max:400,fn:(f,p,I,s)=>{
+        H(I,true);if(f===0)I.p.jump=1;
+        if(f===J2){I.p.jump=1;}
+        I.h.J=f<J2+40;
+        if(dsh&&f===J2+10)I.p.dash=1;
+        if(f>J2+2)s.done=true;}});
       if(has('magnet'))for(const T2 of [25,80,220])for(const mov of [false,true])pols.push({dir:d,max:520,fn:(f,p,I,s)=>{
         if(f===0)I.p.jump=1;
         if(p.onCeil){if(s.ceilT<0)s.ceilT=f;I.h.J=0;H(I,f-s.ceilT<T2);if(f-s.ceilT>=T2){I.p.jump=1;s.done=true;}}

@@ -182,7 +182,7 @@ class Overseer extends MechBoss{
       H.x+=H.vx*dt;H.y+=H.vy*dt;H.dist+=30*dt;
       const r=p.rect(),inR=!p.dead&&H.x>r.x-0.3&&H.x<r.x+r.w+0.3&&H.y>r.y-0.3&&H.y<r.y+r.h+0.3;
       if(inR&&!H.passed){
-        if(p.dashT>0||p.evIF>0){H.passed=true;if(!p.pfDone&&p.evAge<=CFG.combat.perfectWin)p.perfectEvade(H.x);}
+        if(p.dashT>0||p.evIF>0){H.passed=true;if(!p.pfDone&&p.evAge<=perfectWin(g.gs))p.perfectEvade(H.x);}
         else if(p.invuln<=0){H.mode='pull';H.t=0;H.pulled=true;g.audio.hitMetal();g.camera.addShake(0.45);g.hitstop(0.05);
           g.particles.burst(p.cx,p.cy,12,{kind:'spark',col:'#c8452f',spd:5,life:0.35,size:0.05,add:true});}
         else H.passed=true;}

@@ -1,28 +1,28 @@
 "use strict";
 /* ============================== ROOMS · Z1 ============================== */
 Object.assign(ROOMDEFS,{
-z1_start:gs=>({id:'z1_start',zone:'sump',name:'СТАРТОВАЯ НИША',w:44,h:14,
+z1_start:gs=>({id:'z1_start',zone:'sump',sub:'pumps',name:'СТАРТОВАЯ НИША',w:44,h:14,
   art:{bg:Art.bgSump,mid:Art.midSump,game:Art.gameSump,fgd:Art.fgdSump},
   build(R){
-    /* Обучающий коридор: каждое препятствие требует ровно одного навыка.
-       ящик (прыжок) → компрессор 2.2 (прыжок с удержанием) → обвал с зазором 1.2
-       (только подкат/присед) → ржавая решётка (удар) → дверь в хаб (E). */
-    R.solids=[S(-2,-2,46,3.4,'steel'),S(-2,0,2,14,'steel'),S(42,0,2,14,'steel'),S(0,11,44,3,'rust'),
-      S(9.0,9.6,1.6,1.4,'ply'),S(13.4,8.8,2.2,2.2,'steel'),S(19.0,1.4,5.6,8.4,'concrete')];
-    const grate=!gs.flags.start_grate;
-    if(grate)R.solids.push(S(30.2,1.4,0.6,9.6,'steel',{dyn:true,pid:'sgrate'}));
-    R.pushables=grate?[{kind:'grate',x:30.2,y:1.4,w:0.6,h:9.6,id:'sgrate',hp:3,flag:'start_grate'}]:[];
-    R.doors=[{x:40.8,y:8.9,w:1.4,h:2.1,to:'z1_hub',tx:2.2,ty:31.8,label:'НАСОСНАЯ СТАНЦИЯ'}];
+    /* Урок 1 — тело курьера: каждое препятствие требует ровно одного навыка.
+       ящик (прыжок) → компрессор 2.2 (прыжок с удержанием) → обвал с зазором 1.2 (подкат) →
+       канава (прыжок через яму) → висячая опора (присед под ней) → дверь (E). Врагов нет. */
+    R.solids=[S(-2,-2,46,3.4,'steel'),S(-2,0,2,14,'steel'),S(42,0,2,14,'steel'),
+      S(0,11,25,3,'rust'),S(27.4,11,16.6,3,'rust'),S(25,12.4,2.4,1.6,'concrete'),
+      S(9.0,9.6,1.6,1.4,'ply'),S(13.4,8.8,2.2,2.2,'steel'),S(19.0,1.4,5.6,8.4,'concrete'),
+      /* опора крана висит до 9.6: под ней — только пригнувшись */
+      S(29.9,1.4,1.0,8.2,'steel')];
+    R.doors=[{x:40.8,y:8.9,w:1.4,h:2.1,to:'z1_gallery',label:'ГАЛЕРЕЯ ЧИСТИЛЬЩИКОВ'}];
     R.signs=[{x:5.6,y:6.6,keys:['A','D'],text:'ИДТИ'},
       {x:9.8,y:5.6,keys:['SPACE'],text:'ПРЫЖОК'},
-      {x:16.9,y:7.0,keys:['S'],text:'ПОДКАТ'},
-      {x:27.4,y:6.6,keys:['J'],alt:'ЛКМ',text:'УДАР',hideFlag:'start_grate'}];
-    R.enemies.push({type:'mokrica',x:37,y:10.38,patrol:[33,40],amb:true});
+      {x:14.5,y:4.4,keys:['SPACE'],text:'ДЕРЖАТЬ — ВЫШЕ'},
+      {x:16.9,y:7.0,keys:['S'],text:'НА БЕГУ — ПОДКАТ'},
+      {x:33.6,y:6.4,keys:['S'],text:'ПРИСЕСТЬ'}];
     R.lights=[lit(4.4,3.0,9,'#ffbe63',1.2,{flicker:1.6}),lit(12,3.4,8.5,'#ffbe63',0.95),
       lit(21.8,10.4,4.2,'#ff9c4a',0.85,{flicker:0.7}),lit(27,3.2,8.5,'#ffbe63',0.9),
-      lit(30.5,7.0,4,'#c8452f',0.45,{flicker:0.9}),lit(35,3.2,8.5,'#ffbe63',0.85),
+      lit(26.2,12.6,3,'#69d68f',0.5),lit(35,3.2,8.5,'#ffbe63',0.85),
       lit(40.6,8.0,5,'#8fd6ff',0.6),lit(21,12.4,6,'#69d68f',0.3)];
-    R.emitters=[{type:'drip',x:8.4,y:3.4,rate:0.55},{type:'drip',x:28.2,y:3.2,rate:0.8},
+    R.emitters=[{type:'drip',x:8.4,y:3.4,rate:0.55},{type:'drip',x:28.2,y:3.2,rate:0.8},{type:'drip',x:26.0,y:3.4,rate:0.6},
       {type:'steam',x:16.6,y:9.4,rate:0.45,s:0.8},{type:'dust',rate:14},{type:'smoke',x:21.8,y:10.6,rate:0.25}];
     R.checkpoint={x:3.2,y:11,h:1.7,lit:gs.cp.room==='z1_start'};
     R.extraGame=(c,L,r)=>{
@@ -34,13 +34,12 @@ z1_start:gs=>({id:'z1_start',zone:'sump',name:'СТАРТОВАЯ НИША',w:44
         c.beginPath();c.moveTo(x,10.86);c.lineTo(x+0.55,10.66);c.lineTo(x+0.55,10.78);c.lineTo(x+1.1,10.78);
         c.lineTo(x+1.1,10.94);c.lineTo(x+0.55,10.94);c.lineTo(x+0.55,11.06);c.closePath();c.fill();c.restore();}
       Kit.stencil(c,32.6,8.2,'ЭВАКУАЦИЯ →',0.5,'rgba(216,204,178,.5)',0.5);
-      Kit.barrel(c,35.2,10.05,0.42,0.95,'#5c4433');Kit.barrel(c,36.1,10.05,0.42,0.95,'#4a3a2c');
-      Kit.oilStain(c,12,10.95,1.6,rng(5));Kit.puddle(c,27,10.96,1.1);
+      Kit.barrel(c,36.2,10.05,0.42,0.95,'#5c4433');Kit.barrel(c,37.1,10.05,0.42,0.95,'#4a3a2c');
+      Kit.oilStain(c,12,10.95,1.6,rng(5));Kit.puddle(c,26.2,12.36,2.0);
       Kit.ladder(c,39.4,4.6,6.4,0.55);Kit.vent(c,33,2.2,1.6,1.0);Kit.chain(c,26.4,3.4,3.2,0.11);
-      /* рама аварийной решётки в стене — читается и после её слома */
-      Kit.plate(c,29.8,1.4,0.4,9.6,'steel',611,{rust:0.8,boltStep:0.9});
-      Kit.plate(c,30.8,1.4,0.4,9.6,'steel',612,{rust:0.8,boltStep:0.9});
-      if(gs.flags.start_grate)Kit.rubble(c,30.6,10.2,3.4,0.8,rng('sg_rb'),'steel');
+      /* канава: залитый водой разрыв в плитах */
+      Kit.hazardTape(c,24.6,10.8,0.4,0.3);Kit.hazardTape(c,27.4,10.8,0.4,0.3);
+      Kit.stencil(c,24.9,9.7,'РАЗРЫВ ПЛИТ',0.28,'rgba(216,204,178,.45)',0.45);
     };
     R.extraTop=(c,L,r)=>{
       Kit.crate(c,9.0,9.6,1.6,1.4,{seed:2});
@@ -54,6 +53,9 @@ z1_start:gs=>({id:'z1_start',zone:'sump',name:'СТАРТОВАЯ НИША',w:44
       Kit.sign(c,20.2,4.2,3.2,0.8,'ОБВАЛ','#c8452f','#f0e2cf',3);
       for(let i=0;i<3;i++){c.fillStyle='rgba(255,170,90,.5)';const x=20.4+i*1.6;
         c.beginPath();c.moveTo(x,10.1);c.lineTo(x+0.5,10.1);c.lineTo(x+0.25,10.45);c.closePath();c.fill();}
+      /* опора: клёпаная балка, низ в жёлтой ленте — пригнись */
+      Kit.plate(c,29.9,1.4,1.0,8.2,'steel',611,{rust:0.8,boltStep:0.9});
+      Kit.hazardTape(c,29.9,9.25,1.0,0.35);
     };
     R.extraMid=(c,L,r)=>{Kit.tank(c,6,L.h*0.35,3.4,L.h*0.5,{seed:2,label:'Р-12'});
       Kit.tank(c,30,L.h*0.3,2.8,L.h*0.55,{seed:5,label:'Р-13'});};
@@ -65,16 +67,17 @@ z1_hub:gs=>({id:'z1_hub',zone:'sump',name:'НАСОСНАЯ СТАНЦИЯ',w:36
       S(0,34,10,6,'steel'),S(26,34,10,6,'steel'),P(10,34,5,0.42),P(20,34,6,0.42),
       P(24,31,12,0.4),P(28,33,2.4,0.3),P(30.6,32,2.4,0.3),
       P(2,32.4,4,0.36),P(7,31.0,4,0.36),P(2,29.4,4,0.36),P(7,27.8,4,0.36),P(2,26.2,4,0.36),P(0,25,12,0.4),
-      P(11,22.8,7,0.36),P(19,20.8,6,0.36),P(26,18.8,10,0.4)];
+      P(11,22.8,7,0.36),P(19,20.8,6,0.36),P(26,18.8,10,0.4),P(29.6,25,6.4,0.4)];
     /* под сводом — сплошная балка с латунными клёпками (видна с пола с самого начала).
        Выход из вентшахты наверху слева, награда — ниша справа */
     R.magnetRects=[{x:3,y:3.7,w:31,h:0.6}];
     R.solids.push(S(0,7.1,3,0.5,'steel'),S(33.5,7.4,2.5,0.5,'steel'));
     R.hazards=[{x:10,y:37.4,w:16,h:2.6,kind:'coolant'}];
     R.doors=[
-      {x:0.0,y:31.9,w:1.2,h:2.1,to:'z1_start',tx:40.0,ty:8.8,label:'СТАРТОВАЯ НИША'},
+      {x:0.0,y:31.9,w:1.2,h:2.1,to:'z1_charge',label:'ЗАРЯДНАЯ СТАНЦИЯ'},
       {x:34.8,y:28.9,w:1.2,h:2.1,to:'z1_east',tx:1.8,ty:9.6,label:'ВОСТОЧНЫЙ КОРИДОР'},
       {x:34.8,y:16.7,w:1.2,h:2.1,to:'z1_sluice',tx:1.8,ty:7.6,label:'СЕВЕРНЫЙ ШЛЮЗ'},
+      {x:34.8,y:22.9,w:1.2,h:2.1,to:'z1_boiler',label:'КОТЕЛЬНАЯ'},
       {x:4.2,y:33.6,w:1.6,h:0.9,down:true,to:'z1_cellar',tx:1.8,ty:4.8,label:'ПОДВАЛ'},
       /* в шахту можно войти всегда: рифлёные стены внутри сами говорят, что нужны кошки */
       {x:0.0,y:22.8,w:1.1,h:2.2,to:'z1_vent',link:'vent_low',label:'ВЕНТШАХТА'},
@@ -357,7 +360,7 @@ z1_east:gs=>({id:'z1_east',zone:'sump',name:'ВОСТОЧНЫЙ КОРИДОР',
 z1_arena:gs=>({id:'z1_arena',zone:'sump',name:'РЕМОНТНАЯ АРЕНА',w:32,h:23,
   art:{bg:Art.bgSump,mid:Art.midSump,game:Art.gameSump},
   build(R){
-    const cleared=gs.flags.arena_cleared,got=gs.flags.got_pulse;
+    const cleared=gs.flags.arena_cleared,got=gs.flags.got_nozzle;
     R.solids=[S(-2,-2,36,3,'steel'),S(-2,0,2,23,'steel'),S(32,0,2,23,'steel'),S(0,20,32,3,'rust'),
       P(4,17.2,4.4,0.4),P(23.6,17.2,4.4,0.4),P(11,14.4,10,0.4),
       S(6,18.6,2.0,1.4,'ply'),S(24,18.6,2.0,1.4,'ply')];
@@ -380,12 +383,10 @@ z1_arena:gs=>({id:'z1_arena',zone:'sump',name:'РЕМОНТНАЯ АРЕНА',w:
       lit(1.4,18.6,3,'#69d68f',0.4),lit(30.6,18.6,3,'#69d68f',0.4)];
     R.emitters=[{type:'spark',x:9,y:16.6,rate:1.4},{type:'spark',x:23,y:16.6,rate:1.1},
       {type:'steam',x:2,y:19,rate:0.5},{type:'dust',rate:20},{type:'smoke',x:16,y:19.6,rate:0.4}];
-    R.interactables=(cleared&&!got)?[{kind:'salvage',ability:'pulse',x:16,y:19.0,flag:'got_pulse',
-      title:'PUSH-PULSE РЕЗАК',
-      lines:['ЗАРЯДНАЯ СТАНЦИЯ РАСКРЫВАЕТСЯ. ВНУТРИ — ИНСТРУМЕНТ-ПИСТОЛЕТ С ШИРОКИМ СОПЛОМ.',
-             'КРЕПЛЕНИЕ ОТЩЁЛКИВАЕТСЯ. РЕЗАК ЛОЖИТСЯ В РУКУ — ТЁПЛЫЙ, РАБОЧИЙ.',
-             'СНЯТ С ОБСЛУЖИВАНИЯ. ТЕПЕРЬ ОН НА ПОЯСЕ КУРЬЕРА.'],
-      hint:'K / ПКМ — ИМПУЛЬС. ДВИГАЕТ МЕХАНИЗМЫ, РВЁТ ТРОСЫ, ОТТАЛКИВАЕТ ВРАГОВ, ВСКРЫВАЕТ БАЛЛОНЫ.'}]:[];
+    R.interactables=(cleared&&!got)?[{kind:'salvage',upgrade:'pulse_power',x:16,y:19.0,flag:'got_nozzle',
+      title:'ФОРСУНКА РЕЗАКА',
+      lines:['ЗАРЯДНАЯ СТАНЦИЯ ЦЕХА РАСКРЫВАЕТСЯ. ВНУТРИ — ШИРОКАЯ ЛАТУННАЯ ФОРСУНКА.',
+             'ОНА НАВИНЧИВАЕТСЯ НА СОПЛО РЕЗАКА. ИМПУЛЬС ДОСТАЁТ ДАЛЬШЕ И БЬЁТ ТЯЖЕЛЕЕ.']}]:[];
     R.extraGame=(c,L,r)=>{
       for(let i=0;i<4;i++)Kit.chain(c,5+i*7,3,3+r()*4,0.11);
       Kit.plate(c,4,16.6,4.4,0.6,'steel',71,{rust:0.7});Kit.plate(c,23.6,16.6,4.4,0.6,'steel',72,{rust:0.7});
@@ -452,8 +453,7 @@ z1_safe:gs=>({id:'z1_safe',zone:'sump',name:'СЕЙФ-КОМНАТА',w:22,h:14,
       Kit.gauge(c,3.0,9.4,0.32,lerp(0.05,0.9,k));Kit.gauge(c,3.8,9.4,0.24,lerp(0.02,0.8,k));
     };
     R.pushables=[{x:10.4,y:8.0,w:1.5,h:1.9,id:'counterweight',kind:'counterweight',pushed:open}];
-    R.interactables=gs.loreIds[2]?[]:[{kind:'lore',loreId:2,x:6.2,y:11.4,title:'ЦИЛИНДР №2 · ПРИКАЗ НАДСМОТРЩИКУ',
-      text:'«ГРУЗОВОЙ ПУТЬ НАВЕРХ ДЕРЖАТЬ ЗАКРЫТЫМ. КУРЬЕРОВ ВЫШЕ ЯРУСА −41 НЕ ПРОПУСКАТЬ. ПРИЧИНА — НЕ ВАША ЗАБОТА.»'}];
+    R.interactables=[];RB.lore(R,gs,13,6.2,11.4);
     R.doors=[{x:0.0,y:9.3,w:1.2,h:2.1,to:'z1_arena',tx:30.2,ty:17.6,label:'АРЕНА'},
       {x:20.8,y:9.3,w:1.2,h:2.1,to:'z1_boss',tx:1.8,ty:19.6,label:'АРЕНА НАДСМОТРЩИКА',reqFlag:'blast_open',
         reqMsg:'BLAST-ДВЕРЬ · НА ПРОТИВОВЕСЕ'}];
@@ -483,18 +483,22 @@ z1_boss:gs=>({id:'z1_boss',zone:'sump',name:'АРЕНА НАДСМОТРЩИКА
        После смерти крановщика сброшенные грузы проламывают перекрытие у выхода —
        обратно только рывком (немедленное применение нового клапана). */
     R.solids=[S(-2,-3,40,4.6,'steel'),S(-2,0,2,25,'steel'),S(36,0,2,25,'steel'),
-      P(10.4,17.0,3.6,0.4),P(22.0,17.0,3.6,0.4),P(27.0,19.6,4.5,0.4)];
+      P(22.0,17.0,3.6,0.4),P(27.0,19.6,4.5,0.4)];
+    /* левая верхняя платформа рушится вместе с перекрытием — иначе пролом берётся рывком */
+    if(!dead)R.solids.push(P(10.4,17.0,3.6,0.4));
     /* левая нижняя платформа рушится вместе с перекрытием — иначе пролом обходится без рывка */
     if(!dead)R.solids.push(P(4.5,19.6,4.5,0.4));
-    if(dead)R.solids.push(S(0,22,4,3,'rust'),S(14.5,22,21.5,3,'rust'));
+    if(dead)R.solids.push(S(0,22,2.4,3,'rust'),S(17.4,22,18.6,3,'rust'));
     else R.solids.push(S(0,22,36,3,'rust'));
-    if(dead)R.hazards=[{x:4,y:24.2,w:10.5,h:0.8,kind:'pit',back:{x:15.4,y:20.3}}];
-    R.pit=dead?[4,14.5]:null;
-    R.signs=dead?[{x:16.6,y:15.4,keys:['SHIFT'],alt:'L',text:'РЫВОК',need:'dash',hideFlag:'tut_dash1'}]:[];
+    if(dead)R.hazards=[{x:2.4,y:24.2,w:15,h:0.8,kind:'pit',back:{x:17.9,y:20.3},backs:[{minX:-9,x:0.9,y:20.3},{minX:9.9,x:17.9,y:20.3}]}];
+    R.pit=dead?[2.4,17.4]:null;
+    R.signs=dead?[{x:19.6,y:14.4,keys:['U'],alt:'V',text:'ГАРПУН · К РЫМУ',need:'hook'}]:[];
+    RB.ring(R,7.2,15.4,'top',13.8);RB.ring(R,13.2,15.4,'top',13.8);
     R.boss=dead?null:{type:'overseer',x:20,y:18.4};
     R.bossTrigger={x:3.4,y:14,w:30,h:8};
     R.bossDoor={x:0.0,y:19.9,w:1.4,h:2.1,active:!dead};
-    R.doors=[{x:0.0,y:19.9,w:1.2,h:2.1,to:'z1_safe',tx:20.0,ty:9.0,label:'СЕЙФ-КОМНАТА'}];
+    R.doors=[{x:0.0,y:19.9,w:1.2,h:2.1,to:'z1_safe',tx:20.0,ty:9.0,label:'СЕЙФ-КОМНАТА'},
+      {x:34.8,y:19.9,w:1.2,h:2.1,to:'z1_quiet',label:'ДИСПЕТЧЕРСКАЯ',reqFlag:'boss1_dead',reqMsg:'ЗАПЕРТО · КРАН В РАБОТЕ'}];
     R.weights=[6.8,12.2,23.8,29.2].map((x,i)=>({x:x,y:11.6,y0:11.6,w:2.4,h:2.4,cableTop:1.6,state:'hang',id:i,vy:0}));
     for(let i=0;i<4;i++)if(gs.flags['w_drop_'+i])R.weights[i].state='down';
     R.lights=[lit(8,5,12,'#ffbe63',0.85),lit(28,5,12,'#ffbe63',0.85),lit(18,3,14,'#ffa64a',0.75,{flicker:0.5}),
@@ -502,12 +506,11 @@ z1_boss:gs=>({id:'z1_boss',zone:'sump',name:'АРЕНА НАДСМОТРЩИКА
       lit(1.4,20.6,3.5,'#c8452f',0.6,{flicker:0.3}),lit(34,20.6,3.5,'#8fd6ff',0.45)];
     R.emitters=[{type:'steam',x:4,y:21.4,rate:0.5},{type:'steam',x:32,y:21.4,rate:0.5},
       {type:'spark',x:18,y:2.4,rate:0.7},{type:'dust',rate:22}];
-    R.interactables=(dead&&!gs.flags.got_dash)?[{kind:'salvage',ability:'dash',x:19,y:21.2,flag:'got_dash',
-      title:'КЛАПАН DASH',
-      lines:['КОРПУС КРАНОВЩИКА РАСКРЫТ. ВНУТРИ — ЛАТУННЫЙ БАЛЛОНЧИК С СОПЛОМ.',
-             'ШТУЦЕР ПОДХОДИТ К РАНЦУ КУРЬЕРА. ВРЕЗКА. ЩЕЛЧОК. ДАВЛЕНИЕ ПОШЛО.',
-             'ТЕПЕРЬ ПРОПАСТЬ В 12 МЕТРОВ — НЕ ПРОПАСТЬ.'],
-      hint:'L / SHIFT / Z — РЫВОК. СЕВЕРНЫЙ ШЛЮЗ ЖДАЛ ИМЕННО ЭТОГО.'}]:[];
+    R.interactables=(dead&&!gs.flags.got_hook)?[{kind:'salvage',ability:'hook',x:19,y:22,flag:'got_hook',
+      title:'ГАРПУН КРАНОВЩИКА',
+      lines:['СТРЕЛА КРАНОВЩИКА ЛЕЖИТ ПОПЕРЁК ЦЕХА. НА НЕЙ — ЛЕБЁДКА С ГАРПУНОМ.',
+             'ЛЕБЁДКУ ЛЕГКО СНЯТЬ: ЧЕТЫРЕ БОЛТА. ТРОС НАМАТЫВАЕТСЯ НА НАРУЧ.',
+             'ТОТ, КТО ДЕРЖАЛ ЯРУС, ДАЛ КУРЬЕРУ ВЕРЁВКУ НАВЕРХ.']}]:[];
     R.extraGame=(c,L,r)=>{
       Kit.craneGirder(c,0,0.6,36,1.0);
       /* при живом боссе грузы рисуются динамически (иначе остаются «призраки» после падения) */
@@ -519,9 +522,9 @@ z1_boss:gs=>({id:'z1_boss',zone:'sump',name:'АРЕНА НАДСМОТРЩИКА
         Kit.stencil(c,w.x-0.5,w.y+1.6,'4Т',0.4,'rgba(220,210,180,.45)',0.45);}
       if(!dead)Kit.plate(c,4.5,20.0,4.5,0.5,'steel',210,{rust:0.7});
       Kit.plate(c,27,20.0,4.5,0.5,'steel',211,{rust:0.7});
-      Kit.plate(c,10.4,17.4,3.6,0.4,'steel',212,{rust:0.7});Kit.plate(c,22,17.4,3.6,0.4,'steel',213,{rust:0.7});
+      if(!dead)Kit.plate(c,10.4,17.4,3.6,0.4,'steel',212,{rust:0.7});Kit.plate(c,22,17.4,3.6,0.4,'steel',213,{rust:0.7});
       for(const x of (dead?[27.5,31]:[5,8.5,27.5,31]))Kit.pipe(c,[[x,20.0],[x,22]],0.08,'steel',{seed:x|0,rustN:0});
-      for(const x of [10.8,13.6,22.4,25.2])Kit.pipe(c,[[x,17.4],[x,19.6]],0.07,'steel',{seed:x|0,rustN:0});
+      for(const x of (dead?[22.4,25.2]:[10.8,13.6,22.4,25.2]))Kit.pipe(c,[[x,17.4],[x,19.6]],0.07,'steel',{seed:x|0,rustN:0});
       Kit.sign(c,15.9,15.0,4.2,0.9,'ЗОНА РАБОТЫ КРАНА','#c8452f','#f0e2cf',21);
       Kit.lampCage(c,8,5,0.4);Kit.lampCage(c,28,5,0.4);
       for(let i=0;i<5;i++)Kit.oilStain(c,3+r()*30,21.94,1.4+r()*1.8,rng(301+i));
@@ -539,16 +542,16 @@ z1_boss:gs=>({id:'z1_boss',zone:'sump',name:'АРЕНА НАДСМОТРЩИКА
       if(!dead)return;
       /* пролом: чёрный провал с рваными кромками плит и арматурой */
       const g=c.createLinearGradient(0,22,0,25);g.addColorStop(0,'rgba(4,4,5,.92)');g.addColorStop(1,'#000');
-      c.fillStyle=g;c.fillRect(4,21.98,10.5,3.1);
+      c.fillStyle=g;c.fillRect(2.4,21.98,15,3.1);
       const rr2=rng('pit_edges');
-      for(const ex of [4,14.5]){const s=ex===4?1:-1;
+      for(const ex of [2.4,17.4]){const s=ex===2.4?1:-1;
         c.fillStyle=PAT(c,'rust');c.beginPath();c.moveTo(ex,22);
         for(let k=0;k<5;k++)c.lineTo(ex+s*(0.15+rr2()*0.6),22+k*0.55+rr2()*0.3);
         c.lineTo(ex,25);c.closePath();c.fill();
         c.strokeStyle='#6a5340';c.lineWidth=0.06;
         for(let k=0;k<4;k++){const y=22.2+k*0.6;c.beginPath();c.moveTo(ex,y);c.lineTo(ex+s*(0.6+rr2()*1.2),y+0.3+rr2()*0.8);c.stroke();}}
-      Kit.hazardTape(c,2.6,21.7,1.4,0.3);Kit.hazardTape(c,14.5,21.7,1.4,0.3);
-      Kit.stencil(c,6.8,23.4,'ПРОЛОМ',0.5,'rgba(200,69,47,.6)',0.6);
+      Kit.hazardTape(c,1.0,21.7,1.4,0.3);Kit.hazardTape(c,17.4,21.7,1.4,0.3);
+      Kit.stencil(c,8.4,23.4,'ПРОЛОМ',0.5,'rgba(200,69,47,.6)',0.6);
     };
     R.extraMid=(c,L,r)=>{Kit.pumpUnit(c,5,L.h*0.9,1.8,{seed:71,tag:'КР-1'});
       Kit.pumpUnit(c,31,L.h*0.9,1.8,{seed:73,tag:'КР-2'});};
@@ -558,10 +561,11 @@ z1_sluice:gs=>({id:'z1_sluice',zone:'sump',name:'СЕВЕРНЫЙ ШЛЮЗ',w:48
   build(R){
     const bridge=gs.flags.bridge_out;
     R.solids=[S(-2,-2,52,2.4,'steel'),S(-2,0,2,20,'steel'),S(48,0,2,20,'steel'),
-      S(0,10,15,10,'steel'),S(27,10,21,10,'steel')];
+      S(0,10,13,10,'steel'),S(29,10,19,10,'steel')];
+    RB.ring(R,18.6,4.6,'top',4.2);RB.ring(R,23.6,4.8,'top',4.4);
     /* мост — 4 звена по 3 м, сложены «гармошкой» у правого края; раскрываются как складной метр */
-    if(bridge)R.solids.push(Object.assign(P(15,10,12,0.4,'steel'),{dyn:true,pid:'bridge'}));
-    const SEG=4,SL=3,HX=27,HY=10,BT=[[0.55,1.15],[1.3,1.9],[2.05,2.65],[2.8,3.4]];
+    if(bridge)R.solids.push(Object.assign(P(13,10,16,0.4,'steel'),{dyn:true,pid:'bridge'}));
+    const SEG=4,SL=4,HX=29,HY=10,BT=[[0.55,1.15],[1.3,1.9],[2.05,2.65],[2.8,3.4]];
     const T_=W=>W.anims.bridge?W.anims.bridge.t:(gs.flags.bridge_out?99:0);
     const pose=T=>{const out=[];let ax=HX,ay=HY,ang=0;
       for(let i=0;i<SEG;i++){const u=seg01(T,BT[i][0],BT[i][1]),e=i===0?EZ.bounce(u):EZ.back(u);
@@ -596,39 +600,42 @@ z1_sluice:gs=>({id:'z1_sluice',zone:'sump',name:'СЕВЕРНЫЙ ШЛЮЗ',w:48
       /* перила — только на легших звеньях */
       const n=P_.filter((q,i)=>T>=BT[i][1]).length;if(n)Kit.railing(c,HX-SL*n,HY+0.02,SL*n,0.8,'#4d545a');
     };
-    R.hazards=[{x:15,y:18.6,w:12,h:1.4,kind:'pit',back:{x:12.4,y:8.3}}];
+    R.hazards=[{x:13,y:18.6,w:16,h:1.4,kind:'pit',back:{x:10.6,y:8.3},backs:[{minX:-9,x:10.6,y:8.3},{minX:21,x:29.8,y:8.3}]}];
     R.doors=[{x:0.0,y:7.9,w:1.2,h:2.1,to:'z1_hub',tx:33.4,ty:16.4,label:'НАСОСНАЯ'},
-      {x:44.4,y:7.9,w:1.6,h:2.4,to:'z2_escalator',tx:2.2,ty:20.6,label:'ЖИЛЫЕ СОТЫ',elevator:true}];
+      {x:40.6,y:7.6,w:1.6,h:2.4,to:'z2_escalator',tx:2.2,ty:20.6,label:'ЖИЛЫЕ СОТЫ',elevator:true},
+      RB.R(R,10,'z1_pipes','ТРУБНЫЙ КОЛОДЕЦ')];
+    R.signs=[{x:7.2,y:5.0,keys:['U'],alt:'V',text:'ГАРПУН · К РЫМУ',need:'hook',hideFlag:'bridge_out'}];
     R.interactables=[{kind:'lever',x:31,y:10,label:'СКЛАДНОЙ МОСТ',
       plaque:'ФЕРМА · ПОСТОЯННОЕ СОЕДИНЕНИЕ',flag:'bridge_out',sys:'bridge'}];
-    if(!gs.loreIds[4])R.interactables.push({kind:'lore',loreId:4,x:39.6,y:10,title:'ЦИЛИНДР №4 · ГРАФИК ЛИФТА 07',
+    if(!gs.loreIds[4])R.interactables.push({kind:'lore',loreId:4,x:35.6,y:10,title:'ЦИЛИНДР №4 · ГРАФИК ЛИФТА 07',
       text:'«ПОСЛЕДНИЙ ПОДЪЁМ ВЫШЕ ЭДЕМА — 214 ЛЕТ НАЗАД. ДАЛЬШЕ ГРАФИК ПУСТ.»'});
-    R.enemies.push({type:'lampada',x:20,y:3.5,amb:true},{type:'mokrica',x:34,y:9.38,patrol:[28,42],amb:true});
+    R.enemies.push({type:'lampada',x:21,y:6.5,amb:true},{type:'mokrica',x:36,y:9.38,patrol:[30,44],amb:true});
     R.lights=[lit(4,4,8,'#ffbe63',0.9),lit(13,5,6,'#c8452f',0.7,{flicker:0.8}),
       lit(30,4,9,'#ffbe63',0.9),lit(42,4,7,'#ffbe63',0.8),lit(21,14,10,'#3d6a52',0.5),
-      lit(45.4,8.6,4,'#8fd6ff',0.7),lit(1.4,8.6,3,'#8fd6ff',0.4)];
+      lit(41.4,8.6,4,'#8fd6ff',0.7),lit(1.4,8.6,3,'#8fd6ff',0.4),lit(46.8,8.6,3,'#8fd6ff',0.4)];
     R.emitters=[{type:'wind',rate:26},{type:'steam',x:28,y:9.4,rate:0.4},{type:'dust',rate:12}];
     R.extraGame=(c,L,r)=>{
       const g=c.createLinearGradient(0,2.4,0,20);
       g.addColorStop(0,'#05070a');g.addColorStop(1,'#020304');
-      c.fillStyle=g;c.fillRect(15,2.4,12,17);
+      c.fillStyle=g;c.fillRect(13,2.4,16,17);
       for(let i=0;i<70;i++){c.fillStyle='rgba(255,190,99,'+(r()*0.3)+')';
-        c.beginPath();c.arc(15+r()*12,3+r()*16,0.05+r()*0.08,0,TAU);c.fill();}
+        c.beginPath();c.arc(13+r()*16,3+r()*16,0.05+r()*0.08,0,TAU);c.fill();}
       c.fillStyle='rgba(20,26,30,.9)';
-      for(let i=0;i<5;i++)c.fillRect(15.4+i*2.4,4+r()*6,1.2,14);
-      Kit.hazardTape(c,13.4,9.6,1.6,0.4);Kit.hazardTape(c,27,9.6,1.6,0.4);
-      Kit.stencil(c,10.6,9.2,'КРАЙ · 12 М',0.5,'rgba(230,200,140,.6)',0.6);
-      Kit.stencil(c,28.6,9.2,'МОСТ · ПРИВОД',0.44,'rgba(216,204,178,.5)',0.5);
-      Kit.plate(c,0,2.4,15,1.0,'steel',301,{rust:0.8});Kit.plate(c,27,2.4,21,1.0,'steel',302,{rust:0.8});
+      for(let i=0;i<6;i++)c.fillRect(13.4+i*2.6,4+r()*6,1.2,14);
+      Kit.hazardTape(c,11.4,9.6,1.6,0.4);Kit.hazardTape(c,29,9.6,1.6,0.4);
+      Kit.stencil(c,8.4,9.2,'КРАЙ · 16 М',0.5,'rgba(230,200,140,.6)',0.6);
+      Kit.stencil(c,30.4,9.2,'МОСТ · ПРИВОД',0.44,'rgba(216,204,178,.5)',0.5);
+      Kit.plate(c,0,2.4,13,1.0,'steel',301,{rust:0.8});Kit.plate(c,29,2.4,19,1.0,'steel',302,{rust:0.8});
+      Kit.craneGirder(c,13,3.0,16,0.9);
       Kit.pipe(c,[[0,1.4],[48,1.4]],0.26,'steel',{seed:31,band:2,bandCol:'#c8452f'});
       Kit.lampCage(c,4,4,0.34);Kit.lampCage(c,30,4,0.34);Kit.lampCage(c,42,4,0.3);
       Kit.sign(c,2.0,5.6,3.8,0.9,'ШЛЮЗ СЕВЕР · ВЫХОД ЗАПРЕЩЁН','#c8452f','#f0e2cf',33);
-      Kit.plate(c,43.6,6.8,4.4,4.2,'steel',303,{rust:0.6});
-      c.fillStyle='#0e1113';c.fillRect(44.4,7.6,2.8,3.0);
-      Kit.hazardTape(c,44.4,7.4,2.8,0.22);
-      Kit.stencil(c,43.8,6.6,'ЛИФТ 07 → СОТЫ',0.3,'rgba(216,204,178,.6)',0.6);
-      Kit.gauge(c,43.9,9.0,0.24,0.5);
-      Kit.plate(c,27.0,9.6,1.6,0.6,'steel',311,{rust:0.8});
+      Kit.plate(c,39.8,6.6,4.0,4.2,'steel',303,{rust:0.6});
+      c.fillStyle='#0e1113';c.fillRect(40.4,7.4,2.8,3.0);
+      Kit.hazardTape(c,40.4,7.2,2.8,0.22);
+      Kit.stencil(c,39.9,6.4,'ЛИФТ 07 → СОТЫ',0.3,'rgba(216,204,178,.6)',0.6);
+      Kit.gauge(c,43.4,9.0,0.24,0.5);
+      Kit.plate(c,29.0,9.6,1.6,0.6,'steel',311,{rust:0.8});
       Kit.chain(c,20,2.4,6,0.12);
       for(let i=0;i<4;i++)Kit.oilStain(c,2+r()*44,9.95,1.2+r(),rng(400+i));
     };
@@ -655,7 +662,8 @@ z1_drain:gs=>({id:'z1_drain',zone:'sump',name:'ДРЕНАЖ ХЛАДАГЕНТА
     R.pogos=[{x:13,y:11.3,r:0.45,len:2.3},{x:25,y:11.0,r:0.45,len:3.4},{x:31.8,y:11.0,r:0.45,len:3.4}];
     R.hazards=[{x:20,y:13.0,w:14,h:1.4,kind:'pit',look:'coolant',back:{x:17.6,y:8.32}}];
     R.doors=[{x:2.0,y:1.0,w:2.2,h:1.2,to:'z1_cellar',link:'cellar_hole',label:'ПОДВАЛ',oneway:true},
-      {x:40.4,y:7.9,w:1.4,h:2.1,to:'z1_east',link:'drain_up',label:'ВОСТОЧНЫЙ КОРИДОР',latch:'drain_latch',latchHere:true}];
+      {x:40.4,y:7.9,w:1.4,h:2.1,to:'z1_east',link:'drain_up',label:'ВОСТОЧНЫЙ КОРИДОР',latch:'drain_latch',latchHere:true},
+      RB.R(R,10,'z1_canal','ОТСТОЙНЫЙ КАНАЛ')];
     R.signs=[{x:4.6,y:6.4,keys:['↓','J'],text:'НАД КЛАПАНОМ — УДАР ВНИЗ'}];
     R.interactables=gs.flags.got_plate_drain?[]:[{kind:'salvage',upgrade:'plate_drain',x:37.4,y:10,flag:'got_plate_drain',
       title:'ПЛАСТИНА КУРТКИ',

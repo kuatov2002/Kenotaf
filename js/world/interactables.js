@@ -190,6 +190,24 @@ class Pushable{
         c.fillStyle=rgba('#ffe6a3',0.45+0.4*p);c.beginPath();c.arc(cx,cy,0.09,0,TAU);c.fill();
         game.renderer.glowAdd(cx,cy,1.0,'#e8c96a',0.25+0.2*p);
       }
+    }else if(this.kind==='lead'){
+      /* свинцовая заглушка: тусклые листы на заклёпках, сквозная трещина — за ней свет */
+      const x=this.x,y=this.y,w=this.w,h=this.h,sh=this.hitT>0?(Math.random()-0.5)*0.06:0;
+      c.save();c.translate(sh,0);
+      const g=c.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,'#6e737a');g.addColorStop(0.5,'#4e5359');g.addColorStop(1,'#2e3136');
+      c.fillStyle=g;c.fillRect(x,y,w,h);
+      c.save();c.globalAlpha=0.35;c.fillStyle=PAT(c,'lead');c.fillRect(x,y,w,h);c.restore();
+      for(let yy=y+0.3;yy<y+h-0.1;yy+=1.2){c.fillStyle='rgba(0,0,0,.35)';c.fillRect(x,yy,w,0.05);
+        for(let xx=x+0.2;xx<x+w;xx+=0.6)Kit.bolt(c,xx,yy+0.18,0.045);}
+      const r=rng(this.id||'lead');c.strokeStyle='rgba(255,236,190,.85)';c.lineWidth=0.05;c.beginPath();
+      let cx=x+w*0.5,cy=y+0.1;c.moveTo(cx,cy);while(cy<y+h-0.1){cx=clamp(cx+(r()-0.5)*0.6,x+0.15,x+w-0.15);cy+=0.3+r()*0.4;c.lineTo(cx,cy);}c.stroke();
+      game.renderer.glowAdd(x+w/2,y+h/2,Math.max(w,h)*0.5,'#ffe6b0',0.18);
+      if(this.world.game.gs.has('breaker')){const p=0.5+0.5*Math.sin(t*3.4),tx=x+w/2,ty=y+h*0.5;
+        c.fillStyle='rgba(20,16,10,.8)';c.beginPath();c.arc(tx,ty,0.52,0,TAU);c.fill();
+        c.strokeStyle=rgba('#e8c96a',0.8);c.lineWidth=0.07;c.beginPath();c.arc(tx,ty,0.44,0,TAU);c.stroke();c.beginPath();c.arc(tx,ty,0.22,0,TAU);c.stroke();
+        c.fillStyle=rgba('#ffe6a3',0.45+0.4*p);c.beginPath();c.arc(tx,ty,0.09,0,TAU);c.fill();
+        game.renderer.glowAdd(tx,ty,1.0,'#e8c96a',0.25+0.2*p);}
+      c.restore();
     }else if(this.kind==='beam'){
       /* балку рисует сцена садовника (z3_collector) */
     }else if(this.kind==='crate'){

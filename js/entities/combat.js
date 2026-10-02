@@ -89,17 +89,17 @@ class Combat{
   gainWeld(n){const gs=this.game.gs;gs.weld=Math.min(gs.weldMax(),(gs.weld||0)+n);}
   /* импульс резака: позиция, траектория, срыв — без урона */
   pulse(p){
-    const w=this.game.world,g=this.game,C=CFG.player,dir=p.face;
-    const hb={x:p.cx+(dir>0?0:-C.pulseRange),y:p.cy-C.pulseRange*0.55,w:C.pulseRange,h:C.pulseRange*1.1};
+    const w=this.game.world,g=this.game,C=CFG.player,dir=p.face,pw=g.gs.flags.pulse_power?1.35:1,PR=C.pulseRange*pw;
+    const hb={x:p.cx+(dir>0?0:-PR),y:p.cy-PR*0.55,w:PR,h:PR*1.1};
     let hitAny=false;
     for(const e of w.enemies){
       if(e.dead||!aabb(hb,e))continue;hitAny=true;
-      if(e.isMech)e.applyPulse(p,dir);
+      if(e.isMech)e.applyPulse(p,dir,pw);
       else{/* немеханизмы: только толчок */const m=e.mass||1;e.vx+=dir*12/m;e.vy-=4/m;e.alert=6;
         if(e.type==='censor'&&!e.tankBroken)e.popTank();}
     }
     const b=w.boss;
-    if(b&&!b.dead&&b.activated&&aabb(hb,b)){hitAny=true;if(b.isMech)b.applyPulse(p,dir);else if(b.onPulse)b.onPulse(p);}
+    if(b&&!b.dead&&b.activated&&aabb(hb,b)){hitAny=true;if(b.isMech)b.applyPulse(p,dir,pw);else if(b.onPulse)b.onPulse(p);}
     for(const pb of w.pushables){
       if(!aabb(hb,pb.rect()))continue;
       if(pb.kind==='counterweight'&&!pb.pushed){
@@ -110,6 +110,11 @@ class Combat{
         w.startAnim('beam',{dir:dir});w.startAnim('gardener');
         g.particles.burst(pb.x+pb.w/2,pb.y+0.4,24,{kind:'debris',col:'#8a8d7a',spd:5,life:1.0,size:0.12,g:22});
         g.particles.burst(pb.x+pb.w/2,pb.y+0.9,14,{kind:'dust',col:'#a8a48a',spd:3,life:1.2,size:0.14,g:6});
+      }else if(pb.kind==='lead'&&!pb.pushed){
+        hitAny=true;
+        if(g.gs.has('breaker')){w.breakPushable(pb,dir);g.audio.breakPart('iron',true);}
+        else{pb.hitT=0.25;g.audio.deflect();g.audio.mat('iron',0.6);
+          g.particles.burst(clamp(p.cx+dir*1.2,pb.x,pb.x+pb.w),clamp(p.cy,pb.y,pb.y+pb.h),12,{kind:'spark',col:'#dfe4ea',spd:5,life:0.35,size:0.05,add:true,g:12});}
       }else if((pb.kind==='crate'||pb.kind==='grate')&&!pb.pushed&&!pb.floor){
         hitAny=true;w.breakPushable(pb,dir);
       }else if(pb.kind==='core'&&!pb.pushed){
@@ -124,7 +129,7 @@ class Combat{
         if(wt.state!=='hang')continue;
         const box={x:wt.x-wt.w/2,y:wt.y-0.5,w:wt.w,h:wt.h+0.5};
         const nx=clamp(ox,box.x,box.x+box.w),ny=clamp(oy,box.y,box.y+box.h);
-        const inRing=Math.hypot(nx-ox,ny-oy)<CFG.player.pulseRing&&(nx-p.cx)*dir>-0.8;
+        const inRing=Math.hypot(nx-ox,ny-oy)<CFG.player.pulseRing*pw&&(nx-p.cx)*dir>-0.8;
         if(inRing||aabb(hb,{x:wt.x-0.4,y:wt.cableTop,w:0.8,h:wt.y-wt.cableTop})||aabb(hb,box)){
           wt.state='fall';wt.vy=0;hitAny=true;
           g.audio.hitMetal();g.camera.addShake(0.4);
@@ -139,7 +144,7 @@ class Combat{
     const ox=p.cx+dir*0.6,oy=p.cy;
     for(const pr of w.projectiles){
       if(pr.back)continue;
-      const inBox=aabb(hb,{x:pr.x-pr.r,y:pr.y-pr.r,w:pr.r*2,h:pr.r*2}),inRing=Math.hypot(pr.x-ox,pr.y-oy)<C.pulseRing;
+      const inBox=aabb(hb,{x:pr.x-pr.r,y:pr.y-pr.r,w:pr.r*2,h:pr.r*2}),inRing=Math.hypot(pr.x-ox,pr.y-oy)<C.pulseRing*pw;
       if(pr.reflect&&(inBox||inRing)&&w.boss&&!w.boss.dead){
         const bx=w.boss.coreX,by=w.boss.coreY,d=Math.hypot(bx-pr.x,by-pr.y)||1;
         pr.vx=(bx-pr.x)/d*17;pr.vy=(by-pr.y)/d*17;pr.back=true;pr.life=3;hitAny=true;
@@ -151,13 +156,13 @@ class Combat{
         g.audio.deflect();g.particles.burst(pr.x,pr.y,10,{kind:'spark',col:'#ffd27a',spd:5,life:0.4,size:0.05,add:true});}
     }
     if(hitAny){g.hitstop(CFG.hsPulse);g.camera.addShake(0.4);}
-    g.particles.spawn({kind:'ring',x:p.cx+dir*0.6,y:p.cy,ringR:3.6,life:0.34,size:0.1,col:'#dff0f6',add:true,a:0.8});
+    g.particles.spawn({kind:'ring',x:p.cx+dir*0.6,y:p.cy,ringR:3.6*pw,life:0.34,size:0.1,col:'#dff0f6',add:true,a:0.8});
     g.particles.spawn({kind:'shock',x:p.cx+dir*0.6,y:p.cy,ringR:3.0,life:0.3,size:0.08,col:'#ffffff',add:true,a:0.5});
     for(let i=0;i<10;i++)g.particles.spawn({kind:'steam',x:p.cx+dir*(0.6+Math.random()*1.6),
       y:p.cy+(Math.random()-0.5)*1.6,vx:dir*(5+Math.random()*7),vy:(Math.random()-0.5)*3,
       life:0.45,size:0.24,grow:0.7,col:'#cfe6ee',drag:3});
     g.renderer.glowAdd(p.cx+dir*1.4,p.cy,1.6,'#cfe6ee',0.6);
-    g.renderer.wave(p.cx+dir*0.6,p.cy,3.8,0.38);
+    g.renderer.wave(p.cx+dir*0.6,p.cy,3.8*pw,0.38);
   }
   damagePlayer(dmg,srcX){
     const p=this.game.world.player;if(!p)return false;

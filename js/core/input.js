@@ -4,17 +4,17 @@
    (присед, подкат, в воздухе — удар вниз с отскоком). Q/I — залатать куртку (держать). */
 const KEYMAP={jump:['Space'],up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],
   right:['KeyD','ArrowRight'],attack:['KeyJ','KeyX'],pulse:['KeyK','KeyC'],
-  dash:['KeyL','ShiftLeft','ShiftRight','KeyZ'],use:['KeyE','KeyF'],heal:['KeyQ','KeyI']};
+  dash:['KeyL','ShiftLeft','ShiftRight','KeyZ'],use:['KeyE','KeyF'],heal:['KeyQ','KeyI'],hook:['KeyU','KeyV']};
 /* геймпад, стандартная раскладка: A — прыжок, X — удар, B — импульс, Y — действие (E), RB/RT — рывок,
    LB/LT (держать) — залатать, стик / крестовина — движение и направление, START / BACK — пауза */
-const PAD_ACT={PadA:'jump',PadX:'attack',PadB:'pulse',PadY:'use',PadRB:'dash',PadUp:'up',PadDown:'down'};
+const PAD_ACT={PadA:'jump',PadX:'attack',PadB:'pulse',PadY:'use',PadRB:'dash',PadRT:'hook',PadUp:'up',PadDown:'down'};
 class Input{
   constructor(){
     this.k=Object.create(null);this.p=Object.create(null);this.r=Object.create(null);
     this.pending={};for(const a in KEYMAP)this.pending[a]={n:0,t:-1e9};
     this.ml=false;this.mr=false;this.enabled=true;this.EXPIRY=220;this.skip=false;
     const pv=['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab','KeyE','KeyF',
-      'KeyJ','KeyK','KeyL','KeyX','KeyC','KeyZ','ShiftLeft','ShiftRight','KeyQ','KeyI'];
+      'KeyJ','KeyK','KeyL','KeyX','KeyC','KeyZ','ShiftLeft','ShiftRight','KeyQ','KeyI','KeyU','KeyV'];
     addEventListener('keydown',e=>{
       if(pv.indexOf(e.code)>=0)e.preventDefault();
       this.lastKey=performance.now();
@@ -59,7 +59,7 @@ class Input{
     const b=i=>{const q=gp.buttons[i];return !!(q&&(q.pressed||q.value>0.5));};
     const ax=gp.axes[0]||0,ay=gp.axes[1]||0;
     const st={PadLeft:b(14)||ax<-0.4,PadRight:b(15)||ax>0.4,PadUp:b(12)||ay<-0.6,PadDown:b(13)||ay>0.6,
-      PadA:b(0),PadB:b(1),PadX:b(2),PadY:b(3),PadLB:b(4)||b(6),PadRB:b(5)||b(7),PadStart:b(9)||b(8)};
+      PadA:b(0),PadB:b(1),PadX:b(2),PadY:b(3),PadLB:b(4)||b(6),PadRB:b(5),PadRT:b(7),PadStart:b(9)||b(8)};
     for(const c in st){const v=st[c];if(v&&!prev[c])this.padDown(c);this.k[c]=v;prev[c]=v;}
   }
   padDown(c){

@@ -6,7 +6,7 @@
 const MAPLAYOUT={
   /* ЗОНА I · ОТСТОЙНИК */
   z1_vent:[86,390],z1_start:[54,426],z1_hub:[100,398],z1_cellar:[102,440],z1_drain:[122,444],
-  z1_sluice:[138,400],z1_east:[138,422],z1_arena:[178,418],z1_safe:[212,424],z1_boss:[236,416],
+  z1_sluice:[138,400],z1_gallery:[10,426],z1_charge:[-60,426],z1_quiet:[272,420],z1_pipes:[300,384],z1_boiler:[140,370],z1_foundry:[194,330],z1_canal:[168,462],z1_shrine:[216,486],z1_cache:[196,356],z1_east:[138,422],z1_arena:[178,418],z1_safe:[212,424],z1_boss:[236,416],
   /* ЗОНА II · ЖИЛЫЕ СОТЫ */
   z2_escalator:[186,362],z2_atrium:[232,330],z2_apartment:[232,311],z2_stairwell:[270,346],
   z2_turbine:[292,352],z2_boss:[348,354],z2_post:[182,318],z2_overgrown:[196,345],
@@ -18,6 +18,6 @@ const MAPLAYOUT={
   z5_surface:[560,120]
 };
 /* тайники: на скопированной схеме зоны их нет, пока курьер сам туда не войдёт (у двери — обрубок с «?») */
-const MAPSECRET={z1_drain:1,z2_overgrown:1,z3_intake:1};
+const MAPSECRET={z1_drain:1,z2_overgrown:1,z3_intake:1,z1_shrine:1,z1_cache:1};
 /* цвет заливки комнаты на схеме по зоне */
 const MAPTINT={sump:'#5a4636',hives:'#5c3a34',eden:'#6f7a46',seal:'#4e5868',surface:'#6f8ea6'};

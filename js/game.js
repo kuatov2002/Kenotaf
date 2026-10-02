@@ -283,7 +283,7 @@ class Game{
     const par=inMenu?this.menuPar:this.world.parallax;
     c.setTransform(1,0,0,1,0,0);
     if(!room||!par||!par.layers){c.fillStyle='#05060a';c.fillRect(0,0,this.vw,this.vh);return;}
-    const zone=ZONES[room.zone]||ZONES.sump;
+    const zone=zoneLook(room);
     const t=room.t=(room.t||0)+dt*(inMenu?1:this.timeScale);
     const cam=this.camera,zoom=cam.zoom;
     this.renderer.beginFrame();
