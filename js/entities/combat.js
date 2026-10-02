@@ -50,9 +50,9 @@ class Combat{
       e.hurt(C.attackDmg*(heavy?2.2:1)*(o.bonus?1.5:1),kx*(heavy?1.6:1),ky);hitAny=true;plain=true;this.gainWeld(C.weldHit);
       if(sd==='down')pogo=true;
       if(e.type==='censor'&&sd==='side'&&f*e.face<0&&Math.random()<0.35)e.popTank();};
-    for(const e of w.enemies){if(e.dead||!aabb(hb,e))continue;strike(e);}
+    for(const e of w.enemies){if(e.dead||!aabb(hb,e.isMech?e.hitBounds():e))continue;strike(e);}
     const b=w.boss;
-    if(b&&!b.dead&&b.activated&&aabb(hb,b)){
+    if(b&&!b.dead&&b.activated&&aabb(hb,b.isMech?b.hitBounds():b)){
       if(b.isMech)strike(b);
       else{if(!(b.onMelee&&b.onMelee(p)))b.hurt(C.attackDmg*(heavy?2:1),kx*0.4,-1);hitAny=true;plain=true;this.gainWeld(C.weldHit);if(sd==='down')pogo=true;}}
     for(const pb of w.pushables){

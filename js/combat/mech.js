@@ -17,6 +17,11 @@ class Mech extends Enemy{
     this.walk=0;this.recoil=0;this.recoilDir=0;this.flying=!!def.flying;this.turnT=0;
   }
   addNode(o){const n=new Node(o);n.owner=this;this.nodes.push(n);return n;}
+  /* границы попадания: корпус + узлы, вынесенные за него (стрелы, факел) — удар по выступающей детали засчитывается */
+  hitBounds(){let x0=this.x,y0=this.y,x1=this.x+this.w,y1=this.y+this.h;
+    for(const n of this.nodes){if(n.broken||n.hidden||n.locked)continue;
+      x0=Math.min(x0,n.wx-n.r);x1=Math.max(x1,n.wx+n.r);y0=Math.min(y0,n.wy-n.r);y1=Math.max(y1,n.wy+n.r);}
+    return {x:x0,y:y0,w:x1-x0,h:y1-y0};}
   node(id){for(const n of this.nodes)if(n.id===id)return n;return null;}
   has(id){const n=this.node(id);return !!n&&!n.broken;}
   /* --- общие состояния --- */

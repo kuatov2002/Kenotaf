@@ -158,6 +158,12 @@ class AudioSystem{
   heavy(){this.nz(0.22,700,0.6,0.07);this.tone(120,0.25,'triangle',0.06,60);}
   scrap(){const r=0.9+Math.random()*0.2;this.tone(1900*r,0.08,'sine',0.012,2300*r);}
   steamBurst(){this.nz(0.6,1200,0.5,0.07);this.nz(0.3,300,0.6,0.06,'lowpass');}
+  /* гидравлика стрелы: шипение + стон штока (замах босса) */
+  hydraulic(k){k=k===undefined?1:k;this.nz(0.55,900,0.7,0.04*k);this.tone(80,0.6,'sawtooth',0.035*k,150);}
+  /* гарпун: выстрел троса, свист разматывающейся лебёдки; обрыв троса */
+  harpoon(){if(!this.ready||this.muted)return;this.tone(150,0.16,'triangle',0.09,60);this.nz(0.08,2400,1.5,0.045);
+    this.tone(520,0.4,'sawtooth',0.018,1500);}
+  snap(){this.nz(0.06,3200,2,0.05);this.tone(1800,0.14,'sine',0.02,700);this.tone(120,0.12,'triangle',0.04,70);}
   /* лампада: замах — нарастающий вой винта, пике — свист; мокрица — сухой стрёкот лапок */
   lampWind(){this.tone(380,0.58,'sawtooth',0.026,1250);this.nz(0.58,2000,3,0.018);}
   lampDive(){this.nz(0.32,900,0.8,0.05);this.tone(1000,0.26,'triangle',0.02,320);}

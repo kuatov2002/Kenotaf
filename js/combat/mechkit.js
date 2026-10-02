@@ -14,7 +14,9 @@ const MAT={
   glass:{hi:'#ffffff',lt:'#c4e6ff',mid:'#6f9ab4',dk:'#2c4656',ed:'#0e1a22'},
   enamel:{hi:'#fbf3e6',lt:'#ddd2bd',mid:'#ab9b82',dk:'#6b5e4a',ed:'#2a241b'},
   oxblood:{hi:'#f0a088',lt:'#ab4a33',mid:'#7a2a1c',dk:'#4a160e',ed:'#1a0604'},
-  soot:{hi:'#6a645c',lt:'#3e3a35',mid:'#2a2724',dk:'#191715',ed:'#090807'}
+  soot:{hi:'#6a645c',lt:'#3e3a35',mid:'#2a2724',dk:'#191715',ed:'#090807'},
+  /* заводская краска крановой техники: оливковая, выгоревшая — отделяет корпус от латунных узлов */
+  olive:{hi:'#cfcca2',lt:'#8a875f',mid:'#5d5b3e',dk:'#373623',ed:'#14140b'}
 };
 const MK={
   m(mat){return typeof mat==='string'?(MAT[mat]||MAT.steel):mat;},
