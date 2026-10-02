@@ -30,7 +30,9 @@ class Camera{
     this.lookY=damp(this.lookY,tly,4.0,dt);
     let tx,ty;
     if(this.focus){tx=this.focus.x;ty=this.focus.y;}
-    else{tx=player.cx+this.lookX;ty=player.cy-0.55+this.lookY;}
+    else{tx=player.cx+this.lookX;ty=player.cy-0.55+this.lookY;
+      /* бой с большим боссом: кадр тянется к нему, чтобы замах был виден целиком */
+      if(this.frame){tx=lerp(tx,this.frame.x,this.frame.w);ty=lerp(ty,this.frame.y,this.frame.w);}}
     this.zoom=damp(this.zoom,this.tzoom,8,dt);
     const s=ppm*this.zoom,hw=vw/s/2,hh=vh/s/2;this.ppmz=s;
     let cx=tx,cy=ty;

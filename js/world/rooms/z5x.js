@@ -122,19 +122,34 @@ z5_lift:gs=>({id:'z5_lift',zone:'archive',sub:'stacks',name:'ПОДЪЁМНИК 
   }}),
 /* Зал Печати: над полом — Колесо, к нему прикован Архивариус. За Колесом — свет. */
 z5_boss:gs=>({id:'z5_boss',zone:'archive',sub:'council',name:'ЗАЛ ПЕЧАТИ',w:50,h:34,noCut:true,
-  art:RB.art('archive','council'),
+  art:RB.art('archive','council',{fgd:false}),
   build(R){
     const dead=!!gs.flags.archivist_dead,done=gs.flags.wheel_turned;
+    /* зал Печати: под сводом — рельс картотеки, в центре — колесо Печати над площадкой,
+       по краям — ложи писцов, между ними — крючья старых люстр. Пол — свинцовые плиты над тиглем. */
     RB.shell(R,'lead',{ceil:0.4});
-    R.solids.push(S(0,30,50,4,'lead'),P(6,25.6,6),P(38,25.6,6),P(18,21.6,14));
+    R.solids.push(S(0,30,50,4,'lead'),P(4,25.6,6,0.4,'brass'),P(40,25.6,6,0.4,'brass'),P(19,21.6,12,0.4,'brass'));
+    RB.ring(R,14.2,17.4,'top',17);RB.ring(R,35.8,17.4,'top',17);
     R.doors=[RB.L(30,'z5_lift','ПОДЪЁМНИК')];
-    if(!dead){R.boss={type:'archivist',x:22.8,y:4.6};R.bossTrigger={x:4,y:10,w:42,h:20};R.bossDoor={x:0,y:27.9,w:1.4,h:2.1,active:true};
-      R.hazards=[4,10,16,30,36,42].map(x=>({x:x,y:27.8,w:2.6,h:2.2,kind:'steam',ctl:'arch'}));}
-    if(dead&&!done)R.interactables.push({kind:'wheel',x:25,y:30,label:'КОЛЕСО ПЕЧАТИ',flag:'wheel_turned'});
-    R.machines=[{kind:'sealwheel',x:25,y:17,r:4.2,turned:done},{kind:'archivist',x:25,y:8,alive:dead}];
-    R.lights=[lit(25,17,14,done?'#fff6dd':'#a09070',done?1.3:0.7),lit(8,10,9,'#ffcf8a',0.5),lit(42,10,9,'#ffcf8a',0.5),lit(25,28,10,'#ffd9a0',0.4)];
+    if(!dead){R.boss={type:'archivist',x:25,y:7};R.bossTrigger={x:4,y:10,w:42,h:20};R.bossDoor={x:0,y:27.9,w:1.4,h:2.1,active:true};
+      R.hazards=[4,10,16,30,36,42].map(x=>({x:x,y:27.8,w:2.6,h:2.2,kind:'steam',ctl:'arch'}))
+        .concat([19.2,25.2].map(x=>({x:x,y:17.8,w:5.6,h:3.8,kind:'steam',ctl:'arch3'})));}
+    if(dead&&!done)R.interactables.push({kind:'wheel',x:25,y:21.6,label:'КОЛЕСО ПЕЧАТИ',flag:'wheel_turned'});
+    R.machines=[{kind:'sealwheel',x:25,y:15.2,r:4.2,turned:done},{kind:'archivist',x:25,y:8,alive:dead}];
+    R.lights=[lit(25,15,14,done?'#fff6dd':'#a09070',done?1.3:0.7),lit(7,10,9,'#ffcf8a',0.5),lit(43,10,9,'#ffcf8a',0.5),lit(25,28,12,'#ffd9a0',0.4),
+      lit(7,24.6,4,'#ffcf8a',0.4),lit(43,24.6,4,'#ffcf8a',0.4)];
     R.emitters=[{type:'dust',rate:8}];
-    R.extraGame=(c,L,r)=>{Kit.stencil(c,16,32.6,'ПЕЧАТЬ · ОТКРЫВАЕТСЯ ИЗНУТРИ',0.5,'rgba(232,201,106,.4)',0.4);};
+    R.extraGame=(c,L,r)=>{
+      /* рельс картотеки */
+      c.fillStyle='#24262a';c.fillRect(5,3.1,40,0.5);c.fillStyle='#8a6d2a';c.fillRect(5,3.05,40,0.08);
+      for(let x=6;x<45;x+=3){c.fillStyle='#1a1c20';c.fillRect(x,0.4,0.18,2.8);}
+      Kit.stencil(c,16,32.6,'ПЕЧАТЬ · ОТКРЫВАЕТСЯ ИЗНУТРИ',0.5,'rgba(232,201,106,.4)',0.4);
+      /* ложи писцов */
+      for(const x0 of [4,40]){c.fillStyle='#2a1c18';c.fillRect(x0,26.0,6,0.5);c.strokeStyle='#8a6d2a';c.lineWidth=0.07;
+        c.beginPath();c.moveTo(x0,24.7);c.lineTo(x0+6,24.7);c.stroke();for(let i=0;i<=8;i++){c.beginPath();c.moveTo(x0+i*0.75,24.7);c.lineTo(x0+i*0.75,25.6);c.stroke();}}
+      /* тигель под полом: швы плит */
+      c.strokeStyle='rgba(20,20,24,.8)';c.lineWidth=0.05;for(let x=10;x<=40;x+=2.5){c.beginPath();c.moveTo(x,30);c.lineTo(x,30.6);c.stroke();}
+    };
   }}),
 /* Вещательная: массив громкоговорителей всех ярусов. Сказать в него можно то, что знаешь. */
 z5_broadcast:gs=>({id:'z5_broadcast',zone:'archive',sub:'broadcast',name:'ВЕЩАТЕЛЬНАЯ',w:36,h:20,

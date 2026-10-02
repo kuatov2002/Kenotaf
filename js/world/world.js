@@ -152,7 +152,8 @@ class World{
     this.scrap.update(dt);
     g.combat.update(dt);
     /* арена Архивариуса: камера отъезжает, чтобы видеть и пол с соплами, и ядро под сводом */
-    {const b=this.boss,cz=(b&&b.activated&&!b.dead&&b.camZoom)||1;if(!this.game.cinematic.active)this.game.camera.tzoom=cz;}
+    {const b=this.boss,cz=(b&&b.activated&&!b.dead&&b.camZoom)||1;if(!this.game.cinematic.active)this.game.camera.tzoom=cz;
+      this.game.camera.frame=(b&&b.activated&&!b.dead&&b.camFrame)?b.camFrame():null;}
     for(let i=0;i<this.pushables.length;i++)this.pushables[i].update(dt);
     this.updateProjectiles(dt);
     updateZones(this,dt);
@@ -295,11 +296,13 @@ class World{
           if(pr.x>s.x-pr.r&&pr.x<s.x+s.w+pr.r&&pr.y>s.y-pr.r&&pr.y<s.y+s.h+pr.r){hit=true;break;}}
         if(pr.kind==='nut')pr.vy+=0;
       }else if(pr.back){
-        /* отражённый осколок: летит сквозь всё, бьёт только ядро */
+        /* отражённый осколок: летит сквозь всё, бьёт только ядро (доворачивает за движущимся механизмом) */
         const b=this.boss;
+        if(b&&!b.dead&&b.isMech){const dx=b.coreX-pr.x,dy=b.coreY-pr.y,d=Math.hypot(dx,dy)||1,sp=Math.max(14,Math.hypot(pr.vx,pr.vy));
+          pr.vx=damp(pr.vx,dx/d*sp,7,dt);pr.vy=damp(pr.vy,dy/d*sp,7,dt);}
         if(b&&!b.dead&&b.isMech&&Math.hypot(pr.x-b.coreX,pr.y-b.coreY)<1.4){
           const cn=b.nodes.find(n=>n.core);
-          const tgt=cn&&!cn.locked&&!cn.broken?cn:b.nodes.filter(n=>!n.broken&&!n.locked).sort((a,c)=>Math.hypot(a.wx-pr.x,a.wy-pr.y)-Math.hypot(c.wx-pr.x,c.wy-pr.y))[0];
+          const tgt=cn&&!cn.locked&&!cn.broken?cn:b.nodes.filter(n=>!n.broken&&!n.locked&&!n.hidden).sort((a,c)=>Math.hypot(a.wx-pr.x,a.wy-pr.y)-Math.hypot(c.wx-pr.x,c.wy-pr.y))[0];
           if(tgt)b.hitNode(tgt,{kind:'reflect',dmg:pr.rdmg||45,hb:b.rect(),sx:tgt.wx,sy:tgt.wy,fromX:pr.x-Math.sign(pr.vx||1),dir:Math.sign(pr.vx)||1,ky:0},false);
           g.audio.explosion();g.hitstop(0.08);g.flash(0.18,'#bfe3ff');
           g.particles.burst(pr.x,pr.y,30,{kind:'spark',col:'#dff0ff',spd:9,life:0.7,size:0.07,add:true,g:12});hit=true;}

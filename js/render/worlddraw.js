@@ -182,15 +182,23 @@ function drawWorldLive(c,R,t,gs){
         c.strokeStyle=rgba('#ffcf7a',0.35*p);c.lineWidth=0.05;c.strokeRect(h.x,h.y,h.w,h.h);}
     }
     else if(h.kind==='steam'){
+      const cx=h.x+h.w/2,by=h.y+h.h;
       if(h.active){c.save();c.globalCompositeOperation='lighter';
-        const g=c.createLinearGradient(h.x,h.y+h.h,h.x,h.y);
-        g.addColorStop(0,'rgba(240,244,248,.55)');g.addColorStop(1,'rgba(240,244,248,0.04)');
-        c.fillStyle=g;c.fillRect(h.x,h.y,h.w,h.h);c.restore();
-        game.renderer.glowAdd(h.x+h.w/2,h.y+h.h*0.5,h.w*1.6,'#e8f0f6',0.35);
+        /* струя: расширяется кверху, края мягкие (три слоя) */
+        for(let i=0;i<3;i++){const sp=h.w*(0.22+i*0.16),top=h.w*(0.42+i*0.2);
+          const g=c.createLinearGradient(0,by,0,h.y);g.addColorStop(0,rgba('#f0f4f8',0.34-i*0.08));g.addColorStop(0.7,rgba('#f0f4f8',0.12-i*0.03));g.addColorStop(1,'rgba(240,244,248,0)');
+          c.fillStyle=g;c.beginPath();c.moveTo(cx-sp,by);c.lineTo(cx-top,h.y);c.lineTo(cx+top,h.y);c.lineTo(cx+sp,by);c.closePath();c.fill();}
+        c.restore();
+        game.renderer.glowAdd(cx,h.y+h.h*0.5,h.w*1.6,'#e8f0f6',0.35);
       }else if(h.warn){
-        const p=0.5+0.5*Math.sin(t*18);
-        c.fillStyle=rgba('#c8452f',0.2+0.26*p);c.fillRect(h.x,h.y,h.w,h.h);
-        game.renderer.glowAdd(h.x+h.w/2,h.y+h.h,h.w*1.4,'#c8452f',0.25*p);
+        /* перед выбросом: сопло калится, над ним дрожит воздух — высота струи видна по струйкам */
+        const p=0.5+0.5*Math.sin(t*18),hh=Math.min(h.h,2.4);
+        const g=c.createLinearGradient(0,by,0,by-hh);g.addColorStop(0,rgba('#ff5a3a',0.32+0.28*p));g.addColorStop(1,'rgba(255,90,58,0)');
+        c.fillStyle=g;c.fillRect(h.x+0.12,by-hh,h.w-0.24,hh);
+        c.strokeStyle=rgba('#ffb08a',0.25+0.3*p);c.lineWidth=0.05;
+        for(let k=0;k<3;k++){const x=h.x+h.w*(0.25+k*0.25),ph=t*7+k*2;c.beginPath();c.moveTo(x,by);
+          c.quadraticCurveTo(x+Math.sin(ph)*0.3,by-h.h*0.4,x+Math.sin(ph+1)*0.2,h.y+h.h*0.15);c.stroke();}
+        game.renderer.glowAdd(cx,by,h.w*1.4,'#c8452f',0.3*p);
       }
       c.fillStyle='#5d6067';rr(c,h.x-0.1,h.y+h.h,h.w+0.2,0.4,0.06);c.fill();
       c.fillStyle=h.active?'#ffe9c0':(h.warn?'#ff5a3a':'#3a2a26');c.fillRect(h.x+h.w/2-0.12,h.y+h.h+0.12,0.24,0.14);

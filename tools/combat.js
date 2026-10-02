@@ -5,7 +5,14 @@ const lab=require('./lab');
 
 const S={};
 /* общий пролог: курьер в стартовой нише (пол y=11, свободно x 32..42), механизм справа */
-const PRE=(room,px,ab)=>`LAB.setup('${room||'z1_start'}',${px||34},11-1.68,${JSON.stringify(ab||['pulse','dash'])});`;
+/* курьер уже «действовал» и в комнате не первую секунду — иначе механизмы честно ждут (см. World.calm) */
+const PRE=(room,px,ab)=>`LAB.setup('${room||'z1_start'}',${px||34},11-1.68,${JSON.stringify(ab||['pulse','dash'])});game.world.entryT=9;game.world.playerActed=true;`;
+
+/* у двери: механизм рядом ждёт первого действия курьера — ни замаха, ни касания */
+S.spawn_grace=`LAB.setup('z1_start',34,11-1.68,['pulse','dash']);game.world.entryT=0;game.world.playerActed=false;game.world.arrive={x:34.4,y:10};
+  const e=LAB.e(LAB.spawn('repairer',35.2,11-1.55));e.cd=0;let wound=0;
+  for(let i=0;i<360;i++){LAB.step(1);if(e.state==='wind'||e.state==='strike')wound++;}
+  return {ok:wound===0&&game.gs.hp===5,info:{wound,hp:game.gs.hp,acted:game.world.playerActed}};`;
 
 S.pulse_no_damage=`${PRE()}
   const i=LAB.spawn('repairer',35.6,11-1.55);const e=LAB.e(i);e.cd=9;LAB.step(2);
@@ -223,13 +230,26 @@ S.pr_kill=`${PR}
   return {ok:b.dead&&game.gs.bosses.primarch&&game.world.debris.some(d=>d.corpse),info:{dead:b.dead,flag:!!game.gs.bosses.primarch}};`;
 
 /* ---------- Архивариус (старый босс): импульс без урона не должен сломать его бой ---------- */
-S.archivist_reflect=`LAB.setup('z4_antechamber',22,24-1.68,['pulse','dash','claws','magnet','filter'],['gaugeA','gaugeB','gaugeC']);LAB.step(2);
-  const b=game.world.boss;if(!b)return {ok:false,info:'no boss'};b.activated=true;b.shotT=0.05;const p=LAB.p();const hp0=b.hp;
-  game.world.player.invuln=1e9;let hit=false;
-  for(let i=0;i<600&&!hit;i++){LAB.step(1);const o=game.world.projectiles.find(q=>q.kind==='orb'&&!q.back);
-    if(o&&Math.hypot(o.x-p.cx,o.y-p.cy)<2.6){p.face=o.x>p.cx?1:-1;LAB.step(1,[],{0:['pulse']});LAB.step(240);hit=b.hp<hp0;}}
-  game.world.player.invuln=0;
-  return {ok:hit,info:{hp0,hp:b.hp}};`;
+/* Архивариус: I — пломба, отбитая импульсом, бьёт в стекло (удар по стеклу — отскок);
+   II — падение на пол, бросок в стену вскрывает решётку; III — колесо, свинец, ядро; смерть */
+const AR=`LAB.setup('z5_boss',12,30-1.68,['pulse','dash','hook','vjump','claws','magnet','filter','breaker']);LAB.step(1);
+  const b=game.world.boss;if(!b)return {ok:false,info:'no boss'};b.activated=true;b.woke=true;b.state='idle';b.st=0;b.cd=99;LAB.step(2);const p=LAB.p();
+  const brk=id=>{const n=b.node(id);b.breakNode(n,{dir:1,sx:n.wx,sy:n.wy});};`;
+S.arc_reflect=AR+`const gl=b.node('glass'),h0=gl.hp;game.world.player.invuln=1e9;b.x=12-b.w/2;b.state='volleyWind';b.st=0;let hit=false;
+  for(let i=0;i<900&&!hit;i++){LAB.step(1);const o=game.world.projectiles.find(q=>q.kind==='seal'&&!q.back);
+    if(o&&Math.hypot(o.x-p.cx,o.y-p.cy)<2.2){p.face=o.x>p.cx?1:-1;LAB.step(1,[],{0:['pulse']});LAB.step(300);hit=gl.hp<h0;}}
+  game.world.player.invuln=0;return {ok:hit,info:{h0,hp:gl.hp}};`;
+S.arc_glass_melee=AR+`const gl=b.node('glass'),h0=gl.hp;const r=b.hitNode(gl,{kind:'melee',dmg:34,hb:b.rect(),sx:gl.wx,sy:gl.wy,fromX:gl.wx-1,dir:1},false);
+  return {ok:r==='deflect'&&gl.hp===h0,info:{r,hp:gl.hp}};`;
+S.arc_fall=AR+`brk('glass');LAB.step(400);const cg=b.node('cage');
+  return {ok:b.md==='floor'&&b.phase===2&&!cg.hidden&&!b.dead,info:{md:b.md,ph:b.phase,cage:cg.hidden}};`;
+S.arc_lunge=AR+`brk('glass');LAB.step(400);game.world.player.invuln=1e9;p.x=4;b.x=30;b.face=-1;b.state='lungeWind';b.st=0;let seen=false;
+  const tr=[];for(let i=0;i<600&&!seen;i++){LAB.step(1);if(i%20===0)tr.push(b.state+':'+b.x.toFixed(1));if(b.state==='stunWall')seen=true;}
+  const cg=b.node('cage');game.world.player.invuln=0;return {ok:seen&&cg.exT>0,info:{st:b.state,ex:cg.exT,tr:tr.join(' ')}};`;
+S.arc_climb=AR+`brk('glass');LAB.step(400);brk('cage');LAB.step(900);const L=(game.world.room.hazards||[]).find(h=>h.ctl==='archlead');
+  return {ok:b.md==='wheel'&&b.phase===3&&L&&L.kind==='pit'&&!b.node('core').broken,info:{md:b.md,ph:b.phase,lead:L&&L.kind}};`;
+S.arc_kill=AR+`brk('glass');LAB.step(400);brk('cage');LAB.step(500);b.node('core').locked=false;brk('core');LAB.step(60);
+  return {ok:b.dead&&!!game.gs.flags.archivist_dead,info:{dead:b.dead,flag:!!game.gs.flags.archivist_dead}};`;
 
 (async()=>{
   const only=process.argv.slice(2);

@@ -270,46 +270,58 @@ z2_turbine:gs=>({id:'z2_turbine',zone:'hives',name:'ТУРБИННЫЙ ЗАЛ',w
       for(let i=0;i<6;i++)Kit.oilStain(c,12+r()*30,20.94,1.4+r(),rng(80+i));
     };
   }}),
-z2_boss:gs=>({id:'z2_boss',zone:'hives',name:'ЗАЛ ЦЕНЗОРА-ПРИМАРХА',w:40,h:22,
+z2_boss:gs=>({id:'z2_boss',zone:'hives',name:'ЗАЛ ЦЕНЗОРА-ПРИМАРХА',w:60,h:22,
   art:{bg:Art.bgHives,mid:Art.midHives,game:Art.gameHives},
   build(R){
     const dead=gs.bosses.primarch;
-    /* низкие колонны-укрытия (2.4): на них можно запрыгнуть и с них — перемахнуть через Примарха */
-    R.solids=[S(-2,-3,44,3,'concrete'),S(-2,0,2,22,'concrete'),S(40,0,2,22,'concrete'),S(0,18,40,4,'steel'),
-      S(10,15.6,2,2.4,'marble'),S(19,15.6,2,2.4,'marble'),S(28,15.6,2,2.4,'marble')];
-    R.vents=[11,20,29];
-    /* сопла под колоннами: в фазе II ими управляет сам Примарх (ctl) */
+    /* зал заседаний цензуры: пустой паркетный пол 60 м — прятаться не за что.
+       По краям — две ложи для публики (низкие, с них видно всё), под сводом — крюки люстр. */
+    R.solids=[S(-2,-3,64,3,'concrete'),S(-2,0,2,22,'concrete'),S(60,0,2,22,'concrete'),S(0,18,60,4,'steel'),
+      P(2.6,15.6,5.2,0.4,'brass'),P(52.2,15.6,5.2,0.4,'brass')];
+    RB.ring(R,21,8.6,'top',8.6);RB.ring(R,39,8.6,'top',8.6);
+    R.vents=[15,30,45];
+    /* сопла в полу: в фазе II ими управляет сам Примарх (ctl) */
     if(!dead)R.hazards=R.vents.map(x=>({x:x-1.4,y:12.2,w:2.8,h:5.8,kind:'steam',ctl:'primarch'}));
-    R.boss=dead?null:{type:'primarch',x:24,y:14.6};
-    R.bossTrigger={x:5,y:10,w:30,h:8};
+    R.boss=dead?null:{type:'primarch',x:38,y:14.6};
+    R.bossTrigger={x:5,y:10,w:50,h:8};
     R.bossDoor={x:0.0,y:15.9,w:1.4,h:2.1,active:!dead};
     R.doors=[{x:0.0,y:15.9,w:1.2,h:2.1,to:'z2_turbine',label:'ТУРБИНЫ'},
-      {x:38.8,y:15.9,w:1.2,h:2.1,to:'z2_quiet',label:'КАБИНЕТ ПРИМАРХА',
+      {x:58.8,y:15.9,w:1.2,h:2.1,to:'z2_quiet',label:'КАБИНЕТ ПРИМАРХА',
         reqFlag:'boss2_dead',reqMsg:'ЗАПЕРТО. ПРИМАРХ ДЕРЖИТ ДАВЛЕНИЕ НА СЕБЕ.'}];
-    R.lights=[lit(6,5,10,'#d9a441',0.85),lit(20,4,11,'#d9a441',0.9),lit(34,5,10,'#d9a441',0.85),
-      lit(11,14,4,'#ff9c4a',0.5,{flicker:1.2}),lit(29,14,4,'#ff9c4a',0.5,{flicker:0.9}),
-      lit(1.4,16.6,3,'#d9a441',0.5),lit(39,16.6,3,'#d9a441',0.5),lit(20,17,8,'#ffcf8a',0.45)];
-    R.emitters=[{type:'dust',rate:22},{type:'steam',x:11,y:15.4,rate:0.25},{type:'steam',x:29,y:15.4,rate:0.25}];
+    R.lights=[lit(6,5,10,'#d9a441',0.85),lit(21,4,11,'#d9a441',0.9),lit(39,4,11,'#d9a441',0.9),lit(54,5,10,'#d9a441',0.85),
+      lit(15,16,4,'#ff9c4a',0.45,{flicker:1.2}),lit(30,16,4,'#ff9c4a',0.45,{flicker:0.9}),lit(45,16,4,'#ff9c4a',0.45,{flicker:1.1}),
+      lit(1.4,16.6,3,'#d9a441',0.5),lit(58.6,16.6,3,'#d9a441',0.5),lit(30,17,10,'#ffcf8a',0.45)];
+    R.emitters=[{type:'dust',rate:26},{type:'steam',x:15,y:17.6,rate:0.2},{type:'steam',x:30,y:17.6,rate:0.2},{type:'steam',x:45,y:17.6,rate:0.2}];
     R.interactables=[];
-    if(dead&&!gs.flags.got_filter)R.interactables.push({kind:'salvage',ability:'filter',x:22,y:17.4,flag:'got_filter',
+    if(dead&&!gs.flags.got_filter)R.interactables.push({kind:'salvage',ability:'filter',x:30,y:17.4,flag:'got_filter',
       title:'СКАФАНДР MK-II',
       lines:['СМОТРОВОЙ КУПОЛ ТРЕСНУЛ. ШЛЕМ СНИМАЕТСЯ, КАК КРЫШКА.',
              'ПОД НИМ — ФИЛЬТР ЗАМКНУТОГО ЦИКЛА. ЕЩЁ ТЁПЛЫЙ.',
              'РЕЗИНА САДИТСЯ НА ГОРЛОВИНУ КУРТКИ. ПЫЛЬЦА ТЕПЕРЬ НЕ СТРАШНА.']});
-    R.extraTop=(c,L,r)=>{for(const x of [10,19,28]){Kit.column(c,x+1,15.6,2.4,1.0,{gold:true});
-      c.fillStyle='#2a2420';c.fillRect(x+0.2,17.7,1.6,0.3);}};
+    R.extraTop=(c,L,r)=>{
+      /* ложи: латунные перила и бархат */
+      for(const x0 of [2.6,52.2]){c.fillStyle='#3a1418';c.fillRect(x0,16.0,5.2,0.5);
+        c.strokeStyle='#b08d3e';c.lineWidth=0.08;c.beginPath();c.moveTo(x0,14.7);c.lineTo(x0+5.2,14.7);c.stroke();
+        for(let i=0;i<=8;i++){const x=x0+i*0.65;c.beginPath();c.moveTo(x,14.7);c.lineTo(x,15.6);c.stroke();}}
+    };
     R.extraGame=(c,L,r)=>{
-      Kit.plate(c,0,15.0,40,0.2,'ply',601,{bolts:false});
-      for(let i=0;i<10;i++)Kit.doorUnit(c,2+i*3.6,15.2,1.4,2.6,(i*13+701),{seed:i+80});
-      Kit.poster(c,5,11.6,2.0,2.8,91);Kit.poster(c,33,11.8,1.8,2.4,92);
-      Kit.stencil(c,13,10.6,'ЦЕНЗУРА · ПОРЯДОК · ТИШИНА',0.5,'rgba(216,164,65,.4)',0.4);
-      Kit.lampCage(c,6,5,0.36,{glass:'#e8c07a'});Kit.lampCage(c,20,4,0.4,{glass:'#e8c07a'});Kit.lampCage(c,34,5,0.36,{glass:'#e8c07a'});
-      Kit.pipe(c,[[0,2.6],[40,2.6]],0.22,'steel',{seed:93});
-      for(let i=0;i<6;i++)Kit.oilStain(c,3+r()*34,17.94,1.4+r(),rng(900+i));
-      Kit.hazardTape(c,37.6,17.6,2.4,0.3);
-      if(dead){Kit.rubble(c,19,17.2,7,0.9,rng(902),'steel');
-        Kit.oilStain(c,22,17.9,3,rng(903));
-        Kit.stencil(c,19.4,16.4,'ПРИМАРХ · ОСТАНОВЛЕН',0.34,'rgba(216,164,65,.45)',0.45);}
+      Kit.plate(c,0,15.0,60,0.2,'ply',601,{bolts:false});
+      for(let i=0;i<15;i++)if(i!==0&&i!==14)Kit.doorUnit(c,2+i*3.9,15.2,1.4,2.6,(i*13+701),{seed:i+80});
+      Kit.poster(c,9,11.6,2.0,2.8,91);Kit.poster(c,49,11.8,1.8,2.4,92);Kit.poster(c,27,10.8,2.2,3,93);
+      Kit.stencil(c,19,10.4,'ЦЕНЗУРА · ПОРЯДОК · ТИШИНА',0.6,'rgba(216,164,65,.4)',0.4);
+      Kit.lampCage(c,6,5,0.36,{glass:'#e8c07a'});Kit.lampCage(c,54,5,0.36,{glass:'#e8c07a'});
+      /* люстры на крюках — за них можно зацепиться */
+      for(const x of [21,39]){c.strokeStyle='#2a2118';c.lineWidth=0.08;c.beginPath();c.moveTo(x,0);c.lineTo(x,8.2);c.stroke();
+        Kit.lampCage(c,x,4,0.42,{glass:'#e8c07a'});}
+      Kit.pipe(c,[[0,2.6],[60,2.6]],0.22,'steel',{seed:93});
+      /* решётки сопел в паркете */
+      for(const x of R.vents){c.fillStyle='#141012';c.fillRect(x-1.4,17.7,2.8,0.3);
+        c.strokeStyle='#5a4a30';c.lineWidth=0.06;for(let k=0;k<7;k++){c.beginPath();c.moveTo(x-1.2+k*0.4,17.72);c.lineTo(x-1.2+k*0.4,17.98);c.stroke();}}
+      for(let i=0;i<8;i++)Kit.oilStain(c,3+r()*54,17.94,1.4+r(),rng(900+i));
+      Kit.hazardTape(c,57.6,17.6,2.4,0.3);
+      if(dead){Kit.rubble(c,27,17.2,7,0.9,rng(902),'steel');
+        Kit.oilStain(c,30,17.9,3,rng(903));
+        Kit.stencil(c,27.4,16.4,'ПРИМАРХ · ОСТАНОВЛЕН',0.34,'rgba(216,164,65,.45)',0.45);}
     };
   }}),
 });

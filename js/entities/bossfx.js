@@ -102,7 +102,9 @@ function drawBossFX(c,W,t){
       c.restore();}
     else if(pr.kind==='ring'){const a=clamp(1-pr.r/pr.rmax,0,1)*(pr.hit?0.4:1);
       c.save();c.globalCompositeOperation='lighter';c.strokeStyle=rgba(pr.col,0.75*a);c.lineWidth=pr.band;c.beginPath();c.arc(pr.x,pr.y,pr.r,0,TAU);c.stroke();
-      c.strokeStyle=rgba('#ffffff',0.6*a);c.lineWidth=0.05;c.beginPath();c.arc(pr.x,pr.y,pr.r,0,TAU);c.stroke();c.restore();}
+      c.strokeStyle=rgba('#ffffff',0.6*a);c.lineWidth=0.05;c.beginPath();c.arc(pr.x,pr.y,pr.r,0,TAU);c.stroke();c.restore();
+      if(pr.label){c.save();c.globalAlpha=0.85*a;c.fillStyle=pr.col;c.font='600 0.62px Oswald';c.textAlign='center';
+        for(const ang of [-PI/2,PI/2-0.6,PI/2+0.6,-0.2,PI+0.2])c.fillText(pr.label,pr.x+Math.cos(ang)*pr.r,pr.y+Math.sin(ang)*pr.r+0.2);c.restore();}}
     else if(pr.kind==='gear'){c.save();c.translate(pr.x,pr.y);Kit.gear(c,0,0,pr.r,10,pr.rot,pr.mine?'#e8c96a':'#a8842a');
       c.strokeStyle=pr.mine?'rgba(220,240,255,.8)':'rgba(255,90,60,.7)';c.lineWidth=0.05;c.beginPath();c.arc(0,0,pr.r+0.12,0,TAU);c.stroke();c.restore();
       game.renderer.glowAdd(pr.x,pr.y,0.8,pr.mine?'#bfe3ff':'#ff8a3a',0.35);}
