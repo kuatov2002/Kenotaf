@@ -88,6 +88,7 @@ function drawSolids(c,R,zoneKey){
 function finishGameLayer(c,L,R,r,zoneKey){
   const V=READ[zoneKey];
   if(V&&V.veil){c.fillStyle=V.veil;c.fillRect(0,0,L.w,L.h);}
+  if(typeof drawDress==='function')drawDress(c,R);
   if(R.extraGame)R.extraGame(c,L,r);
   drawSolids(c,R,zoneKey);
   if(R.extraTop)R.extraTop(c,L,r);

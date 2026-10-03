@@ -13,6 +13,8 @@ class Room{
     this.playerRef=null;this.t=0;
     if(this.build)this.build(this);
     if(typeof subFill==="function")subFill(this);
+    /* следы жизни: кто здесь жил и что случилось (js/render/dress.js) */
+    if(typeof dressRoom==="function")dressRoom(this);
     /* схема яруса висит в хабе зоны всегда (после копирования — погасшая) */
     if(this.mapPlate)this.interactables.push(this.mapPlate);
     if(this.station)this.interactables.push(this.station);
