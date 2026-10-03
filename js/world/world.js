@@ -41,7 +41,7 @@ class World{
     gs.room=id;gs.visited[id]=true;
     this.time=0;this.projectiles.length=0;this.enemies.length=0;
     this.pushables.length=0;this.interactables.length=0;this.debris.length=0;this.scrap.clear();g.combat.reset();this.zones=[];
-    this.boss=null;this.bossDoorClosed=false;this.waveIdx=-1;this.waveT=0;this.doorCd=0.35;
+    this.boss=null;this.stage=null;this.bossDoorClosed=false;this.waveIdx=-1;this.waveT=0;this.doorCd=0.35;
     this.anims={};
     this.wheelSeq=false;this.wheelT=0;this.wheelDone2=false;
     this.nearDoor=null;this.nearInter=null;
@@ -172,6 +172,8 @@ class World{
     /* арена Архивариуса: камера отъезжает, чтобы видеть и пол с соплами, и ядро под сводом */
     {const b=this.boss,cz=(b&&b.activated&&!b.dead&&b.camZoom)||1;if(!this.game.cinematic.active)this.game.camera.tzoom=cz;
       this.game.camera.frame=(b&&b.activated&&!b.dead&&b.camFrame)?b.camFrame():null;}
+    /* сцена босса: вступление-«открытка» и смена зала в последней фазе (js/world/bossstage.js) */
+    if(this.stage)BossStage.update(this,dt);
     for(let i=0;i<this.pushables.length;i++)this.pushables[i].update(dt);
     this.updateProjectiles(dt);
     updateZones(this,dt);
@@ -260,8 +262,7 @@ class World{
         b.activated=true;this.bossDoorClosed=true;
         g.audio.bossRoar();g.audio.door();g.camera.addShake(1.0);
         g.hud.bossOn(b.name);
-        if(b.type==='archivist')g.hud.say('«ДОСТУП К ПЕЧАТИ — ТОЛЬКО СОВЕТУ.»','АРХИВАРИУС');
-        else g.hud.say(R.id==='z1_boss'?'ВОРОТА ЗАХЛОПНУЛИСЬ.':'ГЕРМОДВЕРЬ ЗАКРЫТА.','');
+        BossStage.intro(this,b);
         if(R.bossDoor)g.particles.burst(R.bossDoor.x+0.7,R.bossDoor.y+1,22,{kind:'dust',col:'#7a6c5c',spd:4,life:1,size:0.14,g:12});
       }
       /* механизм-босс до боя — спящий: стоит, дышит, линза тлеет */
@@ -270,7 +271,7 @@ class World{
     }
     b.update(dt);
     if(b.dead&&this.bossDoorClosed&&!b.done){
-      b.done=true;this.bossDoorClosed=false;
+      b.done=true;this.bossDoorClosed=false;BossStage.end(this);
       if(b.type==='overseer'){g.gs.bosses.overseer=true;g.gs.flag('boss1_dead');
         for(const wt of R.weights||[])if(wt.state!=='hang')g.gs.flags['w_drop_'+wt.id]=true;
         /* сброшенные грузы проломили перекрытие у выхода: обратно — только рывком */

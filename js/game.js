@@ -363,6 +363,7 @@ class Game{
     this.renderer.post(c,zone);
     c.setTransform(1,0,0,1,0,0);
     if(this.finale.active)this.finale.drawOverlay(c);
+    if(!inMenu&&this.world.stage)BossStage.draw(c,this.world);
     if(!inMenu&&this.world.inPollen&&this.state==='play'){
       /* в пыльце края экрана зеленеют тем сильнее, чем меньше заряд фильтра */
       const k=1-clamp((this.world.filter||0)/this.world.filterCap(),0,1);
