@@ -69,9 +69,7 @@ class Combat{
       if(sd==='down')pogo=true;g.audio.clatter(d.mat,0.8);hitAny=true;plain=true;}
     if(sd==='down'){
       /* клапаны-отбойники и шипы: от них отскакивают, их не ломают */
-      for(const q of (R.pogos||[])){const nx=clamp(q.x,hb.x,hb.x+hb.w),ny=clamp(q.y,hb.y,hb.y+hb.h);
-        if(Math.hypot(nx-q.x,ny-q.y)<(q.r||0.45)){pogo=true;q.hitT=0.25;g.audio.hitMetal();
-          g.particles.burst(q.x,q.y-0.3,12,{kind:'spark',col:'#ffe6a3',spd:5,life:0.35,size:0.05,add:true,g:12});}}
+      if(this.valveHit(hb))pogo=true;
       for(const h of (R.hazards||[]))if((h.kind==='spikes'||h.spiky)&&aabb(hb,{x:h.x,y:h.y-0.2,w:h.w,h:0.8}))pogo=true;
     }
     /* гайки и осколки отбиваются ключом (не волны, не орбы Архивариуса — те только импульсом) */
@@ -80,12 +78,21 @@ class Combat{
       if(aabb(hb,{x:pr.x-pr.r,y:pr.y-pr.r,w:pr.r*2,h:pr.r*2})){pr.life=0;pr.dead=true;hitAny=true;plain=true;g.audio.hitMetal();
         g.particles.burst(pr.x,pr.y,12,{kind:'spark',col:'#ffe6a3',spd:6,life:0.4,size:0.05,add:true,g:12});}
     }
-    if(pogo)p.pogo();
+    if(pogo){p.pogo();p.slashPogo=true;}
     else if((hitAny||deflect)&&sd==='side')p.vx-=f*(heavy?C.heavyRecoil:(p.onGround?C.recoilG:C.recoilA))*(deflect&&!hitAny?1.6:1);
     if(plain&&!mechHit){g.audio.hit();g.hitstop(heavy?0.09:CFG.hsMelee);g.camera.addShake(heavy?0.5:0.3);}
     if(hitAny||deflect)g.camera.impulse(sd==='side'?f*(heavy?0.3:0.16):0,sd==='up'?-0.12:sd==='down'?0.12:0);
     return hitAny;
   }
+  /* клапаны-отбойники под линией удара вниз: отскакивают, не ломаются */
+  valveHit(hb){const g=this.game,R=g.world.room;let hit=false;
+    for(const q of (R.pogos||[])){const nx=clamp(q.x,hb.x,hb.x+hb.w),ny=clamp(q.y,hb.y,hb.y+hb.h);
+      if(Math.hypot(nx-q.x,ny-q.y)<(q.r||0.45)){hit=true;q.hitT=0.25;g.audio.hitMetal();
+        g.particles.burst(q.x,q.y-0.3,12,{kind:'spark',col:'#ffe6a3',spd:5,life:0.35,size:0.05,add:true,g:12});}}
+    return hit;}
+  /* видимый взмах вниз ещё идёт (slashT) — клапан, сквозь который проходит ключ, отбивает: окно, а не кадр */
+  slashValve(p){if(!(this.game.world.room.pogos||[]).length)return false;const ext=p.slashHeavy?0.4:0;
+    return this.valveHit({x:p.cx-0.8-ext*0.5,y:p.bottom-0.25,w:1.6+ext,h:1.8+ext});}
   gainWeld(n){const gs=this.game.gs;gs.weld=Math.min(gs.weldMax(),(gs.weld||0)+n);}
   /* импульс резака: позиция, траектория, срыв — без урона */
   pulse(p){

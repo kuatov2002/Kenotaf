@@ -64,7 +64,7 @@ class World{
       const e=this.room.enemies[i],C=ENEMY_TYPES[e.type];if(!C)continue;
       const key=e.type+'@'+e.x+','+e.y,amb=e.amb||!this.room.clearFlag;
       if(amb&&sl[key])continue;
-      const en=new C(this,e,e.x,e.y);if(amb)en.key=key;this.empower(en,e);this.enemies.push(en);}
+      const en=new C(this,e,e.x,e.y);if(amb)en.key=key;en.spawnKey=key;this.empower(en,e);this.enemies.push(en);}
     if(this.room.boss){
       const b=this.room.boss;
       const BC={overseer:Overseer,primarch:Primarch,archivist:Archivist,uprooter:Uprooter,regulator:Regulator}[b.type];
@@ -84,7 +84,12 @@ class World{
   /* сценическая анимация: комната сама рисует её в R.dyn по времени anims[key].t */
   startAnim(key,o){const a=Object.assign({t:0},o||{});this.anims[key]=a;return a;}
   setSolid(pid,fn){const s=this.room.solids.find(q=>q.pid===pid);if(s){fn(s);this.room._edges=null;}return s;}
-  reload(){if(this.room)this.load(this.room.id,this.player.x,this.player.bottom-CFG.player.h,true);}
+  /* мягкая перезагрузка после решённой задачи (ядра, манометр, рычаг): убитые здесь не встают —
+     решение задачи не наказывается новой дракой */
+  reload(){if(!this.room)return;
+    const dead=new Set(this.enemies.filter(e=>e.dead&&e.spawnKey).map(e=>e.spawnKey));
+    this.load(this.room.id,this.player.x,this.player.bottom-CFG.player.h,true);
+    if(dead.size)this.enemies=this.enemies.filter(e=>!dead.has(e.spawnKey));}
   removeSolid(pid){this.room.solids=this.room.solids.filter(s=>s.pid!==pid);this.room._edges=null;}
   /* ящики/решётка разлетаются на месте — без перезагрузки комнаты */
   breakPushable(pb,dir){

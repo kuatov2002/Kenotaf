@@ -14,10 +14,29 @@ const LevelAudit={
     gs.abilities={};for(const a of abil)gs.abilities[a]=true;
     gs.flags=Object.assign({},keep.fl,opts.flags||{});
     g.particles.spawn=()=>null;g.particles.burst=()=>{};g.audio.ready=false;g.state='play';g.onPlayerDeath=()=>{};
-    try{return this.bfs(roomId,abil,opts);}
+    try{return opts.probe?this.probe(roomId,opts.probe):this.bfs(roomId,abil,opts);}
     finally{gs.abilities=keep.ab;gs.flags=keep.fl;g.state=keep.st;g.onPlayerDeath=keep.od;
       W.room=keep.room;W.player=keep.pl;W.interactables=keep.it;W.pushables=keep.pu;
       if(W.room)W.room.playerRef=W.player;g.particles.spawn=keep.ps;g.particles.burst=keep.pb;g.audio.ready=keep.ar;}
+  },
+  /* один прогон заданной политики (для замеров окон тайминга): pr={x,y,max,fn:'(f,p,I,s,R)=>...'} →
+     {x,y,ground,fail,t} — fail: 'pit' | 'out' | null */
+  probe(roomId,pr){
+    const g=game,W=g.world,DT=1/120;
+    const R=new Room(ROOMDEFS[roomId],g.gs);R.id=roomId;W.room=R;
+    W.interactables=R.interactables.map(d=>new Interactable(d,W));W.pushables=R.pushables.map(d=>new Pushable(d,W));
+    const hz=R.hazards.filter(h=>h.kind!=='steam');R.hazards=[];
+    const FI={h:{},p:{},consume(a){if(this.p[a]){this.p[a]=0;return true;}return false;},
+      get move(){return (this.h.R?1:0)-(this.h.L?1:0);},get dn(){return !!this.h.D;},get up(){return !!this.h.U;},healHeld:false,get jumpHeld(){return !!this.h.J;},
+      attackHeld:false,usingPad(){return false;}};
+    const p=new Player(W,pr.x,pr.y);W.player=p;R.playerRef=p;for(let i=0;i<10;i++)p.update(DT,FI);
+    const fn=typeof pr.fn==='string'?(new Function('return '+pr.fn))():pr.fn,s={};let minY=p.y;
+    for(let f=0;f<(pr.max||600);f++){FI.p={};fn(f,p,FI,s,R);
+      for(let k=0;k<2;k++){p.update(DT,FI);minY=Math.min(minY,p.y);
+        if(p.y>R.h+1||p.x<-3||p.x>R.w+3)return {x:p.x,y:p.y,fail:'out',t:f};
+        if(hz.some(h=>aabb(p,h)))return {x:p.x,y:p.y,fail:'pit',t:f,s};}
+      if(s.done&&p.onGround)return {x:p.x,y:p.y,ground:true,t:f,minY,s};}
+    return {x:p.x,y:p.y,ground:p.onGround,t:pr.max,minY};
   },
   bfs(roomId,abil,opts){
     const g=game,W=g.world,DT=1/120,t0=performance.now();
@@ -29,12 +48,18 @@ const LevelAudit={
     /* без фильтра облако пыльцы непроходимо (как в игре: удушье и откат к краю облака);
        продувочная колонна (R.air) защищает и без фильтра */
     const pollen=has('filter')?[]:(R.pollen||[]),air=R.air||[];
-    const T={doors:R.doors.map(d=>({id:d.label||d.to,to:d.to,r:d,hit:false,stand:false,open:!game.gates.doorLocked(d)||!!d.fall})),
+    const T={doors:R.doors.map(d=>({id:d.label||d.to,to:d.to,r:d,hit:false,stand:false,open:(!game.gates.doorLocked(d)||!!d.fall)&&!d.oneway})),
       inters:W.interactables.map(it=>({id:it.def.label||it.def.title||it.def.kind,it:it,hit:false})),
       push:W.pushables.filter(p=>!p.pushed).map(pb=>({id:pb.id,pb:pb,hit:false})),ceil:0,
       targets:(opts.targets||[]).map(q=>({id:q.id,r:q,hit:false}))};
     /* попадания копятся в H (текущий прогон); в T — только подтверждённые */
     let H=null;
+    /* какие «рабочие» элементы комнаты хоть раз сработали: рымы, магнитные рельсы, отбойники, рифлёные стены */
+    const USED=new Set(),grips=R.solids.filter(q=>q.grip&&!q.hidden);
+    const use=p=>{if(p.hook&&p.hook.mode==='pull')USED.add('a'+(R.anchors||[]).indexOf(p.hook.a));
+      if(p.onCeil&&p.ceiling)USED.add('m'+(R.magnetRects||[]).indexOf(p.ceiling));
+      if(p.gripDir){const gx=p.gripDir>0?p.x+p.w:p.x;grips.forEach((q,i)=>{if(Math.abs((p.gripDir>0?q.x:q.x+q.w)-gx)<0.4&&p.bottom>q.y&&p.y<q.y+q.h)USED.add('g'+i);});}
+      (R.pogos||[]).forEach((q,i)=>{if(q.hitT>0.2)USED.add('p'+i);});};
     const mark=p=>{
       const pr=p.rect(),h=H||(H={});
       T.doors.forEach((t,i)=>{if(aabb(pr,t.r)){h['d'+i]=1;if(p.onGround)h['s'+i]=1;}});
@@ -59,7 +84,7 @@ const LevelAudit={
       const p=new Player(W,sx+(pert?pert.dx||0:0),sy);W.player=p;R.playerRef=p;FI.h={};FI.p={};
       for(let i=0;i<10;i++)p.update(DT,FI);
       if(!p.onGround){H=null;return pert?'nostart':null;}
-      const s={jumped:false,dashed:false,dir:pol.dir,cool:0,ceilT:-1,done:false,fj:-1};
+      const s={jumped:false,dashed:false,dir:pol.dir,cool:0,ceilT:-1,done:false,fj:-1,lag:pert&&pert.lag||0};
       const skew=pert?pert.skew||0:0,pend=[];let first=true;
       for(let f=0;f<pol.max;f++){
         if(skew){const P0=Object.assign({},FI.p);pol.fn(f,p,FI,s);
@@ -71,7 +96,7 @@ const LevelAudit={
           if(p.y>R.h+1||p.x<-3||p.x>R.w+3)return null;
           for(let i=0;i<hz.length;i++)if(aabb(p,hz[i]))return null;
           if(choke(p))return null;
-          mark(p);}
+          mark(p);use(p);}
         if(s.done&&p.onGround&&!p.onCeil&&!p.crouch&&Math.abs(p.vx)<0.05)return {x:p.x,y:p.y};
       }
       return p.onGround&&!p.onCeil&&!p.crouch?{x:p.x,y:p.y}:null;
@@ -100,13 +125,17 @@ const LevelAudit={
         if(!free)s.blk=true;
         if(s.blk&&free&&f>12){s.done=true;H(I,false);I.h.D=false;}}});
       /* отскок от клапанов-отбойников: прыжок (или шаг с края), над головкой — удар вниз */
-      if(R.pogos&&R.pogos.length)for(const J of [true,false])for(const lag of [0,12])pols.push({dir:d,max:520,fn:(f,p,I,s)=>{
+      if(R.pogos&&R.pogos.length)for(const J of [true,false])for(const lag of [0,12])pols.push({dir:d,max:520,pogo:true,fn:(f,p,I,s)=>{
         H(I,f>=lag);
         if(J&&f===0)I.p.jump=1;I.h.J=J&&f<30;
-        const tg=R.pogos.find(q=>Math.abs(q.x-p.cx)<0.75&&q.y-p.bottom>-0.25&&q.y-p.bottom<1.6);
+        /* lag — человек жмёт не в «идеальный» кадр: <0 — раньше (на столько кадров по скорости падения), >0 — позже */
+        const E=Math.max(0,-s.lag)*Math.max(0,p.vy)/60;
+        const tg=R.pogos.find(q=>Math.abs(q.x-p.cx)<0.75&&q.y-p.bottom>-0.25&&q.y-p.bottom<1.6+E);
         I.h.D=!!tg&&!p.onGround;
         if(s.cool>0)s.cool--;
-        if(tg&&!p.onGround&&p.vy>-3&&s.cool<=0){I.p.attack=1;s.cool=14;}
+        const ready=tg&&!p.onGround&&p.vy>-3&&s.cool<=0;
+        if(ready&&s.rf===undefined)s.rf=f;if(!ready&&!tg)s.rf=undefined;
+        if(ready&&f-s.rf>=Math.max(0,s.lag)){I.p.attack=1;s.cool=14;s.rf=undefined;}
         if(f>8&&p.onGround)s.done=true;}});
       if(has('claws')){
         for(const flip of [true,false])pols.push({dir:d,max:700,fn:(f,p,I,s)=>{
@@ -149,7 +178,8 @@ const LevelAudit={
         else{I.h.J=0;H(I,false);s.done=true;}}});
     }
     let starts=opts.starts;
-    if(!starts){const ds=R.doors.filter(d=>!opts.from||(d.label||'').indexOf(opts.from)>=0||d.to===opts.from);
+    /* старт — только от дверей, через которые можно войти (запертая сейчас дверь — не вход) */
+    if(!starts){const ds=R.doors.filter(d=>(opts.from||!game.gates.doorLocked(d))&&(!opts.from||(d.label||'').indexOf(opts.from)>=0||d.to===opts.from));
       starts=(ds.length?ds:R.doors).slice(0,opts.from?1:99).map(d=>doorArrival(R,d));}
     /* вход сверху (провал, люк в своде): игрок прибывает в воздухе — сперва дать ему упасть */
     const settle=s=>{const p=new Player(W,s.x,s.y);W.player=p;R.playerRef=p;FI.h={};FI.p={};
@@ -183,9 +213,13 @@ const LevelAudit={
       const near=(a,b)=>a&&b&&Math.abs(a.x-b.x)<=1.05&&Math.abs(a.y-b.y)<=0.35;
       const PERT=[{dx:-0.3},{dx:0.3},{skew:3}];
       const robust=(s,ed)=>{checks++;let ok=0,valid=0;const need=ed.h?Object.keys(ed.h).filter(q=>q[0]!=='s'):[];
-        for(const pt of PERT){const e=sim(s.x,s.y,pols[ed.pi],pt);const h=H||{};H=null;if(e==='nostart')continue;valid++;
-          const landOk=!ed.ek||near(e,pos[ed.ek]),hitOk=need.every(q=>h[q]);if(landOk&&hitOk)ok++;}
-        return ok>=2||(valid<=1&&ok>=valid&&valid>0);};
+        const run=pt=>{const e=sim(s.x,s.y,pols[ed.pi],pt);const h=H||{};H=null;if(e==='nostart')return null;
+          return (!ed.ek||near(e,pos[ed.ek]))&&need.every(q=>h[q]);};
+        for(const pt of PERT){const r=run(pt);if(r===null)continue;valid++;if(r)ok++;}
+        if(!(ok>=2||(valid<=1&&ok>=valid&&valid>0)))return false;
+        /* отскок от клапана: окно, а не кадр — срабатывает и удар на 100 мс раньше, и на 50 мс позже */
+        if(pols[ed.pi].pogo&&(run({lag:-6})===false||run({lag:3})===false))return false;
+        return true;};
       const S=new Set(),SQ=[];for(const k of startKeys)if(pos[k]&&!S.has(k)){S.add(k);SQ.push(k);}
       const doneHit=new Set();
       while(SQ.length&&performance.now()-t0<tl*3){const sk=SQ.shift(),s=pos[sk];
@@ -198,6 +232,10 @@ const LevelAudit={
       strictN=S.size;}
     return {room:roomId,abil:abil.join('+')||'-',states:n,left:Q.length,ms:Math.round(performance.now()-t0),
       traps,strict:!!opts.strict,strictStates:strictN,fragile,checks,
+      unused:[...(R.anchors||[]).map((q,i)=>USED.has('a'+i)?null:'рым '+q.x+','+q.y),
+        ...(R.magnetRects||[]).map((q,i)=>USED.has('m'+i)?null:'рельс '+q.x+'..'+(q.x+q.w)),
+        ...(R.pogos||[]).map((q,i)=>USED.has('p'+i)?null:'отбойник '+q.x),
+        ...grips.map((q,i)=>USED.has('g'+i)?null:'стена '+q.x+','+q.y)].filter(Boolean),
       doors:T.doors.map(t=>t.id+(t.stand?' ✓':t.hit?' ~':' ✗')),
       inters:T.inters.map(t=>t.id+(t.hit?' ✓':' ✗')),
       push:T.push.map(t=>t.id+(t.hit?' ✓':' ✗')),ceil:T.ceil>0,

@@ -74,7 +74,8 @@ class Player extends Body{
     if(this.energyDelay>0)this.energyDelay-=dt;
     else this.energy=Math.min(this.maxEnergy(),this.energy+C.energyRegen*dt);
     if(this.jumpBuf>0)this.jumpBuf-=dt;
-    if(this.slashT>0)this.slashT-=dt;
+    if(this.slashT>0){this.slashT-=dt;
+      if(this.slashDir==='down'&&!this.slashPogo&&!this.onGround&&this.vy>-3&&this.world.game.combat.slashValve(this)){this.slashPogo=true;this.pogo();}}
     if(this.pogoT>0)this.pogoT-=dt;
     if(this.restT>0)this.restT-=dt;
     this.evAge+=dt;if(this.evIF>0)this.evIF-=dt;if(this.empowerT>0)this.empowerT-=dt;
@@ -346,7 +347,7 @@ class Player extends Body{
       this.atkPT-=dt;
       if(this.atkPT<=0){
         const bonus=this.empowerT>0;
-        this.slashT=C.slashT*(this.atkHeavy?1.5:1);this.slashDir=this.atkDir;this.slashFace=this.face;this.slashHeavy=this.atkHeavy;
+        this.slashT=C.slashT*(this.atkHeavy?1.5:1);this.slashPogo=false;this.slashDir=this.atkDir;this.slashFace=this.face;this.slashHeavy=this.atkHeavy;
         const hit=g.combat.melee(this,this.atkDir,{heavy:this.atkHeavy,bonus});
         if(bonus&&hit)this.empowerT=0;
         if(this.atkHeavy){this.hitHeavyT=0.2;g.camera.addShake(0.25);
@@ -430,7 +431,8 @@ class Player extends Body{
       this.flingT=0.45;this.jumpCutDone=true;g.audio.snap();
       g.particles.burst(this.cx,this.cy,10,{kind:'steam',col:'#dff0f6',spd:4,life:0.35,size:0.22,grow:0.6,drag:2.5});};
     if(this.jumpBuf>0){this.jumpBuf=0;fling(C.jumpV*0.8);this.didJump=true;g.audio.jump();return;}
-    const crossed=!H.vert&&(H.s>0?this.cx>tx:this.cx<tx);
+    /* «пролетел рым» — только на его высоте: крутой трос, пересечённый далеко внизу, тянет дальше вверх */
+    const crossed=!H.vert&&Math.abs(dy)<2.2&&(H.s>0?this.cx>tx:this.cx<tx);
     if(crossed||d<(H.vert?0.9:1.25)||H.t>1.3){fling(0);return;}
     const sp=Math.min(HOOK.speed,13+H.t*65);
     this.vx=damp(this.vx,dx/d*sp,16,dt);this.vy=damp(this.vy,dy/d*sp,16,dt);this.face=H.vert?this.face:H.s;
@@ -563,8 +565,11 @@ class Player extends Body{
     g.audio.hurt();g.flash(0.55,'#000');g.camera.addShake(0.5);
     if(g.gs.hp<=0){this.kill();return;}
     this.crouch=false;this.h=CFG.player.h;
-    /* возврат к последней пройденной площадке (backs отсортированы по minX) */
-    const bk=(h.backs||[]).filter(q=>this.cx>=q.minX).pop()||h.back;
+    /* возврат туда, откуда прыгал: точка отката, ближайшая к последней твёрдой опоре курьера.
+       Раньше выбиралась по месту падения — сорвался за серединой пропасти и оказался на дальнем краю:
+       ошибка переносила через препятствие */
+    const ss=this.world.safeSpot,cands=[h.back].concat(h.backs||[]).filter(Boolean),dd=q=>Math.hypot(q.x-ss.x,q.y-ss.y);
+    const bk=ss&&cands.length?cands.reduce((a,q)=>dd(q)<dd(a)?q:a):((h.backs||[]).filter(q=>this.cx>=q.minX).pop()||h.back);
     if(this.onCeil)this.detach(false);
     this.x=bk.x;this.y=bk.y;this.vx=0;this.vy=0;this.dashT=0;this.slideT=0;
     this.invuln=Math.max(this.invuln,1.0);this.coyote=0;this.jumpBuf=0;

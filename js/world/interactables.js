@@ -185,7 +185,8 @@ class Pushable{
       const n=this.world.pushables.filter(p=>p.pushed).length;
       g.gs.flags.cores_placed=n;g.gs.save();
       g.hud.say('ЯДРО В ГНЕЗДЕ · '+n+'/3','МАГИСТРАЛЬ C');
-      if(n>=3)this.world.later(800,()=>this.world.reload());
+      /* три ядра — задача решена: комната завершена, стражи отходят (после перезагрузки их нет) */
+      if(n>=3){const cf=this.world.room.clearFlag;if(cf)g.gs.flag(cf);this.world.later(800,()=>this.world.reload());}
     }
   }
   draw(c,t){

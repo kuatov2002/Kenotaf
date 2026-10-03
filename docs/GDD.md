@@ -332,7 +332,7 @@
 
 ## 12. Инструменты и проверка
 
-`node tools/verify.js` (чек-лист), `combat.js` (45 сценариев боя), `smoke.js` (все комнаты),
+`node tools/verify.js` (чек-лист), `combat.js` (48 сценариев), `smoke.js` (все комнаты),
 `progress.js --strict` (проходимость без пиксельной точности + поиск ловушек + без любой способности
 финал недостижим), `reach.js`, `hooklab.js` (траектория гарпуна), `bosslab.js`, `finale.js`,
 `perf.js --gpu`, `sheet.js`, `maplayout.js`.

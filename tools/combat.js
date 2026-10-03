@@ -8,6 +8,30 @@ const S={};
 /* курьер уже «действовал» и в комнате не первую секунду — иначе механизмы честно ждут (см. World.calm) */
 const PRE=(room,px,ab)=>`LAB.setup('${room||'z1_start'}',${px||34},11-1.68,${JSON.stringify(ab||['pulse','dash'])});game.world.entryT=9;game.world.playerActed=true;`;
 
+/* Зал Архивов: убил одного стража, три ядра в гнёзда — после перезагрузки зал пуст, манометр на месте;
+   прочитал манометр (ещё одна перезагрузка) — стражи не вернулись */
+S.exam_c_cores=`LAB.setup('z4_exam_c',3,17-1.68,['pulse','dash']);const W=game.world;W.load('z4_exam_c',3,17-1.68);W.entryT=9;W.playerActed=true;
+  const p=LAB.p();p.invuln=1e9;const n0=W.enemies.length;W.enemies[0].dead=true;
+  for(const c of W.pushables.filter(q=>q.kind==='core')){c.x=c.slotX-c.w/2;c.y=16-c.h/2;c.vx=0;c.vy=0;}
+  LAB.step(240);p.invuln=1e9;
+  const alive1=W.enemies.filter(e=>!e.dead).length,gauge=W.interactables.find(i=>i.def.kind==='gauge');
+  if(gauge){p.x=gauge.def.x-0.3;p.y=17-1.68;gauge.use(game);}LAB.step(240);
+  const alive2=W.enemies.filter(e=>!e.dead).length;
+  return {ok:n0===2&&alive1===0&&alive2===0&&!!gauge&&!!game.gs.flags.c_clear&&game.gs.flags.cores_placed===3,
+    info:{n0,alive1,alive2,gauge:!!gauge,clear:!!game.gs.flags.c_clear,cores:game.gs.flags.cores_placed}};`;
+
+/* вода канала: −1 ячейка и откат туда, откуда прыгал (не вперёд, к финишу) */
+S.canal_water=`LAB.setup('z3_canal',29.4,7.6-1.68,['pulse','dash','magnet']);const W=game.world,p=LAB.p();LAB.step(30);
+  const hp0=game.gs.hp;p.x=45;p.y=19;p.vx=0;p.vy=5;LAB.step(60);const mid={x:+p.x.toFixed(1),hp:game.gs.hp};
+  p.x=7.2;p.y=4.2-1.68;p.vx=p.vy=0;p.invuln=0;LAB.step(60);p.x=25;p.y=19;p.vy=5;LAB.step(60);const tow={x:+p.x.toFixed(1)};
+  return {ok:hp0-mid.hp===1&&Math.abs(mid.x-29.4)<0.6&&Math.abs(tow.x-7.2)<0.6,info:{hp0,mid,tow}};`;
+
+/* мягкая перезагрузка комнаты (решённая задача) не воскрешает убитых стражей */
+S.reload_keeps_dead=`LAB.setup('z2_escalator',3,10,['pulse','dash']);const W=game.world;W.load(W.room.id,W.player.x,W.player.y);
+  const g0=W.enemies.filter(e=>!e.key).length;for(const e of W.enemies)e.dead=true;W.reload();
+  const back=W.enemies.filter(e=>!e.dead).length;
+  return {ok:g0>0&&back===0,info:{guards:g0,back}};`;
+
 /* застрял в геометрии — выталкивает; кнопка паузы возвращает ко входу */
 S.unstuck=`LAB.setup('z1_boiler',3,17.3,['pulse','dash']);const W=game.world,p=LAB.p();
   p.x=10;p.y=16.2;LAB.step(60);const sols=W.room.solids,me={x:p.x+0.05,y:p.y+0.05,w:p.w-0.1,h:p.h-0.1};

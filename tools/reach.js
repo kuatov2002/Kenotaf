@@ -27,6 +27,7 @@ const {serve,launch,openGame}=require('./lib');
       console.log('  doors: '+r.doors.join(' | '));
       if(r.inters.length)console.log('  items: '+r.inters.join(' | '));
       if(r.push.length)console.log('  push : '+r.push.join(' | '));
+      if(r.unused&&r.unused.length)console.log('  НЕ РАБОТАЕТ: '+r.unused.join(' · '));
     }
     if(L.errors.length)console.log('ERRORS',L.errors.join('\n'));
   }finally{await L.browser.close();srv.close();}

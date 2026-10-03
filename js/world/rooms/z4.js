@@ -127,7 +127,8 @@ z4_exam_c:gs=>({id:'z4_exam_c',zone:'seal',name:'ЭКЗАМЕН C · ЗАЛ АР
     R.pushables=[];
     for(let i=0;i<3;i++){if(gs.flags['core_'+i])continue;
       R.pushables.push({x:6+i*11,y:15.6,w:1.4,h:1.4,id:'core'+i,kind:'core',slotX:34.05+i*2.4,flag:'core_'+i});}
-    R.enemies=gs.flags.c_clear?[]:[{type:'clockmaker',x:20,y:15.0,patrol:[10,32]},
+    /* стражи — только пока задача не решена: три ядра в гнёздах = зал завершён */
+    R.enemies=(gs.flags.c_clear||(gs.flags.cores_placed||0)>=3)?[]:[{type:'clockmaker',x:20,y:15.0,patrol:[10,32]},
       {type:'clockmaker',x:30,y:11.4,patrol:[26,36]}];
     R.clearFlag='c_clear';
     R.interactables=((gs.flags.cores_placed||0)>=3&&!gs.flags.gaugeC)?

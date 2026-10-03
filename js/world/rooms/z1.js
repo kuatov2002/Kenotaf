@@ -657,10 +657,11 @@ z1_drain:gs=>({id:'z1_drain',zone:'sump',name:'ДРЕНАЖ ХЛАДАГЕНТА
   build(R){
     R.solids=[S(-2,-2,48,2.4,'steel'),S(-2,0,2,16,'steel'),S(44,0,2,16,'steel'),
       S(0,10,8,6,'rust'),S(8,13.6,8,2.4,'concrete'),S(8.2,12.2,1.0,1.4,'ply'),
-      S(16,10,4,6,'rust'),S(20,14.4,14,1.6,'steel'),S(34,10,10,6,'rust')];
-    /* клапаны стоят по дуге прыжка с разбега: прыжок с края → удар вниз → удар вниз → уступ */
-    R.pogos=[{x:13,y:11.3,r:0.45,len:2.3},{x:25,y:11.0,r:0.45,len:3.4},{x:31.8,y:11.0,r:0.45,len:3.4}];
-    R.hazards=[{x:20,y:13.0,w:14,h:1.4,kind:'pit',look:'coolant',back:{x:17.6,y:8.32}}];
+      S(16,10,4,6,'rust'),S(20,14.4,13,1.6,'steel'),S(33,10,11,6,'rust')];
+    /* клапаны стоят по дуге прыжка с разбега и по дуге отскока (≈4.6 м), головки — вровень с палубой:
+       прыжок с края → удар вниз → удар вниз → уступ. Проверено tools: окно нажатия ≈200 мс, разные прыжки */
+    R.pogos=[{x:13,y:11.3,r:0.45,len:2.3},{x:26.0,y:10.0,r:0.55,len:4.4},{x:30.6,y:10.0,r:0.55,len:4.4}];
+    R.hazards=[{x:20,y:13.0,w:13,h:1.4,kind:'pit',look:'coolant',back:{x:17.6,y:8.32}}];
     R.doors=[{x:2.0,y:1.0,w:2.2,h:1.2,to:'z1_cellar',link:'cellar_hole',label:'ПОДВАЛ',oneway:true},
       {x:40.4,y:7.9,w:1.4,h:2.1,to:'z1_east',link:'drain_up',label:'ВОСТОЧНЫЙ КОРИДОР',latch:'drain_latch',latchHere:true},
       RB.R(R,10,'z1_canal','ОТСТОЙНЫЙ КАНАЛ')];
@@ -671,7 +672,7 @@ z1_drain:gs=>({id:'z1_drain',zone:'sump',name:'ДРЕНАЖ ХЛАДАГЕНТА
     R.enemies.push({type:'mokrica',x:39,y:9.38,patrol:[35,42.5],amb:true});
     R.lights=[lit(4,4,7,'#ffbe63',0.8,{flicker:1.1}),lit(27,13.4,12,'#69d68f',1.1),lit(12,13,5,'#8a7a5a',0.5),
       lit(38,4.4,7,'#ffbe63',0.85),lit(41.1,7.6,3.5,'#8fd6ff',0.6),lit(3.1,1.6,3,'#69d68f',0.6)];
-    R.emitters=[{type:'coolant',x:27,y:13.1,rate:5,sw:14},{type:'drip',x:12,y:1,rate:0.7},{type:'drip',x:30,y:1,rate:0.5},
+    R.emitters=[{type:'coolant',x:26.5,y:13.1,rate:5,sw:13},{type:'drip',x:12,y:1,rate:0.7},{type:'drip',x:30,y:1,rate:0.5},
       {type:'steam',x:22,y:13,rate:0.4},{type:'dust',rate:14}];
     R.extraGame=(c,L,r)=>{
       Kit.pipe(c,[[0,1.4],[44,1.4]],0.26,'rust',{seed:51,band:2,bandCol:'#69d68f'});
@@ -680,7 +681,7 @@ z1_drain:gs=>({id:'z1_drain',zone:'sump',name:'ДРЕНАЖ ХЛАДАГЕНТА
       Kit.stencil(c,9.2,9.4,'ЖЁЛОБ · СУХО',0.32,'rgba(216,204,178,.45)',0.45);
       Kit.stencil(c,21.4,9.0,'ХЛАДАГЕНТ · КАНАЛ 3',0.36,'rgba(150,230,180,.55)',0.55);
       Kit.sign(c,16.2,6.6,3.6,0.8,'ОТБОЙНИКИ · НЕ СТОЯТЬ','#c9a227','#191612',511);
-      Kit.hazardTape(c,19.6,9.6,0.6,0.4);Kit.hazardTape(c,33.8,9.6,0.6,0.4);
+      Kit.hazardTape(c,19.6,9.6,0.6,0.4);Kit.hazardTape(c,32.8,9.6,0.6,0.4);
       Kit.ladder(c,40.6,0.4,7.6,0.55);
       /* куртка дренажника на уступе — откуда пластина */
       if(!gs.flags.got_plate_drain){c.fillStyle='#5a4a36';c.beginPath();c.ellipse(37.4,9.85,0.75,0.2,0.05,0,TAU);c.fill();
