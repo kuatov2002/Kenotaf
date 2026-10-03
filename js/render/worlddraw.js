@@ -332,6 +332,13 @@ function drawStation(c,it,t,gs){
   if(reg){const p=0.5+0.5*Math.sin(t*2.4);
     c.fillStyle=rgba('#9fe0ff',0.25+0.25*p);c.beginPath();c.arc(x,y-1.35,0.34,0,TAU);c.fill();
     game.renderer.glowAdd(x,y-1.35,1.1,'#9fe0ff',0.25+0.2*p);}
+  /* почта ждёт (письмо или цилиндры к отправке): латунная капсула в окне приёмника, бирка мигает */
+  if(on&&PostNet.pending(gs)){const p=0.5+0.5*Math.sin(t*5);
+    c.save();c.translate(x,y-1.35);c.rotate(0.5);c.fillStyle='#c9a227';rr(c,-0.13,-0.3,0.26,0.6,0.11);c.fill();
+    c.fillStyle='#f0e6c8';c.fillRect(-0.09,-0.06,0.18,0.12);c.restore();
+    c.fillStyle=rgba('#fff2c0',0.35+0.45*p);c.beginPath();c.arc(x,y-1.35,0.46,0,TAU);c.fill();
+    game.renderer.glowAdd(x,y-1.35,1.6,'#ffe6a3',0.35+0.35*p);
+    c.fillStyle=rgba('#ffe6a3',0.6+0.4*p);c.font='600 0.2px Oswald';c.textAlign='center';c.fillText('ПОЧТА',x,y-2.45);c.textAlign='left';}
   Kit.gauge(c,x-0.36,y-0.48,0.17,on?0.7+0.05*Math.sin(t*3):0.0);
   const lc=reg?'#69d68f':on?(Math.sin(t*6)>0?'#ffcf7a':'#5a4a2a'):'#3a2a26';
   c.fillStyle=lc;c.beginPath();c.arc(x+0.36,y-0.48,0.08,0,TAU);c.fill();

@@ -38,7 +38,12 @@ class Cinematic{
     for(const u of ups)grantUpgrade(g,u);
     if(ups.length)g.hud.showUpgradeCard(ups.length>1?{name:ups.map(u=>(UPGRADES[u]||{name:u}).name).join(' + '),
       desc:ups.map(u=>(UPGRADES[u]||{desc:''}).desc).join(' ')}:UPGRADES[ups[0]]);
+    const wasOn=!!g.gs.flags.post_on;
     for(const f of (d.setFlags||[]))g.gs.flag(f);
+    /* сеть ожила — карточка объясняет, что теперь умеют станции */
+    if(!wasOn&&g.gs.flags.post_on){g.audio.elevator();g.camera.addShake(0.5);
+      g.hud.showAbilityCard('post',{kicker:'СЕТЬ ОЖИЛА',name:'ПНЕВМОПОЧТА',keys:[['E']],
+        desc:'СТАНЦИЯ В ХАБЕ КАЖДОЙ ЗОНЫ: ПЕРЕЕЗД МЕЖДУ ЗОНАМИ · ЦИЛИНДРЫ — ПОЧТМЕЙСТЕРУ С ЛЮБОЙ СТАНЦИИ · ЕЁ ПИСЬМА И ПОДСКАЗКИ.'});}
   }
   end(){
     const g=this.game,wasActive=this.active;

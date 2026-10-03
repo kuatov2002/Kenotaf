@@ -8,6 +8,17 @@ const S={};
 /* курьер уже «действовал» и в комнате не первую секунду — иначе механизмы честно ждут (см. World.calm) */
 const PRE=(room,px,ab)=>`LAB.setup('${room||'z1_start'}',${px||34},11-1.68,${JSON.stringify(ab||['pulse','dash'])});game.world.entryT=9;game.world.playerActed=true;`;
 
+/* пневмопочта как механика: почтмейстер открывает сеть при встрече; со станции в зоне I уходят цилиндры
+   (плата — пластина), следующий визит — письмо, следующий — переезд на Главпочтамт */
+S.post_net=`LAB.setup('z2_post',38,20-1.68,['pulse','dash']);const g=game,W=g.world;W.load('z2_post',38,20-1.68);
+  const pm=W.interactables.find(i=>i.def.kind==='postmaster');pm.use(g);let n=0;while(g.cinematic.active&&n++<400){g.cinematic.update(0.5);}
+  const on=!!g.gs.flags.post_on;W.load('z1_hub',9.4,34-1.68);for(let i=1;i<=3;i++)g.gs.loreIds[i]=true;g.gs.lore=3;
+  const st=()=>W.interactables.find(i=>i.def.kind==='station');
+  const pr1=st().prompt();st().use(g);const ups=(g.cinematic.def&&g.cinematic.def.upgrades)||[];n=0;while(g.cinematic.active&&n++<400)g.cinematic.update(0.5);
+  const plate=!!g.gs.flags.plate_post1,letter=!!g.gs.flags.letter_net,pr2=st().prompt();g.gs.flags.st_post=true;
+  st().use(g);const menu=g.state==='travel'&&g.travel.list.indexOf('post')>=0;g.travel.go('post');
+  return {ok:on&&plate&&letter&&menu&&/ЦИЛИНДР/.test(pr1)&&/ПИСЬМО/.test(pr1)&&/ПЕРЕЕЗД/.test(pr2),info:{on,pr1,plate,pr2,letter,menu,ups}};`;
+
 /* Зал Архивов: убил одного стража, три ядра в гнёзда — после перезагрузки зал пуст, манометр на месте;
    прочитал манометр (ещё одна перезагрузка) — стражи не вернулись */
 S.exam_c_cores=`LAB.setup('z4_exam_c',3,17-1.68,['pulse','dash']);const W=game.world;W.load('z4_exam_c',3,17-1.68);W.entryT=9;W.playerActed=true;

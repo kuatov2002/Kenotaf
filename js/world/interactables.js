@@ -20,7 +20,8 @@ class Interactable{
     if(d.kind==='talk')return 'ГОВОРИТЬ · '+d.title;
     if(d.kind==='wheel')return 'ВРАЩАТЬ КОЛЕСО ПЕЧАТИ';
     if(d.kind==='mapplate')return 'СВЕРИТЬ ПЛАНШЕТ · '+d.title;
-    if(d.kind==='station')return 'ПНЕВМОПОЧТА · '+(STATIONS[d.station]?STATIONS[d.station].name:'');
+    if(d.kind==='station'){const pend=PostNet.pending(this.world.game.gs);
+      return 'ПНЕВМОПОЧТА · '+(pend||(STATIONS[d.station]?STATIONS[d.station].name+' · ПЕРЕЕЗД':''));}
     if(d.kind==='postmaster')return 'ГОВОРИТЬ · ПОЧТМЕЙСТЕР';
     if(d.kind==='broadcast')return 'ВЕЩАТЬ НА ВСЕ ЯРУСЫ';
     return d.label||'ОСМОТРЕТЬ';}
@@ -43,9 +44,13 @@ class Interactable{
       if(d.sys)w.startAnim(d.sys);
       game.particles.burst(this.x,this.y-1,22,{kind:'spark',col:'#ffcf7a',spd:4,life:0.7,size:0.05,add:true,g:9});
     }else if(d.kind==='station'){
-      if(!gs.flags.post_on){game.hud.say('ЛИНИЯ МЕРТВА · МАНОМЕТР НА НУЛЕ','ПНЕВМОПОЧТА');game.audio.denied();return;}
+      if(!gs.flags.post_on){game.hud.say('ЛИНИЯ МЕРТВА · МАНОМЕТР НА НУЛЕ. ГЛАВНЫЙ КЛАПАН ДЕРЖАТ НА ГЛАВПОЧТАМТЕ — СОТЫ, ВЛЕВО ИЗ АТРИУМА.','ПНЕВМОПОЧТА');game.audio.denied();return;}
       if(!gs.flags['st_'+d.station]){gs.flag('st_'+d.station);game.audio.checkpoint();
-        game.particles.burst(this.x,this.y-1.4,18,{kind:'spark',col:'#9fe0ff',spd:4,life:0.6,size:0.05,add:true,g:6});}
+        game.particles.burst(this.x,this.y-1.4,18,{kind:'spark',col:'#9fe0ff',spd:4,life:0.6,size:0.05,add:true,g:6});
+        game.hud.say('СТАНЦИЯ «'+(STATIONS[d.station]?STATIONS[d.station].name:'')+'» В СЕТИ','ПНЕВМОПОЧТА');}
+      /* сначала почта: цилиндры уходят, письмо приходит; пустой визит — переезд */
+      const del=PostNet.visit(game,this.x,this.y);
+      if(del){this.capsuleAt=w.time;game.cinematic.play(del);return;}
       game.travel.open(d.station);
     }else if(d.kind==='broadcast'){
       /* сказать ярусам правду можно, только когда её достаточно: цилиндров — не меньше BROADCAST_N */

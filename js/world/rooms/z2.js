@@ -343,8 +343,9 @@ z2_post:gs=>({id:'z2_post',zone:'hives',name:'ГЛАВПОЧТАМТ · СОРТ
     R.doors=[{x:46.8,y:17.9,w:1.2,h:2.1,to:'z2_atrium',label:'АТРИУМ'}];
     R.checkpoint={x:38.2,y:20,h:1.7,lit:gs.cp.room==='z2_post'};
     R.interactables=[{kind:'postmaster',x:41.6,y:20,w:2.4,h:2.4},
-      {kind:'valve',post:true,x:2.4,y:16,label:'ГЛАВНЫЙ КЛАПАН ПНЕВМОСЕТИ',flag:'post_on'},
-      {kind:'station',station:'post',x:5.6,y:16,tubeTop:0.4}];
+      /* главный клапан — у конторки: почтмейстер открывает его при первой встрече (или курьер — сам) */
+      {kind:'valve',post:true,x:44.8,y:20,label:'ГЛАВНЫЙ КЛАПАН ПНЕВМОСЕТИ',flag:'post_on'},
+      {kind:'station',station:'post',x:36.9,y:20,tubeTop:0.4}];
     R.lights=[lit(41.5,15.5,9,'#d9a441',0.95),lit(42.4,17.6,3.2,'#9fe08a',0.7),lit(22,6,12,'#d9a441',0.55,{flicker:0.4}),
       lit(4,12,7,on?'#69d68f':'#c8452f',0.7,{flicker:on?0:0.8}),lit(22,23,10,'#3a2a26',0.6),lit(46,18.6,3,'#d9a441',0.5)];
     R.emitters=[{type:'dust',rate:24},{type:'drip',x:30,y:11.8,rate:0.6},{type:'drip',x:12,y:11.8,rate:0.4}];
