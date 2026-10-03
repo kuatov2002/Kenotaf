@@ -158,7 +158,8 @@ z4_counter:gs=>({id:'z4_counter',zone:'seal',sub:'gears',name:'ПРОТИВОВ�
   art:RB.art('seal','gears'),
   build(R){
     RB.shell(R,'lead',{ceil:0.4});
-    R.solids.push(S(0,31,30,3,'lead'),S(22,28,8,3,'lead'),P(15,25.6,5),P(22,23.2,5),P(14,20.8,5),P(6,18.4,5),P(14,15.6,4));
+    R.solids.push(S(0,31,30,3,'lead'),S(22,28,8,3,'lead'),P(15,25.6,5),P(22,23.2,5),P(14,20.8,5),P(6,18.4,5),P(14,15.6,4),
+      P(18.4,28.6,3.2,0.4,'lead'));   /* ступень с пола к двери: без неё низ комнаты — ловушка */
     RB.ring(R,20,10,'top',9.6);RB.ring(R,26,6,'top',5.6);
     R.doors=[RB.R(R,28,'z4_escapement','АНКЕРНЫЙ ЗАЛ')];
     R.solids.push(S(24,8,6,0.8,'lead'));

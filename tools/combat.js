@@ -8,6 +8,13 @@ const S={};
 /* курьер уже «действовал» и в комнате не первую секунду — иначе механизмы честно ждут (см. World.calm) */
 const PRE=(room,px,ab)=>`LAB.setup('${room||'z1_start'}',${px||34},11-1.68,${JSON.stringify(ab||['pulse','dash'])});game.world.entryT=9;game.world.playerActed=true;`;
 
+/* застрял в геометрии — выталкивает; кнопка паузы возвращает ко входу */
+S.unstuck=`LAB.setup('z1_boiler',3,17.3,['pulse','dash']);const W=game.world,p=LAB.p();
+  p.x=10;p.y=16.2;LAB.step(60);const sols=W.room.solids,me={x:p.x+0.05,y:p.y+0.05,w:p.w-0.1,h:p.h-0.1};
+  const inside=sols.some(s=>!s.ow&&!s.hidden&&aabb(me,s));
+  p.x=30;p.y=5;W.unstuck();const back=Math.abs(p.cx-W.arrive.x)<0.1;
+  return {ok:!inside&&back,info:{inside,back,x:+p.x.toFixed(2),y:+p.y.toFixed(2)}};`;
+
 /* у двери: механизм рядом ждёт первого действия курьера — ни замаха, ни касания */
 S.spawn_grace=`LAB.setup('z1_start',34,11-1.68,['pulse','dash']);game.world.entryT=0;game.world.playerActed=false;game.world.arrive={x:34.4,y:10};
   const e=LAB.e(LAB.spawn('repairer',35.2,11-1.55));e.cd=0;let wound=0;

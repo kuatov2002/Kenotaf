@@ -88,7 +88,7 @@ z4_exam_b:gs=>({id:'z4_exam_b',zone:'seal',name:'ЭКЗАМЕН B · ШАХТА 
        Манометр — в самом конце, наверху */
     R.solids=[S(-2,-3,30,3,'lead'),S(-2,0,2,36,'lead'),S(26,0,2,36,'lead'),
       S(0,32,5,4,'lead'),S(20,32,6,4,'lead'),S(5,34.6,15,1.4,'lead'),
-      S(19.6,14,1.2,12.8,'concrete',{grip:'r'}),S(24,10,1.2,22,'concrete',{grip:'l'}),
+      S(19.6,14,1.2,12.8,'concrete',{grip:'r'}),S(24,10,2,22,'concrete',{grip:'l'}),
       P(23,23,1.0,0.4,'concrete'),S(16.5,14,3.1,0.6,'lead'),S(0,12.6,3,0.6,'lead')];
     R.magnetRects=[{x:4,y:27.1,w:17,h:0.7},{x:2,y:9.1,w:15,h:0.7}];
     for(const m of R.magnetRects)R.solids.push(S(m.x,m.y,m.w,m.h,'steel'));

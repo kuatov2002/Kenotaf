@@ -361,7 +361,14 @@ class Archivist extends MechBoss{
     if(this.md==='floor'||this.md==='drop'){for(const x of [-1.3,1.1]){c.fillStyle='#24262a';rr(c,x-0.22,-0.7,0.44,0.7,0.06);c.fill();c.fillStyle='#8a6d2a';c.fillRect(x-0.3,-0.12,0.6,0.12);}}
     /* шкаф: свинец, ящики картотеки */
     const g=c.createLinearGradient(-1.8,-4.4,1.8,-0.6);g.addColorStop(0,'#7c8189');g.addColorStop(0.5,'#4f545b');g.addColorStop(1,'#2a2d32');
+    /* кабели от плеч в шкаф — за корпусом */
+    for(const sx of [-1,1])MK.hose(c,[[sx*1.75,-3.5],[sx*1.3,-4.2],[sx*0.6,-4.45]],0.07,'#26282c',{ribs:true});
     c.fillStyle=g;rr(c,-1.8,-4.5,3.6,3.9,0.16);c.fill();c.strokeStyle='#1a1c20';c.lineWidth=0.05;c.stroke();
+    /* карниз, цоколь, латунные уголки, жалюзи вентиляции */
+    c.fillStyle='#2c2f34';rr(c,-2.0,-4.72,4.0,0.3,0.05);c.fill();c.fillStyle=MK.cylGrad(c,'brass',0,-4.76,0,-4.68);c.fillRect(-2.02,-4.76,4.04,0.08);
+    c.fillStyle='#24262a';rr(c,-1.95,-0.82,3.9,0.26,0.05);c.fill();c.fillStyle=MK.cylGrad(c,'brass',0,-0.6,0,-0.54);c.fillRect(-1.97,-0.6,3.94,0.06);
+    for(const [x,y,sx,sy] of [[-1.8,-4.42,1,1],[1.8,-4.42,-1,1],[-1.8,-0.85,1,-1],[1.8,-0.85,-1,-1]]){c.fillStyle='#b08d3e';c.beginPath();c.moveTo(x,y);c.lineTo(x+sx*0.34,y);c.lineTo(x,y+sy*0.34);c.closePath();c.fill();MK.bolt(c,x+sx*0.1,y+sy*0.1,0.03,'steel');}
+    c.strokeStyle='rgba(10,10,12,.7)';c.lineWidth=0.035;for(let i=0;i<5;i++){c.beginPath();c.moveTo(1.2,-1.45-i*0.12);c.lineTo(1.65,-1.45-i*0.12);c.stroke();}
     for(let r=0;r<4;r++)for(let q=0;q<3;q++){const x=-1.62+q*1.1,y=-4.32+r*0.92;if(q>=1&&r>=1&&r<=2)continue;
       const open=((r*3+q)*7)%5===0?0.12:0;
       c.fillStyle='#3a3e44';rr(c,x,y,0.98,0.8,0.05);c.fill();c.strokeStyle='#202226';c.lineWidth=0.03;c.stroke();

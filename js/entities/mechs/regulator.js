@@ -167,46 +167,90 @@ class Regulator extends MechBoss{
     const cn=this.node('core');cn.lx=0;cn.ly=-2.5+P.bob+Math.cos(this.pend)*0.2;
   }
   draw(c,t){
-    const P=this.P,bob=P.bob,cn=this.node('core');
-    /* ходули */
-    for(const [i,L] of P.legs.entries()){const far=i===1;MK.seg(c,L.hx,L.hy,L.kx,L.ky,0.2,far?'iron':'brass',{});MK.seg(c,L.kx,L.ky,L.fx,L.fy-0.1,0.16,far?'iron':'steel',{});
-      MK.joint(c,L.kx,L.ky,0.14,'brass');c.fillStyle='#2a2418';rr(c,L.fx-0.3,L.fy-0.14,0.6,0.14,0.05);c.fill();}
-    /* балансир на спине */
-    if(this.has('balance')){c.save();c.translate(-1.1,-3.2+bob);c.rotate(Math.sin(this.bal)*2.4);
-      c.strokeStyle='#c9a227';c.lineWidth=0.1;c.beginPath();c.arc(0,0,0.62,0,TAU);c.stroke();
-      for(let i=0;i<3;i++){c.save();c.rotate(i/3*TAU);c.fillStyle='#8a6d2a';c.fillRect(0,-0.03,0.6,0.06);c.restore();}
-      c.strokeStyle='rgba(255,236,190,.6)';c.lineWidth=0.02;c.beginPath();for(let a=0;a<TAU*3;a+=0.2){const r=0.05+a*0.025;c.lineTo(Math.cos(a)*r,Math.sin(a)*r);}c.stroke();
+    const P=this.P,bob=P.bob,cn=this.node('core'),beat=this.beatT||0,thr=this.threat();
+    const walnut=(x,y,w,h,r)=>{const g=c.createLinearGradient(x,0,x+w,0);g.addColorStop(0,'#24130a');g.addColorStop(0.3,'#5c341f');g.addColorStop(0.55,'#6e4028');g.addColorStop(1,'#1c0e07');
+      c.fillStyle=g;rr(c,x,y,w,h,r);c.fill();c.save();rr(c,x,y,w,h,r);c.clip();c.globalAlpha=0.18;c.strokeStyle='#120804';c.lineWidth=0.02;
+      for(let i=0;i<9;i++){c.beginPath();c.moveTo(x+w*(i/9),y);c.quadraticCurveTo(x+w*(i/9)+0.08,y+h/2,x+w*(i/9)-0.04,y+h);c.stroke();}c.restore();
+      c.strokeStyle='#0e0603';c.lineWidth=0.035;rr(c,x,y,w,h,r);c.stroke();};
+    const gear=(x,y,r,n,a,col)=>{c.save();c.translate(x,y);c.rotate(a);c.fillStyle=col;c.beginPath();
+      for(let i=0;i<n*2;i++){const q=i/(n*2)*TAU,rr2=i%2?r:r*0.82;c.lineTo(Math.cos(q)*rr2,Math.sin(q)*rr2);}c.closePath();c.fill();
+      c.fillStyle='rgba(0,0,0,.35)';c.beginPath();c.arc(0,0,r*0.5,0,TAU);c.fill();c.fillStyle=col;for(let k=0;k<4;k++){c.save();c.rotate(k*PI/2);c.fillRect(-0.02,0,0.04,r*0.7);c.restore();}
+      MK.joint(c,0,0,r*0.22,'steel');c.restore();};
+    /* ходули: бедро латунь + голень сталь, поршень, пружина у колена, тяжёлый башмак */
+    for(const [i,L] of P.legs.entries()){const far=i===1;
+      MK.seg(c,L.hx,L.hy,L.kx,L.ky,far?0.32:0.38,far?'iron':'brass',{ribs:2});
+      MK.piston(c,L.hx+(far?-0.12:0.12),L.hy+0.15,(L.kx+L.fx)/2,(L.ky+L.fy)/2-0.2,0.08,0.6);
+      MK.seg(c,L.kx,L.ky,L.fx,L.fy-0.16,far?0.24:0.28,far?'iron':'steel',{});
+      c.strokeStyle=far?'#5a4a2a':'#c9a227';c.lineWidth=0.04;c.beginPath();
+      for(let k=0;k<6;k++){const u=k/5,x=lerp(L.kx,L.fx,u*0.4),y=lerp(L.ky,L.fy,u*0.4);c.lineTo(x+(k%2?0.1:-0.1),y);}c.stroke();
+      MK.joint(c,L.kx,L.ky,0.22,far?'iron':'brass');
+      c.fillStyle=far?'#17120c':'#2a2418';c.beginPath();c.moveTo(L.fx-0.42,L.fy);c.lineTo(L.fx-0.36,L.fy-0.22);c.lineTo(L.fx+0.3,L.fy-0.22);c.quadraticCurveTo(L.fx+0.55,L.fy-0.2,L.fx+0.5,L.fy);c.closePath();c.fill();
+      MK.bolt(c,L.fx-0.2,L.fy-0.1,0.035,'brass');MK.bolt(c,L.fx+0.2,L.fy-0.1,0.035,'brass');}
+    /* редуктор на поясе: шестерня вертится шагом */
+    MK.box(c,-0.75,-2.45+bob,1.5,0.5,0.1,'brass',{tex:'rust',texA:0.2,bolts:0.035});
+    gear(0,-2.2+bob,0.3,10,this.walk*0.6,'#8a6d2a');
+    /* балансир на спине — в латунной клетке */
+    if(this.has('balance')){c.save();c.translate(-1.1,-3.2+bob);
+      c.strokeStyle='#6d5416';c.lineWidth=0.06;c.beginPath();c.arc(0,0,0.78,0,TAU);c.stroke();
+      for(let i=0;i<6;i++){const q=i/6*TAU;c.beginPath();c.moveTo(Math.cos(q)*0.78,Math.sin(q)*0.78);c.lineTo(Math.cos(q)*0.9,Math.sin(q)*0.9);c.stroke();}
+      c.rotate(Math.sin(this.bal)*2.4);
+      c.strokeStyle='#e8c96a';c.lineWidth=0.11;c.beginPath();c.arc(0,0,0.62,0,TAU);c.stroke();
+      for(let i=0;i<3;i++){c.save();c.rotate(i/3*TAU);c.fillStyle='#b08d3e';c.fillRect(0,-0.035,0.6,0.07);MK.bolt(c,0.62,0,0.05,'brass');c.restore();}
+      c.strokeStyle='rgba(255,236,190,.7)';c.lineWidth=0.02;c.beginPath();for(let a=0;a<TAU*3;a+=0.2){const r=0.05+a*0.025;c.lineTo(Math.cos(a)*r,Math.sin(a)*r);}c.stroke();
       MK.joint(c,0,0,0.12,'steel');c.restore();}
-    else MK.stump(c,-0.8,-3.2+bob,0.2,PI,this.node('balance').seed,t,'brass');
-    /* корпус напольных часов: тёмный орех, латунные накладки */
-    const wg=c.createLinearGradient(-1,0,1,0);wg.addColorStop(0,'#2a160c');wg.addColorStop(0.35,'#5a3220');wg.addColorStop(0.7,'#3a2012');wg.addColorStop(1,'#1e0e08');
-    c.fillStyle=wg;rr(c,-0.85,-4.4+bob,1.7,2.4,0.15);c.fill();c.strokeStyle='#120804';c.lineWidth=0.04;rr(c,-0.85,-4.4+bob,1.7,2.4,0.15);c.stroke();
-    c.fillStyle=MK.cylGrad(c,'brass',0,-2.05+bob,0,-1.95+bob);c.fillRect(-0.9,-2.08+bob,1.8,0.1);
-    /* окно маятника */
-    c.fillStyle='#0c0a08';rr(c,-0.5,-3.1+bob,1.0,1.0,0.1);c.fill();
-    if(!cn.broken){c.save();rr(c,-0.5,-3.1+bob,1.0,1.0,0.1);c.clip();c.translate(0,-3.1+bob);c.rotate(this.pend);
-      c.strokeStyle='#8a6d2a';c.lineWidth=0.05;c.beginPath();c.moveTo(0,0);c.lineTo(0,0.75);c.stroke();
-      const pg=c.createRadialGradient(-0.05,0.68,0,0,0.75,0.22);pg.addColorStop(0,'#fff2c6');pg.addColorStop(1,'#8a6d2a');c.fillStyle=pg;c.beginPath();c.arc(0,0.78,0.2,0,TAU);c.fill();c.restore();
-      if(cn.locked){c.fillStyle='rgba(180,210,230,.28)';rr(c,-0.5,-3.1+bob,1.0,1.0,0.1);c.fill();}
-      else{MK.cracks(c,0,-2.6+bob,0.5,cn.seed,1);this.world.game.renderer.glowAdd(this.cx+this.face*cn.lx,this.bottom+cn.ly,1.0,'#fff2c6',0.4);}}
-    /* циферблат-грудь */
-    SA.dial(c,0,-3.75+bob,0.6,-PI/2+t*0.02,-PI/2+t*0.24,'#e8e0c8');
-    /* голова: купол, колокольцы, линза */
-    c.fillStyle=MK.plateGrad(c,'brass',-0.5,-5.0+bob,1.0,0.6);c.beginPath();c.arc(0,-4.4+bob,0.5,PI,0);c.closePath();c.fill();
-    for(const sx of [-0.35,0.35]){c.fillStyle='#c9a227';c.beginPath();c.moveTo(sx-0.14,-4.85+bob);c.quadraticCurveTo(sx,-5.15+bob,sx+0.14,-4.85+bob);c.lineTo(sx+0.18,-4.75+bob);c.lineTo(sx-0.18,-4.75+bob);c.closePath();c.fill();}
-    MK.lens(c,0.18,-4.6+bob,0.1,this.threat()?'#ff3b22':'#ffcf7a',1);
-    /* часовая стрелка — молот */
-    MK.joint(c,P.shH.x,P.shH.y,0.2,'brass');
+    else MK.stump(c,-0.85,-3.2+bob,0.22,PI,this.node('balance').seed,t,'brass');
+    /* корпус напольных часов: орех, пилястры, филёнка, латунные уголки */
+    const by=bob;walnut(-1.18,-4.55+by,2.36,2.6,0.12);
+    for(const sx of [-1,1]){const x=sx*1.02;c.fillStyle=MK.cylGrad(c,'brass',x-0.09,0,x+0.09,0);c.fillRect(x-0.08,-4.4+by,0.16,2.3);
+      c.fillStyle='#e8c96a';c.fillRect(x-0.12,-4.45+by,0.24,0.08);c.fillRect(x-0.12,-2.15+by,0.24,0.08);}
+    c.strokeStyle='rgba(232,201,106,.55)';c.lineWidth=0.03;rr(c,-0.78,-4.35+by,1.56,2.25,0.08);c.stroke();
+    for(const [x,y,sx,sy] of [[-1.18,-4.55,1,1],[1.18,-4.55,-1,1],[-1.18,-1.95,1,-1],[1.18,-1.95,-1,-1]]){c.fillStyle='#c9a227';c.beginPath();c.moveTo(x,y+by);c.lineTo(x+sx*0.3,y+by);c.lineTo(x,y+by+sy*0.3);c.closePath();c.fill();}
+    /* дверца маятника: латунная рама, стекло, ключ */
+    c.fillStyle='#0b0806';rr(c,-0.55,-3.2+by,1.1,1.1,0.12);c.fill();
+    if(!cn.broken){c.save();rr(c,-0.55,-3.2+by,1.1,1.1,0.12);c.clip();c.translate(0,-3.2+by);c.rotate(this.pend);
+      c.strokeStyle='#8a6d2a';c.lineWidth=0.05;c.beginPath();c.moveTo(0,0);c.lineTo(0,0.8);c.stroke();
+      const pg=c.createRadialGradient(-0.06,0.78,0,0,0.84,0.26);pg.addColorStop(0,'#fff6d8');pg.addColorStop(0.5,'#e8c96a');pg.addColorStop(1,'#6d5416');c.fillStyle=pg;c.beginPath();c.arc(0,0.86,0.23,0,TAU);c.fill();
+      c.strokeStyle='rgba(255,246,216,.6)';c.lineWidth=0.02;c.beginPath();c.arc(0,0.86,0.16,0,TAU);c.stroke();c.restore();
+      if(cn.locked){c.fillStyle='rgba(170,205,225,.25)';rr(c,-0.55,-3.2+by,1.1,1.1,0.12);c.fill();
+        c.strokeStyle='rgba(235,248,255,.65)';c.lineWidth=0.025;c.beginPath();c.moveTo(-0.42,-3.1+by);c.lineTo(-0.12,-2.45+by);c.moveTo(-0.3,-3.12+by);c.lineTo(-0.15,-2.8+by);c.stroke();}
+      else{MK.cracks(c,0,-2.65+by,0.55,cn.seed,1);this.world.game.renderer.glowAdd(this.cx+this.face*cn.lx,this.bottom+cn.ly,1.2,'#fff2c6',0.5);}}
+    c.strokeStyle='#c9a227';c.lineWidth=0.07;rr(c,-0.55,-3.2+by,1.1,1.1,0.12);c.stroke();
+    c.fillStyle='#c9a227';c.beginPath();c.arc(0.42,-2.65+by,0.05,0,TAU);c.fill();c.fillRect(0.405,-2.65+by,0.03,0.09);
+    /* циферблат: латунный обод с болтами, римские риски, стрелки показывают свой «час» */
+    c.fillStyle=MK.cylGrad(c,'brass',-0.82,-3.8+by,0.82,-3.8+by);c.beginPath();c.arc(0,-3.85+by,0.8,0,TAU);c.fill();
+    for(let i=0;i<12;i++){const q=i/12*TAU;MK.bolt(c,Math.cos(q)*0.72,-3.85+by+Math.sin(q)*0.72,0.028,'steel');}
+    SA.dial(c,0,-3.85+by,0.62,-PI/2+t*0.02,-PI/2+t*0.24,'#ece4cc');
+    c.strokeStyle='#2a2418';c.lineWidth=0.025;for(let i=0;i<12;i++){const q=i/12*TAU,r1=i%3?0.5:0.44;c.beginPath();c.moveTo(Math.cos(q)*r1,-3.85+by+Math.sin(q)*r1);c.lineTo(Math.cos(q)*0.58,-3.85+by+Math.sin(q)*0.58);c.stroke();}
+    /* фронтон: карниз, завитки, навершия; в центре — линза и колокола */
+    c.fillStyle='#3a2012';rr(c,-1.35,-4.85+by,2.7,0.32,0.06);c.fill();c.fillStyle=MK.cylGrad(c,'brass',0,-4.86+by,0,-4.78+by);c.fillRect(-1.38,-4.88+by,2.76,0.08);
+    for(const sx of [-1,1]){c.fillStyle='#4a2a16';c.beginPath();c.moveTo(sx*1.3,-4.85+by);c.quadraticCurveTo(sx*1.25,-5.5+by,sx*0.55,-5.35+by);c.quadraticCurveTo(sx*0.75,-5.0+by,sx*0.4,-4.85+by);c.closePath();c.fill();
+      c.strokeStyle='#c9a227';c.lineWidth=0.03;c.stroke();
+      c.fillStyle='#e8c96a';c.beginPath();c.arc(sx*1.32,-4.98+by,0.09,0,TAU);c.fill();c.fillRect(sx*1.32-0.03,-5.12+by,0.06,0.1);}
+    c.fillStyle=MK.plateGrad(c,'brass',-0.42,-5.45+by,0.84,0.6);c.beginPath();c.arc(0,-4.85+by,0.42,PI,0);c.closePath();c.fill();c.strokeStyle=MAT.brass.ed;c.lineWidth=0.03;c.stroke();
+    MK.lens(c,0,-5.02+by,0.13,thr?'#ff3b22':'#ffcf7a',1);
+    this.world.game.renderer.glowAdd(this.cx,this.bottom-5.02+by,0.8,thr?'#ff3b22':'#ffcf7a',0.4);
+    /* колокола на стойке, молоточки бьют на долю */
+    c.strokeStyle='#6d5416';c.lineWidth=0.05;c.beginPath();c.moveTo(-0.55,-5.3+by);c.lineTo(0,-5.85+by);c.lineTo(0.55,-5.3+by);c.stroke();
+    for(const sx of [-0.42,0.42]){c.fillStyle=MK.cylGrad(c,'brass',sx-0.2,0,sx+0.2,0);c.beginPath();c.moveTo(sx-0.17,-5.38+by);c.quadraticCurveTo(sx,-5.78+by,sx+0.17,-5.38+by);c.lineTo(sx+0.22,-5.28+by);c.lineTo(sx-0.22,-5.28+by);c.closePath();c.fill();
+      const ha=beat<0.08?0.5:-0.2;c.save();c.translate(sx*0.5,-5.6+by);c.rotate(sx>0?-ha:ha);c.strokeStyle='#2a2418';c.lineWidth=0.03;c.beginPath();c.moveTo(0,0);c.lineTo(sx*0.4,0.1);c.stroke();
+      c.fillStyle='#2a2418';c.beginPath();c.arc(sx*0.42,0.1,0.05,0,TAU);c.fill();c.restore();}
+    /* плечи: шестерни-втулки крутятся вместе со стрелками */
+    gear(P.shH.x,P.shH.y,0.32,12,this.ha*1.5,'#b08d3e');gear(P.shM.x,P.shM.y,0.28,10,this.ma*1.5,'#8a8f94');
+    /* часовая стрелка — молот с ажурной пикой */
     if(this.has('hour')){const a=this.ha;c.save();c.translate(P.shH.x,P.shH.y);c.rotate(a);
-      c.fillStyle=MK.plateGrad(c,'brass',0,-0.14,2,0.28);c.beginPath();c.moveTo(0,-0.1);c.lineTo(1.4,-0.12);c.lineTo(1.4,0.12);c.lineTo(0,0.1);c.closePath();c.fill();
-      c.beginPath();c.moveTo(1.3,0);c.lineTo(1.75,-0.42);c.lineTo(2.2,0);c.lineTo(1.75,0.42);c.closePath();c.fill();c.strokeStyle=MAT.brass.ed;c.lineWidth=0.03;c.stroke();c.restore();}
+      c.fillStyle=MK.plateGrad(c,'brass',0,-0.14,2,0.28);c.beginPath();c.moveTo(-0.45,-0.07);c.lineTo(1.35,-0.11);c.lineTo(1.35,0.11);c.lineTo(-0.45,0.07);c.closePath();c.fill();
+      c.beginPath();c.arc(-0.45,0,0.16,0,TAU);c.fill();
+      c.beginPath();c.moveTo(1.25,0);c.lineTo(1.75,-0.48);c.lineTo(2.3,0);c.lineTo(1.75,0.48);c.closePath();c.fill();c.strokeStyle=MAT.brass.ed;c.lineWidth=0.035;c.stroke();
+      c.fillStyle='#1a120a';c.beginPath();c.moveTo(1.55,0);c.lineTo(1.75,-0.2);c.lineTo(1.98,0);c.lineTo(1.75,0.2);c.closePath();c.fill();
+      c.fillStyle='rgba(255,246,216,.35)';c.fillRect(0,-0.1,1.3,0.03);c.restore();}
     else MK.stump(c,P.shH.x,P.shH.y,0.16,this.ha,this.node('hour').seed,t,'brass');
-    /* минутная стрелка — длинный клинок */
-    MK.joint(c,P.shM.x,P.shM.y,0.18,'steel');
+    /* минутная стрелка — длинный клинок с ажуром и противовесом */
     if(this.has('minute')){const a=this.ma;c.save();c.translate(P.shM.x,P.shM.y);c.rotate(a);
-      c.fillStyle=MK.plateGrad(c,'steel',0,-0.08,5,0.16);c.beginPath();c.moveTo(0,-0.07);c.lineTo(4.4,-0.05);c.lineTo(5.0,0);c.lineTo(4.4,0.05);c.lineTo(0,0.07);c.closePath();c.fill();
-      c.strokeStyle='#eef3f6';c.lineWidth=0.02;c.beginPath();c.moveTo(0.2,-0.05);c.lineTo(4.9,-0.01);c.stroke();
-      c.fillStyle='#8a6d2a';c.beginPath();c.arc(3.6,0,0.14,0,TAU);c.fill();c.restore();}
+      c.fillStyle=MK.plateGrad(c,'steel',0,-0.08,5,0.16);c.beginPath();c.moveTo(-0.7,-0.06);c.lineTo(4.4,-0.06);c.lineTo(5.0,0);c.lineTo(4.4,0.06);c.lineTo(-0.7,0.06);c.closePath();c.fill();
+      c.fillStyle=MK.cylGrad(c,'steel',-0.9,-0.2,-0.5,0.2);c.beginPath();c.arc(-0.72,0,0.17,0,TAU);c.fill();
+      c.strokeStyle='#eef3f6';c.lineWidth=0.02;c.beginPath();c.moveTo(0.2,-0.045);c.lineTo(4.9,-0.008);c.stroke();
+      c.fillStyle='#1c2024';for(const x of [1.2,2.0,2.8]){c.beginPath();c.ellipse(x,0,0.22,0.035,0,0,TAU);c.fill();}
+      c.fillStyle='#8a6d2a';c.beginPath();c.arc(3.6,0,0.15,0,TAU);c.fill();c.fillStyle='#1c2024';c.beginPath();c.arc(3.6,0,0.07,0,TAU);c.fill();c.restore();}
     else MK.stump(c,P.shM.x,P.shM.y,0.14,this.ma,this.node('minute').seed,t,'steel');
   }
   drawFX(c,t){if(this.state==='minute'&&this.st<0.35){const P=this.P,a=1-this.st/0.35;c.save();c.globalCompositeOperation='lighter';

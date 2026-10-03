@@ -28,7 +28,9 @@ z3_apiary:gs=>({id:'z3_apiary',zone:'eden',sub:'apiary',name:'ПАСЕКА',w:46
   build(R){
     RB.shell(R,'marble',{ceil:0.4});
     R.solids.push(S(0,24,46,2,'marble'),S(6,20,4,4,'ply'),S(14,17,4,7,'ply'),S(22,14,4,10,'ply'),S(30,17,4,7,'ply'),S(38,20,4,4,'ply'),
-      P(12,11.4,4),S(0,6.6,5,0.6,'marble'));
+      P(12,11.4,4),S(0,6.6,5,0.6,'marble'),
+      /* рамки-ступени между ульями: из любого провала — наверх (иначе провалы — ловушки) */
+      P(18.2,21.4,1.6,0.4,'ply'),P(20.2,18.8,1.6,0.4,'ply'),P(28.2,21.4,1.6,0.4,'ply'),P(26.2,18.8,1.6,0.4,'ply'),P(11.6,21.6,2,0.4,'ply'));
     R.doors=[RB.R(R,24,'z3_orchard','ФРУКТОВЫЙ САД'),RB.L(6.6,'z3_hive','?')];
     RB.lore(R,gs,30,42,24);
     R.enemies.push({type:'pollinator',x:16,y:10,amb:true},{type:'pollinator',x:30,y:8,amb:true},{type:'pollinator',x:40,y:12,amb:true},
@@ -46,7 +48,7 @@ z3_roots:gs=>({id:'z3_roots',zone:'eden',sub:'roots',name:'КОРНЕВАЯ ГА
   build(R){
     RB.shell(R,'concrete',{ceil:0.4});
     R.solids.push(S(0,20,58,2,'concrete'),P(10,17.6,4),P(4,15.2,4),P(10,12.8,4),P(4,10.4,4),P(10,8,4),P(4,5.6,4),P(6,3.3,3.6),
-      S(24,16,6,4,'concrete'),S(40,17,5,3,'concrete'));
+      S(24,16,6,4,'concrete'),S(40,17.6,5,2.4,'concrete'));
     R.doors=[Object.assign(RB.top(6.2,'z3_orchard','САД'),{h:1.4}),RB.R(R,20,'z3_canal','ОРОСИТЕЛЬНЫЙ КАНАЛ'),
       {x:33.6,y:17.9,w:1.4,h:2.1,to:'z3_seedvault',label:'?',reqFlag:'lead_roots',reqMsg:'СВИНЦОВАЯ ЗАГЛУШКА'}];
     if(!gs.flags.lead_roots)R.pushables.push({kind:'lead',x:33.3,y:17.6,w:2.0,h:2.4,id:'roots_lead',flag:'lead_roots'});

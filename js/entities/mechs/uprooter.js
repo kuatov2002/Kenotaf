@@ -186,29 +186,66 @@ class Uprooter extends MechBoss{
     const cn=this.node('core');cn.lx=-0.35;cn.ly=-3.0+P.bob;
   }
   draw(c,t){
-    const P=this.P,bob=P.bob,cn=this.node('core');
-    /* гусеницы */
-    c.fillStyle='#1d1b17';rr(c,-2.7,-1.05,5.1,1.05,0.5);c.fill();
-    c.strokeStyle='#3a3630';c.lineWidth=0.06;for(let i=0;i<14;i++){const x=-2.5+((i*0.36+this.tread*0.6)%4.9+4.9)%4.9;c.beginPath();c.moveTo(x,-1.05);c.lineTo(x,-0.92);c.moveTo(x,-0.13);c.lineTo(x,0);c.stroke();}
-    for(let i=0;i<6;i++)MK.joint(c,-2.1+i*0.86,-0.52,0.3,'iron');
-    /* бак гербицида (корма): зелёное стекло, жидкость плещется */
+    const P=this.P,bob=P.bob,cn=this.node('core'),thr=this.threat(),tr=this.tread;
+    /* ---- ходовая: резиновая лента с траками, ведущая звезда, ленивец, катки, грязь ---- */
+    c.fillStyle='#16140f';rr(c,-2.75,-1.1,5.25,1.1,0.52);c.fill();
+    c.strokeStyle='#2c2822';c.lineWidth=0.11;rr(c,-2.68,-1.03,5.11,0.96,0.46);c.stroke();
+    c.strokeStyle='#4a4339';c.lineWidth=0.06;
+    for(let i=0;i<16;i++){const x=-2.45+((i*0.33+tr*0.6)%4.95+4.95)%4.95;c.beginPath();c.moveTo(x,-1.1);c.lineTo(x+0.08,-0.96);c.moveTo(x,-0.14);c.lineTo(x+0.08,0);c.stroke();}
+    const wheel=(x,r,mat,teeth)=>{c.save();c.translate(x,-0.55);c.rotate(tr*1.2/r);
+      if(teeth){c.fillStyle='#3a342a';c.beginPath();for(let i=0;i<20;i++){const q=i/20*TAU,rr2=i%2?r:r*0.86;c.lineTo(Math.cos(q)*rr2,Math.sin(q)*rr2);}c.closePath();c.fill();}
+      c.fillStyle=MK.cylGrad(c,mat,-r,0,r,0);c.beginPath();c.arc(0,0,r*0.8,0,TAU);c.fill();
+      c.strokeStyle='rgba(0,0,0,.5)';c.lineWidth=0.03;c.beginPath();c.arc(0,0,r*0.55,0,TAU);c.stroke();
+      for(let k=0;k<5;k++){const q=k/5*TAU;MK.bolt(c,Math.cos(q)*r*0.42,Math.sin(q)*r*0.42,0.03,'steel');}
+      MK.joint(c,0,0,r*0.22,'brass');c.restore();};
+    wheel(2.05,0.46,'iron',true);wheel(-2.3,0.42,'iron',false);
+    for(let i=0;i<4;i++)wheel(-1.35+i*0.82,0.3,'steel',false);
+    c.fillStyle='#4a3a20';for(const [x,y,r] of [[-2.2,-0.08,0.16],[-0.6,-0.05,0.12],[0.9,-0.06,0.15],[1.9,-0.95,0.13],[-1.6,-1.0,0.1]]){c.beginPath();c.ellipse(x,y,r*1.4,r,0,0,TAU);c.fill();}
+    /* крыло над гусеницей: заклёпки, «зебра» на носу */
+    MK.box(c,-2.85,-1.32+bob,5.35,0.3,0.08,'olive',{tex:'rust',texA:0.3,bolts:0.03});
+    c.save();rr(c,1.9,-1.32+bob,0.6,0.3,0.06);c.clip();for(let i=0;i<5;i++){c.fillStyle=i%2?'#1a1a14':'#d8b830';c.beginPath();c.moveTo(1.9+i*0.16,-1.32+bob);c.lineTo(2.06+i*0.16,-1.32+bob);c.lineTo(1.9+i*0.16,-1.02+bob);c.lineTo(1.74+i*0.16,-1.02+bob);c.closePath();c.fill();}c.restore();
+    /* ---- бак гербицида (корма): зелёное стекло в латунной клетке, жидкость плещется ---- */
     if(this.has('tank')){const tn=this.node('tank');
-      c.fillStyle='#1a2a12';rr(c,-3.05,-3.0,0.95,2.05,0.3);c.fill();
-      const lv=-1.2-1.4*clamp(tn.hp/tn.max,0.15,1)+Math.sin(t*3)*0.04;
-      const lg=c.createLinearGradient(0,lv,0,-1.0);lg.addColorStop(0,'#c8e04a');lg.addColorStop(1,'#4a6a1a');c.fillStyle=lg;
-      c.save();rr(c,-3.0,-2.95,0.85,1.95,0.28);c.clip();c.fillRect(-3.0,lv,0.85,3);c.restore();
-      c.strokeStyle='rgba(220,255,200,.5)';c.lineWidth=0.04;rr(c,-3.0,-2.95,0.85,1.95,0.28);c.stroke();
-      c.fillStyle='rgba(255,255,255,.3)';c.fillRect(-2.9,-2.8,0.08,1.6);
-      for(const y of [-2.7,-1.25]){c.fillStyle=MK.cylGrad(c,'brass',-3.08,0,-2.05,0);c.fillRect(-3.08,y,1.03,0.1);}
-      MK.hose(c,[[-2.55,-3.0],[-2.2,-3.4],[-1.4,-3.2]],0.07,'#2f2b28',{ribs:true});}
+      c.fillStyle='#1a2a12';rr(c,-3.08,-3.05,1.0,2.1,0.32);c.fill();
+      const lv=-1.2-1.4*clamp(tn.hp/tn.max,0.15,1)+Math.sin(t*3)*0.05;
+      const lg=c.createLinearGradient(0,lv,0,-1.0);lg.addColorStop(0,'#d8f05a');lg.addColorStop(1,'#3a5a12');c.fillStyle=lg;
+      c.save();rr(c,-3.02,-3.0,0.88,2.0,0.29);c.clip();c.fillRect(-3.02,lv,0.88,3);
+      for(let i=0;i<4;i++){const by=(-1.1-((t*0.6+i*0.37)%1.6));c.fillStyle='rgba(230,255,170,.5)';c.beginPath();c.arc(-2.7+i*0.15,by,0.04,0,TAU);c.fill();}c.restore();
+      c.strokeStyle='rgba(220,255,200,.55)';c.lineWidth=0.04;rr(c,-3.02,-3.0,0.88,2.0,0.29);c.stroke();
+      c.fillStyle='rgba(255,255,255,.32)';c.fillRect(-2.92,-2.85,0.08,1.6);
+      for(const y of [-2.8,-2.0,-1.2]){c.fillStyle=MK.cylGrad(c,'brass',-3.11,0,-2.05,0);c.fillRect(-3.11,y,1.06,0.1);}
+      for(const x of [-3.0,-2.16]){c.fillStyle=MK.cylGrad(c,'brass',x-0.04,0,x+0.04,0);c.fillRect(x-0.04,-3.0,0.08,2.05);}
+      c.fillStyle='#c8452f';c.beginPath();c.arc(-2.58,-3.12,0.08,0,TAU);c.fill();
+      MK.hose(c,[[-2.55,-3.05],[-2.25,-3.55],[-1.6,-3.35]],0.08,'#2f2b28',{ribs:true});
+      MK.hose(c,[[-2.1,-1.3],[-0.8,-0.98+bob],[1.4,-1.05+bob]],0.07,'#34302a',{ribs:true});}
     else MK.stump(c,-2.2,-1.9,0.3,PI,this.node('tank').seed,t,'glass');
-    /* корпус: оливковая краска садовых машин, латунные полосы каталога */
-    MK.box(c,-2.25,-2.75+bob,4.0,1.85,0.32,'olive',{tex:'rust',texA:0.25,seams:[0.33,0.66],bolts:0.05});
-    c.fillStyle='rgba(255,246,214,.12)';c.fillRect(-2.1,-2.65+bob,3.7,0.05);
+    /* ---- корпус: оливковая краска садовых машин, подтёки ржавчины, решётка радиатора, фары ---- */
+    MK.box(c,-2.25,-2.75+bob,4.0,1.85,0.32,'olive',{tex:'rust',texA:0.28,seams:[0.33,0.66],bolts:0.05});
+    c.save();rr(c,-2.25,-2.75+bob,4.0,1.85,0.32);c.clip();
+    for(let i=0;i<7;i++){const x=-2.0+i*0.58+((i*37)%7)*0.04,g=c.createLinearGradient(0,-2.6+bob,0,-1.0+bob);g.addColorStop(0,'rgba(90,50,24,.0)');g.addColorStop(0.3,'rgba(90,50,24,.35)');g.addColorStop(1,'rgba(90,50,24,0)');
+      c.fillStyle=g;c.fillRect(x,-2.6+bob,0.06+((i*13)%3)*0.02,1.6);}
+    c.fillStyle='rgba(0,0,0,.28)';c.fillRect(-2.25,-1.3+bob,4.0,0.4);c.restore();
     for(let i=0;i<3;i++){c.fillStyle=MK.cylGrad(c,'brass',0,-1.4+bob,0,-1.3+bob);c.fillRect(-2.25,-1.45+bob-i*0.42,4.0,0.07);}
+    c.fillStyle='#14120c';rr(c,1.3,-2.55+bob,0.42,1.25,0.06);c.fill();
+    c.strokeStyle='#6a6a52';c.lineWidth=0.04;for(let i=0;i<6;i++){c.beginPath();c.moveTo(1.36+i*0.06,-2.5+bob);c.lineTo(1.36+i*0.06,-1.35+bob);c.stroke();}
+    for(const y of [-2.35,-1.75]){const on=thr?1:0.6;c.fillStyle='#2a2418';c.beginPath();c.arc(1.82,y+bob,0.17,0,TAU);c.fill();
+      c.fillStyle=rgba(thr?'#ffd27a':'#fff2c0',on);c.beginPath();c.arc(1.84,y+bob,0.11,0,TAU);c.fill();
+      this.world.game.renderer.glowAdd(this.cx+this.face*1.9,this.bottom+y+bob,0.9,'#fff2c0',0.35*on);}
     Kit.stencil(c,-1.9,-1.05+bob,'ЭДЕМ · К-1',0.28,'rgba(232,224,190,.55)',0.55);
-    /* кабина с барабаном каталога за стеклом */
+    c.fillStyle=MK.plateGrad(c,'brass',-0.6,-2.2+bob,1.1,0.4);rr(c,-0.6,-2.25+bob,1.1,0.38,0.05);c.fill();
+    c.fillStyle='rgba(40,30,10,.7)';c.font='600 0.13px Oswald';c.fillText('КАТАЛОГ ВИДОВ · №1',-0.55,-2.0+bob);
+    /* форсунки гербицида под носом */
+    for(let i=0;i<3;i++){MK.seg(c,0.9+i*0.25,-1.2+bob,1.15+i*0.25,-0.95+bob,0.07,'brass',{});}
+    /* ---- двигатель за кабиной: рёбра охлаждения и выхлопная труба с копотью ---- */
+    MK.box(c,-2.15,-3.35+bob,0.95,0.62,0.08,'iron',{bolts:0.03});
+    c.strokeStyle='rgba(0,0,0,.45)';c.lineWidth=0.03;for(let i=0;i<6;i++){c.beginPath();c.moveTo(-2.05+i*0.14,-3.3+bob);c.lineTo(-2.05+i*0.14,-2.78+bob);c.stroke();}
+    MK.cyl(c,-1.95,-4.55+bob,0.24,1.25,'iron',{bands:[[0.15,0.05,'brass'],[0.7,0.05,'brass']]});
+    c.fillStyle='#14120e';c.beginPath();c.ellipse(-1.83,-4.55+bob,0.14,0.05,0,0,TAU);c.fill();
+    for(let i=0;i<3;i++){const k=(t*0.8+i/3)%1;c.fillStyle=rgba('#2a2622',0.35*(1-k));c.beginPath();c.arc(-1.83-k*0.5,-4.7+bob-k*1.3,0.12+k*0.35,0,TAU);c.fill();}
+    /* ---- кабина: козырёк, рамы окон, барабан каталога за стеклом, маячок ---- */
     MK.box(c,-1.25,-3.75+bob,1.75,1.1,0.18,'olive',{bolts:0.04});
+    c.fillStyle=MK.plateGrad(c,'olive',-1.45,-4.0+bob,2.2,0.3);c.beginPath();c.moveTo(-1.42,-3.72+bob);c.lineTo(0.75,-3.72+bob);c.lineTo(0.95,-3.88+bob);c.lineTo(-1.35,-3.95+bob);c.closePath();c.fill();
+    c.strokeStyle=MAT.olive.ed;c.lineWidth=0.03;c.stroke();
     c.fillStyle='#0d120a';rr(c,-1.05,-3.6+bob,1.35,0.8,0.08);c.fill();
     if(!cn.broken){const k=cn.locked?0.35:0.8+0.2*Math.sin(t*9);
       c.save();rr(c,-1.05,-3.6+bob,1.35,0.8,0.08);c.clip();
@@ -217,22 +254,36 @@ class Uprooter extends MechBoss{
       c.restore();
       if(cn.locked){c.fillStyle='rgba(160,210,230,.35)';rr(c,-1.05,-3.6+bob,1.35,0.8,0.08);c.fill();c.strokeStyle='rgba(220,240,255,.6)';c.lineWidth=0.03;c.beginPath();c.moveTo(-0.9,-3.5+bob);c.lineTo(-0.6,-3.0+bob);c.stroke();}
       else{MK.cracks(c,-0.35,-3.2+bob,0.6,cn.seed,1);this.world.game.renderer.glowAdd(this.cx+this.face*cn.lx,this.bottom+cn.ly,1.2,'#ffe6a3',0.4*k);}}
-    MK.lens(c,0.35,-3.85+bob,0.12,this.threat()?'#ff3b22':'#ffcf7a',0.9);
-    /* барабан-рыхлитель на рычагах */
+    c.strokeStyle='#2a2a1c';c.lineWidth=0.06;c.beginPath();c.moveTo(-0.38,-3.6+bob);c.lineTo(-0.38,-2.8+bob);c.stroke();
+    MK.lens(c,0.35,-3.85+bob,0.12,thr?'#ff3b22':'#ffcf7a',0.9);
+    const bk=0.5+0.5*Math.sin(t*(thr?14:3));c.fillStyle=rgba('#ffb03a',0.4+0.6*bk);c.beginPath();c.arc(-0.6,-4.05+bob,0.09,PI,0);c.fill();
+    this.world.game.renderer.glowAdd(this.cx-this.face*0.6,this.bottom-4.05+bob,0.8,'#ffb03a',0.35*bk);
+    c.strokeStyle='#2a2a1c';c.lineWidth=0.03;c.beginPath();c.moveTo(0.1,-3.95+bob);c.lineTo(0.15,-4.6+bob);c.stroke();
+    /* ---- барабан-рыхлитель: кожух, рычаги с гидравликой, зубья в земле ---- */
     const D=P.drum;
-    if(this.has('drum')){MK.seg(c,1.5,-1.7+bob,D.x,D.y,0.3,'steel',{});MK.piston(c,1.4,-1.2+bob,D.x-0.2,D.y+0.1,0.14,0.6);
-      c.save();c.translate(D.x,D.y);c.fillStyle=MK.cylGrad(c,'iron',-0.7,0,0.7,0);c.beginPath();c.arc(0,0,0.62,0,TAU);c.fill();
-      for(let i=0;i<8;i++){const a=this.drumA+i/8*TAU;c.save();c.rotate(a);c.fillStyle=MK.plateGrad(c,'steel',0.4,-0.08,0.5,0.16);
-        c.beginPath();c.moveTo(0.45,-0.08);c.lineTo(0.95,-0.02);c.lineTo(0.92,0.06);c.lineTo(0.45,0.08);c.closePath();c.fill();c.restore();}
-      MK.joint(c,0,0,0.22,'brass');c.restore();}
+    if(this.has('drum')){MK.seg(c,1.5,-1.7+bob,D.x,D.y,0.34,'steel',{ribs:2});MK.piston(c,1.4,-1.2+bob,D.x-0.2,D.y+0.1,0.16,0.6);
+      MK.piston(c,1.6,-2.2+bob,D.x+0.1,D.y-0.5,0.12,0.5);
+      c.save();c.translate(D.x,D.y);c.fillStyle=MK.cylGrad(c,'iron',-0.7,0,0.7,0);c.beginPath();c.arc(0,0,0.64,0,TAU);c.fill();
+      for(let i=0;i<10;i++){const a=this.drumA+i/10*TAU;c.save();c.rotate(a);c.fillStyle=MK.plateGrad(c,'steel',0.4,-0.08,0.5,0.16);
+        c.beginPath();c.moveTo(0.45,-0.09);c.lineTo(0.98,-0.02);c.lineTo(0.94,0.07);c.lineTo(0.45,0.09);c.closePath();c.fill();
+        c.fillStyle='#4a3a20';c.beginPath();c.arc(0.7,0.04,0.05,0,TAU);c.fill();c.restore();}
+      MK.joint(c,0,0,0.24,'brass');
+      c.fillStyle=MK.plateGrad(c,'olive',-1.1,-1.15,2.2,0.6);c.beginPath();c.arc(0,0,1.08,PI*1.08,PI*1.92);c.arc(0,0,0.86,PI*1.92,PI*1.08,true);c.closePath();c.fill();
+      c.strokeStyle=MAT.olive.ed;c.lineWidth=0.03;c.stroke();for(let i=0;i<5;i++){const q=PI*1.15+i*0.17*PI;MK.bolt(c,Math.cos(q)*0.97,Math.sin(q)*0.97,0.03,'steel');}
+      c.restore();}
     else MK.stump(c,1.6,-1.6+bob,0.24,0.3,this.node('drum').seed,t,'steel');
-    /* коса */
-    MK.joint(c,P.sh.x,P.sh.y,0.22,'iron');
-    if(this.has('scythe')){MK.seg(c,P.sh.x,P.sh.y,P.el.x,P.el.y,0.24,'olive',{ribs:3});MK.joint(c,P.el.x,P.el.y,0.18,'brass');
-      MK.seg(c,P.el.x,P.el.y,P.tip.x,P.tip.y,0.14,'steel',{});
+    /* ---- коса на суставчатой руке с гидравликой ---- */
+    MK.box(c,-0.15,-3.75+bob,0.5,0.45,0.1,'iron',{bolts:0.03});
+    MK.joint(c,P.sh.x,P.sh.y,0.26,'iron');
+    if(this.has('scythe')){MK.seg(c,P.sh.x,P.sh.y,P.el.x,P.el.y,0.28,'olive',{ribs:3});
+      MK.piston(c,P.sh.x+0.1,P.sh.y+0.2,(P.sh.x+P.el.x)/2,(P.sh.y+P.el.y)/2+0.12,0.09,0.6);
+      MK.joint(c,P.el.x,P.el.y,0.2,'brass');
+      MK.seg(c,P.el.x,P.el.y,P.tip.x,P.tip.y,0.16,'steel',{});
       const a=Math.atan2(P.tip.y-P.el.y,P.tip.x-P.el.x);c.save();c.translate(P.tip.x,P.tip.y);c.rotate(a);
-      c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(0.9,-0.4,1.9,0.5);c.quadraticCurveTo(0.9,-0.05,0.05,0.22);c.closePath();
-      c.fillStyle=MK.plateGrad(c,'steel',0,-0.4,1.9,0.9);c.fill();c.strokeStyle='#e8eef2';c.lineWidth=0.03;c.beginPath();c.moveTo(0.1,0);c.quadraticCurveTo(0.9,-0.38,1.85,0.45);c.stroke();c.restore();}
+      c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(0.9,-0.42,1.95,0.52);c.quadraticCurveTo(0.9,-0.04,0.05,0.24);c.closePath();
+      c.fillStyle=MK.plateGrad(c,'steel',0,-0.4,1.9,0.9);c.fill();c.strokeStyle=MAT.steel.ed;c.lineWidth=0.03;c.stroke();
+      c.strokeStyle='#f2f6f8';c.lineWidth=0.035;c.beginPath();c.moveTo(0.12,0.02);c.quadraticCurveTo(0.9,-0.38,1.88,0.46);c.stroke();
+      MK.bolt(c,0.12,0.08,0.05,'brass');c.restore();}
     else MK.stump(c,P.sh.x+0.1,P.sh.y,0.18,P.sa,this.node('scythe').seed,t,'brass');
   }
   drawFX(c,t){

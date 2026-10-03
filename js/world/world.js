@@ -240,6 +240,11 @@ class World{
         else this.checkClear();}
     }
   }
+  /* сброс позиции: курьер возвращается туда, где вошёл в зал */
+  canUnstuck(){const R=this.room;return !!(R&&this.player&&!this.player.dead&&!this.bossDoorClosed&&!(R.waves&&this.waveIdx>=0&&!this.game.gs.flags[R.clearFlag]));}
+  unstuck(){if(!this.canUnstuck())return;const p=this.player,a=this.arrive,g=this.game;
+    p.x=a.x-p.w/2;p.y=a.y-p.h/2;p.vx=0;p.vy=0;p.hook=null;p.dashT=0;p.invuln=Math.max(p.invuln,0.8);
+    g.camera.reset(p.cx,p.cy,g.camera.zoom);g.flash(0.25,'#000');g.audio.door();}
   updateBoss(dt){
     const g=this.game,R=this.room;
     if(!this.boss)return;

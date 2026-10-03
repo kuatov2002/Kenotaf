@@ -282,7 +282,7 @@ z2_boss:gs=>({id:'z2_boss',zone:'hives',name:'ЗАЛ ЦЕНЗОРА-ПРИМАР
     R.vents=[15,30,45];
     /* сопла в полу: в фазе II ими управляет сам Примарх (ctl) */
     if(!dead)R.hazards=R.vents.map(x=>({x:x-1.4,y:12.2,w:2.8,h:5.8,kind:'steam',ctl:'primarch'}));
-    R.boss=dead?null:{type:'primarch',x:38,y:14.6};
+    R.boss=dead?null:{type:'primarch',x:38,y:18-4.25};
     R.bossTrigger={x:5,y:10,w:50,h:8};
     R.bossDoor={x:0.0,y:15.9,w:1.4,h:2.1,active:!dead};
     R.doors=[{x:0.0,y:15.9,w:1.2,h:2.1,to:'z2_turbine',label:'ТУРБИНЫ'},

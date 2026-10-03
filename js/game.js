@@ -61,6 +61,8 @@ class Game{
     $('btnPauseSet').onclick=()=>this.settingsUI.open('pause');
     $('btnArchive').onclick=()=>this.archiveUI.open();
     $('btnResume').onclick=()=>this.togglePause();
+    /* страховка от застревания: вернуться к точке входа в зал (не в бою с боссом и не на арене) */
+    $('btnUnstuck').onclick=()=>{if($('btnUnstuck').classList.contains('dim'))return;this.togglePause();this.world.unstuck();};
     $('btnToMenu').onclick=()=>{this.gs.save();this.toMenuState();};
     $('btnPause').onclick=()=>this.togglePause();
     $('btnMute').onclick=()=>{this.audio.init();this.audio.toggleMute();};
@@ -130,6 +132,7 @@ class Game{
       if(this.world.room)document.getElementById('pauseInfo').textContent=
         ZONES[this.world.room.zone].name+' · '+this.world.room.name;
       document.getElementById('journal').innerHTML=journalHTML(this.gs);
+      document.getElementById('btnUnstuck').classList.toggle('dim',!this.world.canUnstuck());
       if(!this.mapCv){this.mapCv=document.getElementById('mapcv');
         this.mapCv.addEventListener('click',()=>{this.map.whole=!this.map.whole;this.map.render(this.mapCv);});}
       requestAnimationFrame(()=>this.map.render(this.mapCv));

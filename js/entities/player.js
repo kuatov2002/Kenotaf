@@ -300,6 +300,16 @@ class Player extends Body{
           life:0.4,size:0.06,col:'#6b5f52',g:2});}
     }
 
+    /* застрял в геометрии (дверь, подвижный блок, присед под плитой) — выталкивание */
+    if(!this.onCeil&&!this.hook){const sols=w.room.solids,me={x:this.x+0.04,y:this.y+0.04,w:this.w-0.08,h:this.h-0.08};
+      const inside=sols.some(s=>!s.ow&&!s.hidden&&aabb(me,s));
+      if(inside){this.stuckT=(this.stuckT||0)+dt;
+        if(this.stuckT>0.2){this.stuckT=0;let done=false;
+          const free=(x,y)=>{const r={x:x+0.02,y:y+0.02,w:this.w-0.04,h:this.h-0.04};return !sols.some(s=>!s.ow&&!s.hidden&&aabb(r,s));};
+          for(let d=0.25;d<=2.5&&!done;d+=0.25)for(const [ox,oy] of [[0,-d],[-d,0],[d,0],[0,d],[-d,-d],[d,-d]])
+            if(free(this.x+ox,this.y+oy)){this.x+=ox;this.y+=oy;this.vx=0;this.vy=Math.min(this.vy,0);done=true;break;}
+          if(!done&&w.arrive){this.x=w.arrive.x-this.w/2;this.y=w.arrive.y-this.h/2;this.vx=0;this.vy=0;}}}
+      else this.stuckT=0;}
     /* hazards (состояние уже посчитано в World.updateHazards) */
     const hz=w.room.hazards;
     if(hz)for(let i=0;i<hz.length;i++){

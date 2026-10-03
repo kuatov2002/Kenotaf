@@ -12,9 +12,10 @@
      (II) таран в стену, сопла пола; (III) залп пломб — их можно отбить импульсом В ЯДРО, серии.
    Окна: импульс в спину рвёт вентиль баллона (раз в 12 с) — оглушение; прерывание любого замаха;
    таран в стену — оглушение. Поломки снимают атаки: без штампа нет прыжка, без прожектора — капсул. */
+const PRI_S=1.25;
 class Primarch extends MechBoss{
   constructor(world,x,y){
-    super(world,{type:'primarch',w:3.2,h:3.4,hp:999,mass:8,bodyMat:'brass',name:'ЦЕНЗОР-ПРИМАРХ'},x,y);
+    super(world,{type:'primarch',w:4.0,h:4.25,hp:999,mass:8,bodyMat:'brass',name:'ЦЕНЗОР-ПРИМАРХ'},x,y);
     this.addNode({id:'armor',hp:230,r:0.68,mat:'iron',frontOnly:true,deflect:true,coreDmg:0,scrap:4});
     this.addNode({id:'claw',hp:250,r:0.6,mat:'brass',coreDmg:0,scrap:5});
     this.addNode({id:'tank',hp:120,r:0.55,mat:'steel',backOnly:true,coreDmg:0,scrap:4});
@@ -215,7 +216,7 @@ class Primarch extends MechBoss{
     if(n.id==='lamp')this.beam=null;
   }
   onDeath(h){
-    const W=this.world,P=this.P,q=P.R(0.1,-1.85);
+    const W=this.world,P=this.P,q0=P.R(0.1,-1.85),q={x:q0.x*PRI_S,y:q0.y*PRI_S};
     W.addDebris({x:this.cx+this.face*q.x,y:this.bottom+q.y,w:1.4,h:0.8,vx:-this.face*2+(Math.random()-0.5)*3,vy:-7,vr:this.face*3,mass:2,mat:'brass',hot:4,
       face:this.face,src:this,draw:(c,t)=>{c.beginPath();c.arc(0,0.3,0.7,PI,0);c.closePath();c.fillStyle=MK.plateGrad(c,'brass',-0.7,-0.4,1.4,0.7);c.fill();
         c.fillStyle='#1a1512';c.beginPath();c.arc(0,0.3,0.48,PI,0);c.closePath();c.fill();MK.cracks(c,0,0.05,0.4,51,1);}});
@@ -255,8 +256,11 @@ class Primarch extends MechBoss{
     const kn=this.node('claw');kn.lx=(el.x+hd.x)/2;kn.ly=(el.y+hd.y)/2;
     const sn=this.node('stamp');sn.lx=P.stamp.x;sn.ly=P.stamp.y;
     const ln=this.node('lamp');{const q=R(0.12,-2.62);ln.lx=q.x;ln.ly=q.y;}
+    /* масштаб 1.25: рисунок и узлы растут вместе (draw масштабирует холст) */
+    for(const n of this.nodes){n.lx*=PRI_S;n.ly*=PRI_S;}
   }
   draw(c,t){
+    c.scale(PRI_S,PRI_S);
     const P=this.P,s=this.state,stun=s==='stun'||s==='stunWall'||this.openT>0;
     /* рука штампа (за корпусом) */
     MK.joint(c,P.ssh.x,P.ssh.y,0.22,'iron');
@@ -269,21 +273,34 @@ class Primarch extends MechBoss{
     else MK.stump(c,P.ssh.x,P.ssh.y,0.18,P.sa,this.node('stamp').seed,t,'iron');
     for(const [i,L] of P.legs.entries()){const far=i===1;
       MK.seg(c,L.hx,L.hy,L.kx,L.ky,0.34,far?'iron':'brass',{});MK.seg(c,L.kx,L.ky,L.fx,L.fy-0.14,0.28,far?'iron':'steel',{});
-      MK.joint(c,L.kx,L.ky,0.18,far?'iron':'brass');
-      c.fillStyle=far?'#1c1810':'#2b2418';rr(c,L.fx-0.36,L.fy-0.2,0.76,0.2,0.06);c.fill();}
+      MK.piston(c,L.hx+(far?-0.1:0.1),L.hy+0.12,(L.kx+L.fx)/2,(L.ky+L.fy)/2-0.12,0.09,0.55);
+      MK.joint(c,L.kx,L.ky,0.2,far?'iron':'brass');
+      c.fillStyle=far?'#1c1810':'#2b2418';c.beginPath();c.moveTo(L.fx-0.42,L.fy);c.lineTo(L.fx-0.36,L.fy-0.26);c.lineTo(L.fx+0.32,L.fy-0.26);c.quadraticCurveTo(L.fx+0.56,L.fy-0.22,L.fx+0.52,L.fy);c.closePath();c.fill();
+      MK.bolt(c,L.fx-0.18,L.fy-0.12,0.035,'brass');MK.bolt(c,L.fx+0.2,L.fy-0.12,0.035,'brass');}
     c.save();c.translate(0,P.hipY);c.rotate(P.lean);
     if(this.has('tank')){MK.cyl(c,-1.82,-1.85,0.8,1.6,'steel',{bands:[[0.12,0.07,'brass'],[0.82,0.07,'brass']]});
       Kit.gauge(c,-1.42,-1.1,0.16,stun?0.05:(s==='breathWind'?0.5+0.45*clamp(this.st/0.75,0,1):0.6+0.05*Math.sin(t*4)));
       c.fillStyle=this.popCd>0?'#5a3a30':'#c8452f';c.beginPath();c.arc(-1.42,-1.93,0.1,0,TAU);c.fill();}
     else{MK.stump(c,-1.2,-1.0,0.24,PI,this.node('tank').seed,t,'steel');
       if(Math.random()<0.2)this.world.game.particles.spawn({kind:'steam',x:this.cx-this.face*1.3,y:this.cy-0.5,vx:-this.face*0.8,vy:-1.4,life:1.1,size:0.36,grow:0.7,col:'#cfc9b8',drag:1.3});}
+    for(const [x,h] of [[-1.0,1.05],[-0.62,0.8]]){MK.cyl(c,x,-1.8-h,0.24,h+0.3,'iron',{bands:[[0.1,0.05,'brass']]});
+      c.fillStyle='#120e0a';c.beginPath();c.ellipse(x+0.12,-1.8-h,0.13,0.05,0,0,TAU);c.fill();
+      for(let i=0;i<2;i++){const k=((t*0.7+i*0.5+x)%1+1)%1;c.fillStyle=rgba('#2a2622',0.32*(1-k));c.beginPath();c.arc(x+0.12-k*0.4,-1.95-h-k*1.1,0.1+k*0.3,0,TAU);c.fill();}}
+    if(this.has('tank'))MK.hose(c,[[-1.42,-1.85],[-1.25,-2.05],[-0.95,-1.7]],0.08,'#2f2b28',{ribs:true});
     MK.box(c,-1.15,-1.8,2.25,1.9,0.42,'brass',{tex:'rust',texA:0.2,seams:[0.35,0.7]});
+    c.save();rr(c,-1.15,-1.8,2.25,1.9,0.42);c.clip();
+    for(let i=0;i<6;i++){const x=-1.0+i*0.38+((i*29)%5)*0.03,g=c.createLinearGradient(0,-1.7,0,-0.2);g.addColorStop(0,'rgba(80,40,16,0)');g.addColorStop(0.35,'rgba(80,40,16,.32)');g.addColorStop(1,'rgba(80,40,16,0)');
+      c.fillStyle=g;c.fillRect(x,-1.7,0.05+((i*7)%3)*0.02,1.5);}
+    for(let i=0;i<7;i++)MK.bolt(c,-0.98+i*0.33,-0.28,0.04,'steel');c.restore();
     c.save();rr(c,-1.15,-1.8,2.25,1.9,0.42);c.clip();
     const vg=c.createLinearGradient(0,-1.8,0,0.1);vg.addColorStop(0,'rgba(255,240,200,.25)');vg.addColorStop(0.3,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.45)');
     c.fillStyle=vg;c.fillRect(-1.2,-1.8,2.4,1.92);c.restore();
     for(let i=0;i<6;i++)MK.bolt(c,-0.95+i*0.36,-1.66,0.05,'steel');
     c.fillStyle=MK.cylGrad(c,'iron',0,-0.12,0,0.0);c.fillRect(-1.15,-0.12,2.25,0.12);
     Kit.stencil(c,-1.0,-0.3,'ЦЕНЗУРА',0.2,'rgba(40,20,10,.5)',0.5);
+    c.fillStyle='#15100a';rr(c,-0.55,-1.68,0.9,0.28,0.06);c.fill();
+    c.strokeStyle='#8a6d2a';c.lineWidth=0.04;for(let i=0;i<6;i++){c.beginPath();c.moveTo(-0.48+i*0.15,-1.66);c.lineTo(-0.48+i*0.15,-1.42);c.stroke();}
+    if(this.state==='breathWind'||this.state==='breath'){c.fillStyle=rgba('#ffd27a',0.5);rr(c,-0.55,-1.68,0.9,0.28,0.06);c.fill();}
     const cn=this.node('core');
     if(!cn.locked&&!cn.broken){const fl=0.6+0.3*Math.sin(t*8);
       c.fillStyle='#120a05';rr(c,0.42,-1.28,0.76,0.76,0.1);c.fill();
@@ -305,8 +322,11 @@ class Primarch extends MechBoss{
       c.strokeStyle='#c9a227';c.lineWidth=0.04;c.beginPath();c.arc(0,-0.84,0.2,0,TAU);c.stroke();}
     c.restore();
     c.restore();
-    if(!stun)this.world.game.renderer.glowAdd(this.cx+this.face*(P.R(0.3,-2.1).x),this.bottom+P.R(0.3,-2.1).y,0.8,bk?'#ffd27a':'#c8452f',0.4);
+    if(!stun)this.world.game.renderer.glowAdd(this.cx+this.face*(P.R(0.3,-2.1).x)*PRI_S,this.bottom+P.R(0.3,-2.1).y*PRI_S,0.8,bk?'#ffd27a':'#c8452f',0.4);
     MK.joint(c,P.sh.x,P.sh.y,0.26,'iron');
+    c.save();c.translate(P.sh.x,P.sh.y);c.beginPath();c.arc(0,0.02,0.46,PI*1.05,PI*1.95);c.lineTo(0.38,0.12);c.lineTo(-0.38,0.12);c.closePath();
+    c.fillStyle=MK.plateGrad(c,'brass',-0.46,-0.46,0.92,0.6);c.fill();c.strokeStyle=MAT.brass.ed;c.lineWidth=0.03;c.stroke();
+    for(const q of [-0.28,0,0.28])MK.bolt(c,q,-0.3+Math.abs(q)*0.3,0.035,'steel');c.restore();
     if(this.has('claw')){
       MK.seg(c,P.sh.x,P.sh.y,P.el.x,P.el.y,0.34,'brass',{ribs:3});
       MK.piston(c,P.sh.x+0.1,P.sh.y+0.22,P.el.x,P.el.y+0.14,0.16,0.5);
@@ -349,5 +369,5 @@ class Primarch extends MechBoss{
       const fl=0.3+0.2*Math.sin(t*4);c.fillStyle='#120a05';rr(c,0.3,-0.4,0.66,0.6,0.08);c.fill();c.fillStyle=rgba('#ff8a3a',fl);rr(c,0.36,-0.34,0.54,0.48,0.06);c.fill();
       MK.seg(c,-1.2,0.5,-0.5,0.62,0.3,'iron',{});MK.seg(c,0.6,0.55,1.3,0.6,0.3,'iron',{});}};
   }
-  spriteBounds(){return {x:this.cx-5,y:this.bottom-6.4,w:10,h:7};}
+  spriteBounds(){return {x:this.cx-6.3,y:this.bottom-8,w:12.6,h:8.6};}
 }

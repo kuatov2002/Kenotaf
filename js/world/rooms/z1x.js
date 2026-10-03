@@ -195,9 +195,9 @@ z1_boiler:gs=>({id:'z1_boiler',zone:'sump',sub:'boiler',name:'КОТЕЛЬНАЯ
   art:RB.art('sump','boiler'),
   build(R){
     RB.shell(R,'steel',{ceil:0.4});
-    R.solids.push(S(0,19,52,3,'rust'),S(5.2,17.4,1.4,1.6,'ply'),S(7,15.6,9,3.4,'steel'),S(19,14.4,10,4.6,'steel'),
+    R.solids.push(S(0,19,52,3,'rust'),S(5.2,17.4,1.4,1.6,'ply'),S(7,15.6,9,3.4,'steel'),S(16,17.6,1.1,1.4,'ply'),S(19,14.4,10,4.6,'steel'),
       P(31,12.4,6),P(38,10.6,6),S(44.6,6,7.4,0.8,'steel'),S(40.2,16.6,1.6,2.4,'ply'));
-    R.hazards=[{x:16.4,y:12,w:2.2,h:7,kind:'steam',per:2.8,on:0.9,off:0},{x:33,y:13,w:2,h:6,kind:'steam',per:2.4,on:0.8,off:1.2}];
+    R.hazards=[{x:17.3,y:12,w:1.6,h:7,kind:'steam',per:2.8,on:0.9,off:0},{x:33,y:13,w:2,h:6,kind:'steam',per:2.4,on:0.8,off:1.2}];
     R.doors=[RB.L(19,'z1_hub','НАСОСНАЯ СТАНЦИЯ'),RB.R(R,19,'z1_foundry','ЛИТЕЙНЫЙ ЦЕХ'),RB.R(R,6,'z1_cache','НИША КОЧЕГАРОВ')];
     R.enemies.push({type:'wrench',x:22,y:14.4-1.55,patrol:[20,27.5],amb:true},{type:'repairer',x:42,y:19-1.55,patrol:[36,49],amb:true},
       {type:'lampada',x:40,y:5,amb:true});
