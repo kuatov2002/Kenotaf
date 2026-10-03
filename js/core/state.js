@@ -2,7 +2,7 @@
 /* ============================== GAMESTATE / SAVE ============================== */
 class GameState{
   constructor(){this.reset();}
-  reset(){this.abilities={};this.flags={};this.hp=CFG.player.hp;this.energy=CFG.player.energy;this.weld=0;
+  reset(){this.abilities={};this.flags={};this.hp=CFG.player.hp;this.energy=CFG.player.energy;this.weld=0;this.heat=0;
     this.lore=0;this.loreIds={};this.cp={room:'z1_start',x:3.2,y:9.32};
     this.room='z1_start';this.visited={};this.bosses={};}
   has(a){return !!this.abilities[a];}

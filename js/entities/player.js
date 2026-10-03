@@ -279,8 +279,11 @@ class Player extends Body{
     }
     this.updateSwing(dt,inp,canAct&&!sliding&&!healing);
     if(canAct&&gs.has('pulse')&&this.pulseCd<=0&&!healing&&inp.consume('pulse')){
-      if(this.energy>=C.pulseCost){
-        this.energy-=C.pulseCost;this.energyDelay=C.energyDelay;
+      /* давления нет — импульс на перегреве (аварийный): заряд сгорает; это и есть выбор — импульс или разрыв */
+      const em=this.energy<C.pulseCost&&(gs.heat||0)>=1;
+      if(this.energy>=C.pulseCost||em){
+        if(em){gs.heat--;g.hud.heatPulse();g.particles.burst(this.cx,this.cy,12,{kind:'spark',col:'#ff7a40',spd:5,life:0.4,size:0.05,add:true,g:8});}
+        else{this.energy-=C.pulseCost;this.energyDelay=C.energyDelay;}
         this.pulseCd=C.pulseCd;this.pulseT=0.28;
         g.audio.pulse();g.camera.addShake(0.34);g.camera.impulse(-this.face*0.22,0);
         /* ранец стравливает давление: пар из вентиля назад-вверх */
@@ -335,8 +338,15 @@ class Player extends Body{
     else if(Math.abs(this.vx)>0.6)this.state='run';
     else this.state='idle';
   }
+  /* перегрев резака: заряды за срыв замаха и идеальное уклонение (gs.heat — переживает переходы, сгорает смертью) */
+  gainHeat(n,x,y){const g=this.world.game,gs=g.gs,was=gs.heat||0;gs.heat=Math.min(HEAT_MAX,was+n);if(gs.heat<=was)return;
+    g.audio.heat(gs.heat);g.hud.heatPulse();
+    g.particles.spawn({kind:'ring',x:this.cx,y:this.cy,ringR:1.5,life:0.35,size:0.08,col:'#ff9a5a',add:true,a:0.85});
+    if(!gs.flags.heat_learned){gs.flag('heat_learned');
+      g.hud.showAbilityCard('heat',{kicker:'ПЕРЕГРЕВ РЕЗАКА',name:'РАЗРЫВ',keys:[['J'],['ЛКМ']],
+        desc:'СОРВАННЫЙ ЗАМАХ И ИДЕАЛЬНОЕ УКЛОНЕНИЕ ПЕРЕГРЕВАЮТ РЕЗАК. ДЕРЖИ УДАР И ОТПУСТИ — РАЗРЫВ ВЫРЫВАЕТ УЗЕЛ СРАЗУ, ДАЖЕ БРОНЮ. КОНЧИЛОСЬ ДАВЛЕНИЕ — ИМПУЛЬС ВОЗЬМЁТ ПЕРЕГРЕВ.'});}}
   startSwing(dir,heavy){
-    const C=CFG.player,g=this.world.game;
+    const C=CFG.player,g=this.world.game;if(!heavy)this.atkRupture=false;
     this.atkPhase='wind';this.atkPT=heavy?C.heavyWind:C.atkWind;this.atkDir=dir;this.atkHeavy=heavy;
     this.atkT=this.atkPT+0.2;this.atkCd=heavy?C.heavyWind+0.2:C.attackCd;this.slashFace=this.face;this.slashDir=dir;
     this.noiseLevel=Math.max(this.noiseLevel,0.5);
@@ -349,7 +359,11 @@ class Player extends Body{
       if(this.atkPT<=0){
         const bonus=this.empowerT>0;
         this.slashT=C.slashT*(this.atkHeavy?1.5:1);this.slashPogo=false;this.slashDir=this.atkDir;this.slashFace=this.face;this.slashHeavy=this.atkHeavy;
-        const hit=g.combat.melee(this,this.atkDir,{heavy:this.atkHeavy,bonus});
+        const rup=this.atkHeavy&&this.atkRupture&&(g.gs.heat||0)>=1;this.slashRupture=rup;
+        const hit=g.combat.melee(this,this.atkDir,{heavy:this.atkHeavy,bonus,rupture:rup});
+        /* разрыв тратит заряд, только если ключ дошёл до механизма */
+        if(rup&&this.lastMechHit){g.gs.heat--;g.hud.heatPulse();}
+        this.atkRupture=false;
         if(bonus&&hit)this.empowerT=0;
         if(this.atkHeavy){this.hitHeavyT=0.2;g.camera.addShake(0.25);
           if(this.onGround)g.particles.burst(this.cx+this.face*0.6,this.bottom,10,{kind:'dust',col:'#7a6c5c',spd:3.5,life:0.45,size:0.1,g:8,ang:-PI/2,spread:PI});}
@@ -366,7 +380,7 @@ class Player extends Body{
       if(this.chargeT>0.12&&Math.random()<dt*30)g.particles.spawn({kind:'steam',x:this.cx-this.face*0.45,y:this.bottom-this.h*0.7,
         vx:-this.face*1.5,vy:-1.5,life:0.4,size:0.18,grow:0.5,col:'#dff0f6',drag:2,a:0.6});
     }else if(this.chargeT>0){
-      if(this.charged&&ok&&!inp.attackHeld)this.startSwing('side',true);
+      if(this.charged&&ok&&!inp.attackHeld){this.startSwing('side',true);this.atkRupture=(g.gs.heat||0)>=1;}
       this.chargeT=0;this.charged=false;
     }
   }
@@ -374,7 +388,7 @@ class Player extends Body{
      мгновенное восстановление и бонус к следующему удару. Без текста */
   perfectEvade(srcX){
     const g=this.world.game,C=CFG.combat;
-    this.pfDone=true;this.empowerT=C.empowerT;this.dashCd=0;this.airDash=this.airDashes();this.pulseCd=0;
+    this.pfDone=true;this.empowerT=C.empowerT;this.dashCd=0;this.airDash=this.airDashes();this.pulseCd=0;this.gainHeat(1,this.cx,this.cy);
     this.energy=Math.min(this.maxEnergy(),this.energy+20);
     g.slowmo(0.14,0.22);g.flash(0.14,'#dff4ff');g.audio.evade();g.camera.addShake(0.2);
     g.particles.spawn({kind:'ring',x:this.cx,y:this.cy,ringR:2.4,life:0.35,size:0.08,col:'#dff4ff',add:true,a:0.9});
@@ -664,8 +678,10 @@ class Player extends Body{
     }
     /* заряд тяжёлого удара: голова ключа наливается жаром */
     if(this.chargeT>0.12&&this._wHead){const k=clamp((this.chargeT-0.12)/(CFG.player.heavyHold-0.12),0,1),w=this._wHead,fl=this.charged?0.75+0.25*Math.sin(t*40):k;
-      c.save();c.globalCompositeOperation='lighter';const gr=c.createRadialGradient(w.x,w.y,0,w.x,w.y,0.32+0.2*k);
-      gr.addColorStop(0,rgba('#fff2d0',0.8*fl));gr.addColorStop(0.4,rgba('#ffb45a',0.55*fl));gr.addColorStop(1,'rgba(255,120,40,0)');
+      /* на перегреве голова ключа раскаляется добела с красным ореолом — будет разрыв */
+      const hot=(this.world.game.gs.heat||0)>=1;
+      c.save();c.globalCompositeOperation='lighter';const gr=c.createRadialGradient(w.x,w.y,0,w.x,w.y,(0.32+0.2*k)*(hot?1.4:1));
+      gr.addColorStop(0,rgba('#fff2d0',0.8*fl));gr.addColorStop(0.4,rgba(hot?'#ff6a3a':'#ffb45a',0.55*fl));gr.addColorStop(1,'rgba(255,120,40,0)');
       c.fillStyle=gr;c.beginPath();c.arc(w.x,w.y,0.32+0.2*k,0,TAU);c.fill();c.restore();
       this.world.game.renderer.glowAdd(w.x,w.y,0.8+0.6*k,'#ffb45a',0.5*fl);}
     /* импульс: вспышка у сопла резака */
@@ -686,8 +702,9 @@ class Player extends Body{
     c.save();c.translate(ox,oy);c.rotate(rot);
     if(dir==='side'&&f<0)c.scale(1,-1);
     c.globalCompositeOperation='lighter';
-    crescent(-0.35,0.28*a,'255,190,110');   /* шлейф: остаток взмаха чуть позади */
-    crescent(0,0.95*a,'255,226,170');
+    const rc=this.slashRupture;
+    crescent(-0.35,0.28*a,rc?'255,110,60':'255,190,110');   /* шлейф: остаток взмаха чуть позади */
+    crescent(0,0.95*a,rc?'255,170,130':'255,226,170');
     c.strokeStyle='rgba(255,255,255,'+(0.85*a)+')';c.lineWidth=0.06;c.beginPath();c.arc(0,0,R,-sw*0.95,sw*0.95);c.stroke();
     c.restore();
     const hx=dir==='side'?this.cx+f*1.3:this.cx,hy=dir==='up'?this.y-0.9:dir==='down'?this.bottom+0.9:this.y+this.h*0.45;

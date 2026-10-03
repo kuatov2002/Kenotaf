@@ -30,6 +30,8 @@ const CFG={
 };
 /* окно идеального уклонения: гироскоп расширяет его */
 function perfectWin(gs){return CFG.combat.perfectWin*(gs&&gs.flags.evade_win?1.6:1);}
+/* перегрев резака: запас зарядов (срыв замаха / идеальное уклонение → +1) */
+const HEAT_MAX=3;
 /* гарпун: дальность троса и скорость лебёдки */
 const HOOK={reach:10,speed:24};
 const ZONES={

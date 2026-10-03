@@ -42,7 +42,7 @@ class Combat{
     const sx=sd==='side'?p.cx+f*(1.0+ext*0.5):p.cx,sy=sd==='up'?p.y-0.7:sd==='down'?p.bottom+0.7:p.y+p.h*0.42;
     const kx=sd==='side'?f*7:0,ky=sd==='up'?-6:sd==='down'?4:-3.4;
     const hit={kind:heavy?'heavy':'melee',sd,dmg:C.attackDmg,hb,sx,sy,fromX:p.cx,dir:sd==='side'?f:0,
-      ky:sd==='up'?-5:sd==='down'?3.5:-1.2,heavy,bonus:!!o.bonus};
+      ky:sd==='up'?-5:sd==='down'?3.5:-1.2,heavy,bonus:!!o.bonus,rupture:!!o.rupture};
     let hitAny=false,pogo=false,deflect=false,mechHit=false,plain=false;
     const strike=e=>{
       if(e.isMech){const r=e.takeHit(hit);if(!r)return;
@@ -78,6 +78,7 @@ class Combat{
       if(aabb(hb,{x:pr.x-pr.r,y:pr.y-pr.r,w:pr.r*2,h:pr.r*2})){pr.life=0;pr.dead=true;hitAny=true;plain=true;g.audio.hitMetal();
         g.particles.burst(pr.x,pr.y,12,{kind:'spark',col:'#ffe6a3',spd:6,life:0.4,size:0.05,add:true,g:12});}
     }
+    p.lastMechHit=mechHit;
     if(pogo){p.pogo();p.slashPogo=true;}
     else if((hitAny||deflect)&&sd==='side')p.vx-=f*(heavy?C.heavyRecoil:(p.onGround?C.recoilG:C.recoilA))*(deflect&&!hitAny?1.6:1);
     if(plain&&!mechHit){g.audio.hit();g.hitstop(heavy?0.09:CFG.hsMelee);g.camera.addShake(heavy?0.5:0.3);}

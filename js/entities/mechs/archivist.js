@@ -198,7 +198,7 @@ class Archivist extends MechBoss{
         if(this.cd<=0&&this.face===want)this.beginA(BossDyn.queue(this,this.pickString(ad)));
         break;}
       case 'lungeWind':{const Wd=0.85/des;this.vx=damp(this.vx,-this.face*1.2,6,dt);
-        this.telegraph(this.node('cage'),this.st/Wd,this.st>Wd-0.32);
+        this.telegraph(this.node('cage'),this.st/Wd,this.st>Wd-0.32,true);
         if(this.st>=Wd){this.state='lunge';this.st=0;this.hitDone=false;g.audio.dash();}
         break;}
       case 'lunge':{this.vx=this.face*13.5;this.walk+=dt*16;
@@ -222,7 +222,7 @@ class Archivist extends MechBoss{
         if(!this.hitDone&&this.st<0.3&&!p.dead){const pr=p.rect();for(const k of hs){const h=H[k];
           if(h.x+0.7>pr.x&&h.x-0.7<pr.x+pr.w&&h.y+0.62>pr.y&&h.y-0.62<pr.y+pr.h){this.hitDone=true;if(this.damagePlayer(1,this.cx)){p.vx=this.face*15;p.vy=-9;}break;}}}
         if(this.st>0.45){this.state='recover';this.st=0;}break;
-      case 'hornWind':{const Wd=1.0/des;this.vx=damp(this.vx,0,8,dt);this.telegraph(this.node('horn'),this.st/Wd,this.st>Wd-0.34);
+      case 'hornWind':{const Wd=1.0/des;this.vx=damp(this.vx,0,8,dt);this.telegraph(this.node('horn'),this.st/Wd,this.st>Wd-0.34,true);
         if(this.st>=Wd){this.state='horn';this.st=0;this.act={n:0};}
         break;}
       case 'horn':{const a=this.act,N=this.phase>=2&&this.des()>1.1?2:1,hn=this.node('horn');
@@ -274,7 +274,7 @@ class Archivist extends MechBoss{
     switch(this.state){
       case 'idle':if(this.cd<=0)this.beginA(BossDyn.queue(this,this.pickString(Math.abs(p.cx-this.cx))));
         break;
-      case 'contraWind':{const Wd=0.9/des;this.telegraph(this.node('horn'),this.st/Wd,this.st>Wd-0.3);
+      case 'contraWind':{const Wd=0.9/des;this.telegraph(this.node('horn'),this.st/Wd,this.st>Wd-0.3,true);
         if(this.st>=Wd){this.state='contra';this.st=0;this.act={n:0};}break;}
       /* три звона «СНАРУЖИ · НИЧЕГО · НЕТ»: ответ — рывок сквозь кольцо. Шаг 0.85 с — рывок с откатом (0.64 с)
          успевает на каждый; перед каждым звоном раструб вдыхает (вспышка и щелчок за 0.3 с) */

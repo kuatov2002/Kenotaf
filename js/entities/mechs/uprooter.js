@@ -72,7 +72,7 @@ class Uprooter extends MechBoss{
       /* рывок назад: выхлоп из кормы (телеграф), гусеницы на реверс — корма бьёт */
       case 'buckWind':{const Wd=0.5;this.vx=damp(this.vx,this.face*0.6,6,dt);
         if(Math.random()<dt*40)g.particles.spawn({kind:'smoke',x:this.cx-this.face*2.8,y:this.y+0.6,vx:-this.face*2,vy:-1,life:0.7,size:0.3,grow:0.8,col:'#3a342c',drag:1.2,a:0.6});
-        this.telegraph(this.node('tank')&&this.has('tank')?this.node('tank'):this.node('core'),this.st/Wd,this.st>Wd-0.25);
+        this.telegraph(this.node('tank')&&this.has('tank')?this.node('tank'):this.node('core'),this.st/Wd,this.st>Wd-0.25,true);
         if(this.st>=Wd){this.state='buck';this.st=0;this.hitDone=false;g.audio.dash();}break;}
       case 'buck':{this.vx=-this.face*9;
         const hb={x:this.face>0?this.x-0.6:this.x+this.w-1.8,y:this.y+0.6,w:2.4,h:this.h-0.6};
@@ -95,7 +95,7 @@ class Uprooter extends MechBoss{
         if(this.st>0.4){this.state='recover';this.st=0;}
         break;}
       case 'tillWind':{const Wd=1.05/des;this.vx=damp(this.vx,-this.face*0.8,5,dt);
-        this.telegraph(this.node('drum'),this.st/Wd,this.st>Wd-0.38);
+        this.telegraph(this.node('drum'),this.st/Wd,this.st>Wd-0.38,true);
         if(Math.random()<dt*50){const dx=this.node('drum').wx;g.particles.spawn({kind:'spark',x:dx,y:this.bottom-0.2,vx:-this.face*4,vy:-2-Math.random()*3,life:0.4,size:0.05,col:'#ffcf7a',add:true,g:16});}
         if(this.st>=Wd){this.state='till';this.st=0;this.hitDone=false;g.audio.dash();g.audio.hydraulic(1);}
         break;}

@@ -51,6 +51,17 @@ class CombatFX{
     g.particles.spawn({kind:'ring',x,y,ringR:2.6,life:0.45,size:0.12,col:'#ffe2a0',add:true,a:1});
     g.particles.spawn({kind:'shock',x,y,ringR:1.6,life:0.3,size:0.1,col:'#ffffff',add:true,a:0.9});
     g.renderer.glowAdd(x,y,2.8,'#ffcf7a',1);}
+  /* РАЗРЫВ: перегретый удар выдирает узел — белый удар, красный жар, долгая остановка */
+  rupture(x,y,mat){const g=this.g;
+    g.hitstop(0.2);g.camera.addShake(1.2);g.slowmo(0.12,0.3);g.flash(0.22,'#ffd8b0');g.audio.rupture();
+    this.sparks(x,y,mat,40,13);this.chips(x,y,mat,18,9);
+    g.particles.burst(x,y,26,{kind:'spark',col:'#ff7a40',spd:12,life:0.6,size:0.07,add:true,g:12});
+    g.particles.spawn({kind:'ring',x,y,ringR:3.4,life:0.5,size:0.14,col:'#ff9a5a',add:true,a:1});
+    g.particles.spawn({kind:'shock',x,y,ringR:2.4,life:0.35,size:0.12,col:'#ffffff',add:true,a:1});
+    g.renderer.glowAdd(x,y,3.6,'#ff8a4a',1);g.renderer.wave(x,y,4,0.5);}
+  /* импульс в несрываемый замах: искры отскакивают красным — «тут нужен рывок» */
+  redDeny(x,y){const g=this.g;if(this._rd&&g.world.time-this._rd<0.4)return;this._rd=g.world.time;
+    g.audio.deflect();g.particles.burst(x,y,10,{kind:'spark',col:'#ff5a40',spd:6,life:0.35,size:0.05,add:true,g:10});}
   pin(x,y,mat){const g=this.g;
     g.hitstop(0.11);g.camera.addShake(0.7);g.audio.pin();
     g.particles.burst(x,y,24,{kind:'debris',col:'#7a6c5c',spd:7,life:0.9,size:0.1,g:26});

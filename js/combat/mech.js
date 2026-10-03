@@ -36,12 +36,13 @@ class Mech extends Enemy{
   releaseToken(){this.world.game.combat.releaseToken(this);}
   cancelAttack(){this.releaseToken();for(const n of this.nodes){n.tele=0;n.teleHot=false;}
     if(this.state==='wind'||this.state==='strike'){this.state='recover';this.st=0;}}
-  /* узел телеграфирует: k — прогресс замаха 0..1; последние hot секунд — окно прерывания */
-  telegraph(n,k,hot){if(!n||n.broken)return;n.tele=clamp(k,0,1);n.teleHot=!!hot;}
+  /* узел телеграфирует: k — прогресс замаха 0..1; последние hot секунд — окно прерывания.
+     red — НЕСРЫВАЕМАЯ атака (таран, прыжок, звон): красное кольцо, импульс её не берёт — ответ только рывок */
+  telegraph(n,k,hot,red){if(!n||n.broken)return;n.tele=clamp(k,0,1);n.teleHot=!!hot;n.red=!!red;}
   /* --- цикл --- */
   update(dt){
     this.t+=dt;if(this.flash>0)this.flash-=dt;
-    for(const n of this.nodes){if(n.exT>0)n.exT-=dt;if(n.markT>0)n.markT-=dt;if(n.hitT>0)n.hitT-=dt;n.tele=0;n.teleHot=false;}
+    for(const n of this.nodes){if(n.exT>0)n.exT-=dt;if(n.markT>0)n.markT-=dt;if(n.hitT>0)n.hitT-=dt;n.tele=0;n.teleHot=false;n.red=false;}
     if(this.recoil>0)this.recoil=Math.max(0,this.recoil-dt*5);
     if(this.slamCd>0)this.slamCd-=dt;
     if(this.dead){this.deadT+=dt;return;}
@@ -97,13 +98,14 @@ class Mech extends Enemy{
   /* импульс резака: ни единицы урона — только позиция, траектория и срыв замаха */
   applyPulse(p,dir,pw){
     const C=CFG.combat;if(this.dead)return;pw=pw||1;
-    const tn=this.nodes.find(n=>n.teleHot&&!n.broken);
+    const tn=this.nodes.find(n=>n.teleHot&&!n.broken&&!n.red),red=this.nodes.some(n=>n.red&&n.tele>0);
     if(tn)this.interrupt(tn,p);
+    else if(red)this.world.game.fx.redDeny(this.cx,this.cy);
     const m=this.mass;
     if(m>=3){this.vx+=dir*C.pulseImpulse*0.22*pw;this.knockT=Math.max(this.knockT,0.28);this.lastImp={src:'pulse',t:this.world.time};
       this.recoil=1;this.recoilDir=dir;}
     else this.impulse(dir*C.pulseImpulse*pw/m,-C.pulseLift/Math.max(1,m),'pulse');
-    if(!tn&&this.isWinding())this.cancelAttack();
+    if(!tn&&!red&&this.isWinding())this.cancelAttack();
     this.alert=6;
   }
   /* рывок сквозь механизм: толкает лёгких и средних, след ставит на выходе (Combat.update) */
@@ -125,6 +127,8 @@ class Mech extends Enemy{
     n.hp=Math.min(n.hp,n.max*(C.damagedAt-0.08));n.exT=Math.max(n.exT,C.interruptOpen+0.2);n.hitT=0.22;
     this.openT=C.interruptOpen*(g.gs.flags.stun_long?1.4:1);this.state='open';this.st=0;
     g.fx.interrupt(n.wx,n.wy,n.mat,this.isBoss);
+    /* срыв замаха — давление в резаке перегревается: запас на разрыв или аварийный импульс */
+    if(p&&p.gainHeat)p.gainHeat(1,n.wx,n.wy);
     this.onInterrupt(n,p);
   }
   slam(speed,side,imp){
@@ -165,10 +169,13 @@ class Mech extends Enemy{
   }
   hitNode(n,h,behind){
     const C=CFG.combat,g=this.world.game;
+    /* РАЗРЫВ (заряженный удар на перегреве): узел ломается сразу — даже бронированный в лоб; ядро — тройной урон */
+    if(h.rupture&&!n.core){g.fx.rupture(n.wx,n.wy,n.mat);this.breakNode(n,h,true);return 'break';}
     if(n.exT<=0&&n.deflect&&!(n.backOnly&&behind)&&!(n.frontOnly&&!behind)){
       n.hitT=0.08;g.fx.deflect(n.wx,n.wy,n.mat);this.react(h,0.35);return 'deflect';}
     if(n.markT>0&&!n.core){n.markT=0;this.breakNode(n,h,true);return 'break';}
-    const d=h.dmg*(n.exT>0?C.exposedMul:n.armor)*(h.heavy?C.heavyNodeMul:1)*(h.bonus?C.bonusMul:1);
+    if(h.rupture&&n.core)g.fx.rupture(n.wx,n.wy,n.mat);
+    const d=h.dmg*(n.exT>0?C.exposedMul:n.armor)*(h.heavy?C.heavyNodeMul:1)*(h.bonus?C.bonusMul:1)*(h.rupture&&n.core?3:1);
     const was=n.damaged;
     n.hp-=d;n.hitT=0.16;
     this.hp-=n.core?d:d*C.nodeLeak;
@@ -182,7 +189,7 @@ class Mech extends Enemy{
     const C=CFG.combat,g=this.world.game;
     const open=this.openT>0||this.pinT>0||this.stunT>0;
     if(this.bodyArmor<=0&&!open){g.fx.deflect(clamp(h.sx,this.x,this.x+this.w),clamp(h.sy,this.y,this.bottom),this.bodyMat);this.react(h,0.3);return 'deflect';}
-    const d=h.dmg*(open?1:this.bodyArmor)*(h.heavy?C.heavyMul:1)*(h.bonus?C.bonusMul:1);
+    const d=h.dmg*(open?1:this.bodyArmor)*(h.heavy?C.heavyMul:1)*(h.bonus?C.bonusMul:1)*(h.rupture?1.8:1);
     this.hp-=d;this.flash=0.12;
     g.fx.bodyHit(clamp(h.sx,this.x,this.x+this.w),clamp(h.sy,this.y,this.bottom),this.bodyMat,h,this.isBoss);
     this.react(h,0.75);

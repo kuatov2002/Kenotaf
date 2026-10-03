@@ -43,6 +43,10 @@ class HUD{
     for(const k in this.abEls){const on=!!gs.has(k);this.abEls[k].classList.toggle('on',on);this.abEls[k].style.display=on?'':'none';}
     this.el.lore.textContent=gs.lore;}
   energy(v){this.el.en.style.width=clamp(v,0,100)+'%';}
+  /* перегрев резака: три раскалённых шестигранника справа от давления */
+  heatSync(){const n=this.game.gs.heat||0;if(this._heat===n)return;this._heat=n;const el=this._hp_||(this._hp_=document.getElementById('heatPips'));if(!el)return;
+    const pips=el.querySelectorAll('i');pips.forEach((p,i)=>p.classList.toggle('on',i<n));el.classList.toggle('any',n>0);}
+  heatPulse(){this._heat=-1;this.heatSync();const el=document.getElementById('heatPips');if(!el)return;el.classList.remove('pulse');void el.offsetWidth;el.classList.add('pulse');}
   /* подкачка у фонаря: ячейка вспыхивает по очереди, вся полоса тёплая, пока шланг подцеплен */
   cellRefill(i){const c=this.cells[i];if(!c)return;c.classList.remove('refill');void c.offsetWidth;c.classList.add('refill');}
   lampRest(on){this.el.hp.classList.toggle('resting',!!on);}
@@ -92,6 +96,7 @@ class HUD{
     const g=this.game;
     /* ранен — пустые ячейки тлеют: их можно наполнить */
     {const hurt=g.gs.hp<g.gs.maxHp()&&g.state==='play';if(this._hurt!==hurt){this._hurt=hurt;this.el.hp.classList.toggle('hurt',hurt);}}
+    this.heatSync();
     if(g.world&&g.world.player&&!g.world.player.dead){
       this.energy(g.world.player.energy/g.world.player.maxEnergy()*100);
       if(this._hp!==g.gs.hp){this._hp=g.gs.hp;this.syncHp();}

@@ -104,7 +104,7 @@ class Overseer extends MechBoss{
           const ix=this.cx+this.face*3.2;g.particles.burst(ix,this.bottom,16,{kind:'debris',col:'#8a7a6a',spd:5,life:0.8,size:0.12,g:28});}
         break;}
       case 'chargeWind':{const W=1.1/des;this.vx=damp(this.vx,-this.face*1.0,4,dt);
-        this.telegraph(this.node('treads'),this.st/W,this.st>W-0.4);
+        this.telegraph(this.node('treads'),this.st/W,this.st>W-0.4,true);
         if(Math.random()<dt*70)g.particles.spawn({kind:'smoke',x:this.cx-this.face*2.4,y:this.bottom-0.4,vx:-this.face*2,vy:-1,life:1,size:0.5,grow:1,col:'#3a322a',drag:1});
         if(this.st>=W){this.state='charge';this.st=0;this.hitDone=false;g.audio.dash();}
         break;}

@@ -161,7 +161,7 @@ class Game{
   /* замедление времени (идеальное уклонение, прерывание): реальные секунды, множитель */
   slowmo(t,k){this.slowT=Math.max(this.slowT,t);this.slowK=Math.min(this.slowT>t?this.slowK:1,k);}
   onPlayerDeath(){
-    this.gs.hp=this.gs.maxHp();this.world.slain={};
+    this.gs.hp=this.gs.maxHp();this.world.slain={};this.gs.heat=0;
     this.transition(()=>{this.world.load(this.gs.cp.room,this.gs.cp.x,this.gs.cp.y);this.hud.syncHp();});
   }
   ending(){

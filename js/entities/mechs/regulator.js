@@ -65,7 +65,9 @@ class Regulator extends MechBoss{
           this.pose(0);if(this.geoHit(this.legSegs(1),p))this.damagePlayer(1,this.cx);}break;}   /* бьёт сама ходуля, выброшенная назад */
       case 'heel':this.vx=0;if(this.st>0.3){this.state='recover';this.st=0;}break;
       /* марш: три размашистых шага по долям к курьеру (стрелки на взводе) */
-      case 'marchWind':{this.vx=damp(this.vx,0,8,dt);if(this.st>=0.3/tp){this.state='march';this.st=0;this.steps=0;}break;}
+      /* марш — несрываемый: ходули на взводе, красное кольцо на корпусе; ответ — рывок сквозь */
+      case 'marchWind':{const Wd=0.6/tp;this.vx=damp(this.vx,0,8,dt);this.telegraph(this.node('core'),this.st/Wd,this.st>Wd-0.3,true);
+        if(this.st>=Wd){this.state='march';this.st=0;this.steps=0;}break;}
       case 'march':{const tgt=this.face*7.5;this.vx=damp(this.vx,tgt,6,dt);this.walk+=dt*8;
         if(this.beatT<dt*tp*1.01){this.steps++;g.audio.mat('brass',0.6);g.camera.addShake(0.2);}
         if(this.steps>=3||ad<3.4||this.wall!==0){this.vx*=0.3;this.state='recover';this.st=0.1;}break;}
@@ -92,7 +94,7 @@ class Regulator extends MechBoss{
           if(pd>0.6&&pd<L+0.4&&Math.abs(angDiff(this.ma,pa))<0.22){this.hitDone=true;this.damagePlayer();}}
         if(this.st>0.6){this.state='recover';this.st=0;}
         break;}
-      case 'chimeWind':{const Wd=0.8/tp;this.vx=damp(this.vx,0,8,dt);this.telegraph(this.node('balance'),this.st/Wd,this.st>Wd-0.3);
+      case 'chimeWind':{const Wd=0.8/tp;this.vx=damp(this.vx,0,8,dt);this.telegraph(this.node('balance'),this.st/Wd,this.st>Wd-0.3,true);
         if(this.st>=Wd){this.state='chime';this.st=0;const n=this.phase>=3?3:2,cy=this.bottom-3.6;
           for(let i=0;i<n;i++)W.later(i*520/tp,()=>{if(this.dead)return;BossFX.ring(W,this.cx,cy,{vr:7.5*Math.min(1.25,tp),rmax:16,band:0.55,col:'#ffe6a3'});
             g.audio.tone(1568-i*140,0.8,'sine',0.045,0,g.audio.verb);g.audio.tone(784,0.6,'sine',0.03);});}

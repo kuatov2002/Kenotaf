@@ -34,7 +34,19 @@ function drawNodeFX(c,e,t){
     if(n.hitT>0){c.save();c.globalCompositeOperation='lighter';
       c.fillStyle=rgba('#fff4dc',n.hitT*3.2);c.beginPath();c.arc(x,y,r*1.15,0,TAU);c.fill();c.restore();}
     /* телеграф: сжимающееся кольцо — когда оно сомкнулось на детали, окно прерывания открыто */
-    if(n.tele>0){const k=n.tele,R=r*(1.1+1.5*(1-k)),hot=n.teleHot;
+    if(n.tele>0&&n.red){/* НЕСРЫВАЕМАЯ: красное кольцо, пунктир и шевроны «уклонись» — импульс не поможет, только рывок */
+      const k=n.tele,R=r*(1.1+1.5*(1-k)),hot=n.teleHot,p=0.5+0.5*Math.sin(t*(hot?34:12));
+      c.save();c.globalCompositeOperation='lighter';
+      c.strokeStyle=rgba(hot?'#ff6a50':'#d8342a',hot?0.95:0.45+0.4*k);c.lineWidth=hot?0.09:0.06;
+      c.beginPath();c.arc(x,y,R,0,TAU);c.stroke();
+      c.setLineDash([0.12,0.08]);c.lineWidth=0.035;c.beginPath();c.arc(x,y,R+0.16,0,TAU);c.stroke();c.setLineDash([]);
+      c.fillStyle=rgba('#ff5a40',0.45+0.45*p);
+      for(const dx of [-1,1]){c.beginPath();c.moveTo(x+dx*(R+0.5),y-0.2);c.lineTo(x+dx*(R+0.28),y);c.lineTo(x+dx*(R+0.5),y+0.2);c.lineTo(x+dx*(R+0.38),y);c.closePath();c.fill();}
+      if(hot){const g=c.createRadialGradient(x,y,0,x,y,r*1.8);g.addColorStop(0,rgba('#ffd0c0',0.6));g.addColorStop(0.5,rgba('#ff3a2a',0.35+0.2*p));g.addColorStop(1,'rgba(200,30,20,0)');
+        c.fillStyle=g;c.beginPath();c.arc(x,y,r*1.8,0,TAU);c.fill();}
+      c.restore();
+      W.game.renderer.glowAdd(wx,wy,r*(hot?2.8:2),'#ff3a2a',hot?0.75:0.35*k);}
+    else if(n.tele>0){const k=n.tele,R=r*(1.1+1.5*(1-k)),hot=n.teleHot;
       c.save();c.globalCompositeOperation='lighter';
       c.strokeStyle=rgba(hot?'#ffe2a0':'#ffb45a',hot?0.95:0.35+0.4*k);c.lineWidth=hot?0.07:0.045;
       c.beginPath();c.arc(x,y,R,0,TAU);c.stroke();

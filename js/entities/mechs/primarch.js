@@ -125,7 +125,7 @@ class Primarch extends MechBoss{
         if(this.st>1.1){this.state='recover';this.st=0;}
         break;}
       /* штамп-прыжок: присел, тень на полу под курьером, прыжок, приземление штампом */
-      case 'leapWind':{const Wd=0.85/des;this.vx=damp(this.vx,0,8,dt);this.telegraph(this.node('stamp'),this.st/Wd,this.st>Wd-0.34);
+      case 'leapWind':{const Wd=0.85/des;this.vx=damp(this.vx,0,8,dt);this.telegraph(this.node('stamp'),this.st/Wd,this.st>Wd-0.34,true);
         if(this.st>=Wd){const tx=clamp(p.cx,10.6,R.w-10.6);this.leap={x0:this.cx,tx:tx,t:0,T:0.8/Math.min(des,1.2)};this.state='leap';this.st=0;this.face=tx>this.cx?1:-1;
           g.audio.dash();g.audio.steamBurst();g.particles.burst(this.cx,this.bottom,24,{kind:'steam',col:'#efe8dc',spd:6,life:0.8,size:0.5,grow:1.2,drag:1.6});}
         break;}
@@ -159,7 +159,7 @@ class Primarch extends MechBoss{
         break;}
       case 'seal':this.vx=0;if(this.st>0.6){this.state='recover';this.st=0;}break;
       case 'chargeWind':{const Wd=0.7/des;this.vx=damp(this.vx,-this.face*0.8,6,dt);
-        this.telegraph(this.node('armor')||this.node('core'),this.st/Wd,this.st>Wd-0.34);
+        this.telegraph(this.node('armor')||this.node('core'),this.st/Wd,this.st>Wd-0.34,true);
         if(this.st>=Wd){this.state='charge';this.st=0;this.hitDone=false;g.audio.dash();}
         break;}
       case 'charge':{this.vx=this.face*11;

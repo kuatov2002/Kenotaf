@@ -179,6 +179,11 @@ class AudioSystem{
     f.frequency.exponentialRampToValueAtTime(2600,this.t()+0.5);s.connect(f);this.env(f,0.12,0.5,0.03);s.start();s.stop(this.t()+0.7);}
   chargeFull(){this.tone(740,0.25,'sine',0.025,760);this.tone(1110,0.2,'sine',0.012);}
   heavy(){this.nz(0.22,700,0.6,0.07);this.tone(120,0.25,'triangle',0.06,60);}
+  /* разрыв: глухой удар, металл рвётся, перегретый пар */
+  rupture(){if(!this.ready||this.muted)return;this.tone(46,0.9,'sine',0.2,24);this.nz(0.5,320,0.5,0.12,'lowpass');
+    this.tone(220,0.5,'sawtooth',0.03,90);this.nz(0.35,2600,0.8,0.05);this.tone(880,0.8,'sine',0.02,440,this.verb);}
+  /* перегрев копится: короткий нарастающий свист */
+  heat(n){this.tone(520+n*180,0.22,'sine',0.03,760+n*220);this.nz(0.12,3200,1.2,0.02);}
   scrap(){const r=0.9+Math.random()*0.2;this.tone(1900*r,0.08,'sine',0.012,2300*r);}
   steamBurst(){this.nz(0.6,1200,0.5,0.07);this.nz(0.3,300,0.6,0.06,'lowpass');}
   /* гидравлика стрелы: шипение + стон штока (замах босса) */

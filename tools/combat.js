@@ -313,6 +313,32 @@ S.arc_lunge=AR+`brk('glass');LAB.step(400);game.world.player.invuln=1e9;p.x=4;b.
   const cg=b.node('cage');game.world.player.invuln=0;return {ok:seen&&cg.exT>0,info:{st:b.state,ex:cg.exT,tr:tr.join(' ')}};`;
 S.arc_climb=AR+`brk('glass');LAB.step(400);brk('cage');LAB.step(900);const L=(game.world.room.hazards||[]).find(h=>h.ctl==='archlead');
   return {ok:b.md==='wheel'&&b.phase===3&&L&&L.kind==='pit'&&!b.node('core').broken,info:{md:b.md,ph:b.phase,lead:L&&L.kind}};`;
+/* ---------- экономика выбора: перегрев резака ---------- */
+/* срыв замаха перегревает резак: +1 заряд */
+S.heat_gain=`${PRE()}game.gs.heat=0;
+  const e=LAB.e(LAB.spawn('repairer',35.4,11-1.55));e.cd=0;
+  LAB.until("e.state==='wind'&&e.nodes[0].teleHot",600);game.world.player.face=1;LAB.step(1,[],{0:['pulse']});LAB.step(2);
+  return {ok:e.openT>0&&game.gs.heat===1,info:{open:e.openT>0,heat:game.gs.heat}};`;
+/* разрыв: заряженный удар на перегреве вырывает бронированный узел в лоб (обычный удар — рикошет) */
+S.heat_rupture=`${PR}
+  const nb=()=>b.nodes.filter(n=>n.broken).length,heavy=()=>{p.x=b.cx-2.6;p.face=1;p.vx=0;LAB.step(2);LAB.step(1,['KeyJ'],{0:['attack']});LAB.step(70,['KeyJ']);LAB.step(40);};
+  game.gs.heat=0;const n0=nb();heavy();const plain=nb()-n0;
+  game.gs.heat=1;const n1=nb();heavy();const rup=nb()-n1;
+  return {ok:plain===0&&rup===1&&game.gs.heat===0,info:{plain,rup,heat:game.gs.heat,nodes:b.nodes.map(n=>n.id+':'+n.state).join(' ')}};`;
+/* разрыв мимо механизма заряд не тратит */
+S.heat_keep_on_miss=`${PRE()}game.gs.heat=2;const p=LAB.p();p.face=-1;
+  LAB.step(1,['KeyJ'],{0:['attack']});LAB.step(70,['KeyJ']);LAB.step(40);
+  return {ok:game.gs.heat===2,info:{heat:game.gs.heat}};`;
+/* давления нет — импульс берёт заряд перегрева */
+S.heat_pulse=`${PRE()}const p=LAB.p();p.energy=0;p.energyDelay=9;game.gs.heat=1;
+  LAB.step(1,[],{0:['pulse']});LAB.step(2);const fired=p.pulseT>0;
+  return {ok:fired&&game.gs.heat===0,info:{fired,heat:game.gs.heat}};`;
+/* красный телеграф: таран Надсмотрщика импульсом не срывается — только рывок */
+S.red_no_interrupt=`${OV()}
+  p.x=b.cx-3.2;p.face=1;b.face=-1;b.state='chargeWind';b.st=0;b.cd=99;
+  for(let i=0;i<400&&!b.nodes.some(n=>n.teleHot);i++)LAB.step(1);const red=b.nodes.some(n=>n.teleHot&&n.red);
+  game.world.player.face=1;game.world.player.invuln=1e9;LAB.step(1,[],{0:['pulse']});LAB.step(4);
+  return {ok:red&&b.state!=='open'&&game.gs.heat===0,info:{red,state:b.state}};`;
 /* «СНАРУЖИ · НИЧЕГО · НЕТ»: три звона уклоняемы идеальным вводом — рывок ровно перед касанием кольца
    (к ближней стене / к центру площадки), с разных точек арены фазы III. Сложно, но не гарантированный урон */
 S.arc_contra_dodge=AR+`brk('glass');LAB.step(400);brk('cage');LAB.step(900);const W=game.world,R=W.room;
