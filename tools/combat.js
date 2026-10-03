@@ -236,6 +236,17 @@ S.pr_kill=`${PR}
   for(const id of ['armor','claw','tank'])brk(id);LAB.step(20);brk('core');LAB.step(240);
   return {ok:b.dead&&game.gs.bosses.primarch&&game.world.debris.some(d=>d.corpse),info:{dead:b.dead,flag:!!game.gs.bosses.primarch}};`;
 
+/* ---------- Корчеватель: коса бьёт только там, где лезвие (z3_boss, пол y=22) ---------- */
+S.up_scythe_fair=`LAB.setup('z3_boss',30,22-1.68,['pulse','dash']);LAB.step(1);
+  const b=game.world.boss,p=LAB.p();b.activated=true;b.woke=true;b.state='idle';b.st=0;b.cd=99;LAB.step(2);
+  let hits=0;b.damagePlayer=function(){hits++;};
+  const sw=(st,dx,cr)=>{b.x=32-b.w/2;b.vx=0;p.x=32+dx-p.w/2;p.y=22-p.h;p.vx=p.vy=0;LAB.step(cr?20:2,cr?['KeyS']:[]);
+    hits=0;const X0=b.cx;b.face=1;b.state=st+'Wind';b.st=0.8;b.hitDone=false;
+    for(let i=0;i<80&&b.state!=='recover';i++){p.x=X0+dx-p.w/2;p.vx=0;p.invuln=0;b.cd=99;b.face=1;LAB.step(1,cr?['KeyS']:[]);}
+    b.state='idle';b.st=0;LAB.step(30);return hits>0;};
+  const r={lowNear:sw('low',3.5),lowFar:sw('low',5.6),highNear:sw('high',3.5),highCrouch:sw('high',4,1),highFar:sw('high',6)};
+  return {ok:r.lowNear&&!r.lowFar&&r.highNear&&!r.highCrouch&&!r.highFar,info:r};`;
+
 /* ---------- Архивариус (старый босс): импульс без урона не должен сломать его бой ---------- */
 /* опылитель: заходит, телеграфирует жалом, бросается; облако пыльцы — зона */
 S.pollinator=`LAB.setup('z3_herbarium',8,15-1.68,['pulse','dash','hook','claws','filter','magnet']);game.world.entryT=9;game.world.playerActed=true;

@@ -29,7 +29,7 @@ class Uprooter extends MechBoss{
   des(){return (this.phase>=3?1.35:this.phase>=2?1.15:1)*(BossDyn.linking(this)?1.2:1);}
   /* связки: коса низ/верх, корчевание с добивкой, облака и таран сквозь них */
   pickString(ad){const ph=this.phase,sc=this.has('scythe'),dr=this.has('drum'),tk=this.has('tank');const o=[];
-    if(ad<6.2)o.push([['low','high'],sc?2.6:0],[['high','low'],sc?2:0],[['low','uproot'],sc&&dr?1.4:0],[['spray','till'],tk&&dr?1.2:0],
+    if(ad<4.9)o.push([['low','high'],sc?2.6:0],[['high','low'],sc?2:0],[['low','uproot'],sc&&dr?1.4:0],[['spray','till'],tk&&dr?1.2:0],
       [['low','high','till'],sc&&dr&&ph>=3?2:0],[['high','spray'],sc&&tk?1:0]);
     else o.push([['till'],dr?2:0],[['uproot','low'],dr&&sc?2:0],[['spray','till'],tk&&dr?1.6:0],[['throw','uproot'],ph>=2&&dr?1.6:0],
       [['throw','till'],ph>=2&&dr?1.2:0],[['uproot','uproot'],dr&&ph>=3?1.4:0],[['throw'],1]);
@@ -66,7 +66,7 @@ class Uprooter extends MechBoss{
           if(this.turnT>0.55&&ad<4.2&&this.cd<=0.3){this.turnT=0;this.begin('buck');break;}
           if(this.turnT>(0.7/des)){this.face=want;this.turnT=0;this.cd=Math.min(this.cd,0.1);g.audio.hydraulic(0.6);}}else this.turnT=0;
         /* преследование: держит курьера на дистанции косы */
-        const spd=(this.phase>=3?3.6:3.0)*Math.min(des,1.2);this.vx=damp(this.vx,this.face===want?this.face*(ad>5.2?spd:ad<2.6?-spd*0.5:0.3*spd):0,3,dt);
+        const spd=(this.phase>=3?3.6:3.0)*Math.min(des,1.2);this.vx=damp(this.vx,this.face===want?this.face*(ad>4.2?spd:ad<2.6?-spd*0.5:0.3*spd):0,3,dt);
         if(this.cd<=0&&this.face===want)this.begin(BossDyn.queue(this,this.pickString(ad)));
         break;}
       /* рывок назад: выхлоп из кормы (телеграф), гусеницы на реверс — корма бьёт */
@@ -84,12 +84,14 @@ class Uprooter extends MechBoss{
         if(this.st>1.5){this.state='idle';this.st=0;this.cd=0.2;}break;
       case 'lowWind':case 'highWind':{const Wd=0.85/des,low=this.state==='lowWind';this.vx=damp(this.vx,0,7,dt);
         this.telegraph(this.node('scythe'),this.st/Wd,this.st>Wd-0.36);
-        if(this.st>=Wd){this.state=low?'low':'high';this.st=0;this.hitDone=false;g.audio.heavy();g.audio.melee();g.camera.addShake(0.3);}
+        if(this.st>=Wd){this.state=low?'low':'high';this.st=0;this.hitDone=false;this.bladePrev=null;g.audio.heavy();g.audio.melee();g.camera.addShake(0.3);}
         break;}
       case 'low':case 'high':{this.vx=damp(this.vx,this.face*2.2,4,dt);
-        const low=this.state==='low',hb={x:this.face>0?this.cx-0.5:this.cx-6.3,y:low?this.bottom-1.15:this.bottom-2.0,w:6.8,h:low?1.15:0.75};   /* верх — на уровне головы: присел — прошла над тобой */
-        if(!this.hitDone&&this.st>0.05&&this.st<0.3&&aabb(hb,p.rect())){this.hitDone=true;this.damagePlayer();}
-        if(low&&this.st<0.25&&Math.random()<dt*60)g.particles.spawn({kind:'leaf',x:this.cx+this.face*(1+Math.random()*5),y:this.bottom-0.2,vx:this.face*4,vy:-3,life:1.2,size:0.14,col:'#6f9a4a',rot:Math.random()*6,vr:8,drag:0.8,a:0.9});
+        /* бьёт сама коса: предплечье и лезвие, как нарисованы, с заметанием между кадрами */
+        const low=this.state==='low';
+        if(!this.hitDone&&this.st<0.3&&this.bladeHits(p.rect(),0.14)){this.hitDone=true;this.damagePlayer();}
+        const tr=this.P.trail,te=tr&&tr[tr.length-1];
+        if(low&&te&&te.y>-0.5&&this.st<0.25&&Math.random()<dt*60)g.particles.spawn({kind:'leaf',x:this.cx+this.face*(te.x+(Math.random()-0.5)*0.8),y:this.bottom-0.2,vx:this.face*4,vy:-3,life:1.2,size:0.14,col:'#6f9a4a',rot:Math.random()*6,vr:8,drag:0.8,a:0.9});
         if(this.st>0.4){this.state='recover';this.st=0;}
         break;}
       case 'tillWind':{const Wd=1.05/des;this.vx=damp(this.vx,-this.face*0.8,5,dt);
@@ -166,19 +168,23 @@ class Uprooter extends MechBoss{
     const P=this.P,s=this.state,t=this.t;dt=dt||0;
     this.tread+=this.vx*this.face*dt;
     const kw=(W)=>clamp(this.st/(W/this.des()),0,1);
-    let sa=-2.2+Math.sin(t*1.4)*0.06,sb=1.5;   /* коса: плечо, локоть (отн. углы) */
+    let sa=-2.2+Math.sin(t*1.4)*0.06,sb=1.5,wr=0;   /* коса: плечо, локоть (отн. углы), кисть лезвия */
     if(s==='lowWind'){const k=kw(0.85);sa=lerp(-2.2,-0.4,EZ.out(k));sb=lerp(1.5,2.6,k);}
-    else if(s==='low'){const k=clamp(this.st/0.2,0,1);sa=lerp(-0.4,0.35,EZ.out(k));sb=lerp(2.6,0.4,k);}
+    else if(s==='low'){const k=clamp(this.st/0.2,0,1);sa=lerp(-0.4,0.95,EZ.out(k));sb=lerp(2.6,-0.15,k);wr=-0.62*k;}   /* косит вперёд вдоль пола */
     else if(s==='highWind'){const k=kw(0.85);sa=lerp(-2.2,-2.9,EZ.out(k));sb=lerp(1.5,0.4,k);}
-    else if(s==='high'){const k=clamp(this.st/0.2,0,1);sa=lerp(-2.9,0.7,EZ.out(k));sb=lerp(0.4,-0.5,k);}
+    else if(s==='high'){const k=clamp(this.st/0.2,0,1);sa=lerp(-2.9,1.21,EZ.out(k));sb=lerp(0.4,-0.88,k);wr=-0.6*k;}   /* рубит сверху и встаёт плашмя на уровне головы */
     else if(s==='throwWind'){sa=-3.0;sb=0.6;}
     else if(s==='stunWall'||s==='choke'||this.openT>0){sa=-0.8+Math.sin(t*7)*0.06;sb=1.9;}
-    P.sa=dt?damp(P.sa,sa,s==='low'||s==='high'?40:10,dt):sa;P.sb=dt?damp(P.sb,sb,s==='low'||s==='high'?40:10,dt):sb;
+    P.sa=dt?damp(P.sa,sa,s==='low'||s==='high'?40:10,dt):sa;P.sb=dt?damp(P.sb,sb,s==='low'||s==='high'?40:10,dt):sb;P.wr=dt?damp(P.wr||0,wr,s==='low'||s==='high'?40:10,dt):wr;
     P.lean=(s==='till'?0.05:0)+(s==='stunWall'?-0.05:0)+this.recoil*0.02;
     P.bob=Math.sin(t*2)*0.03+(s==='till'?Math.sin(t*40)*0.04:0);
     const sh={x:0.1,y:-3.5+P.bob},el={x:sh.x+Math.cos(P.sa)*1.6,y:sh.y+Math.sin(P.sa)*1.6},tip={x:el.x+Math.cos(P.sa+P.sb)*1.7,y:el.y+Math.sin(P.sa+P.sb)*1.7};
     if(tip.y>-0.15)tip.y=-0.15;
     P.sh=sh;P.el=el;P.tip=tip;
+    /* остриё не уходит под пол: кисть доворачивает лезвие, и оно скребёт по плитке */
+    P.wa=P.wr;{const A=Math.atan2(tip.y-el.y,tip.x-el.x)+P.wr+0.26,lim=(-0.08-tip.y)/2.018;
+      if(lim<1&&tip.y+2.018*Math.sin(A)>-0.08){const as=Math.asin(Math.max(-1,lim));P.wa=P.wr+(Math.cos(A)>=0?as:Math.PI-as)-A;}}
+    if(s==='low'||s==='high'){const e=this.bladeLocal().pop();(P.trail||(P.trail=[])).push({x:e[0],y:e[1]});if(P.trail.length>9)P.trail.shift();}else P.trail=null;
     const dk=(s==='uprootWind'||s==='uproot')?0.5:0;P.drum={x:2.75,y:-0.75+dk*0.4};
     const dn=this.node('drum');dn.lx=P.drum.x;dn.ly=P.drum.y;
     const sn=this.node('scythe');sn.lx=el.x;sn.ly=el.y;
@@ -279,20 +285,33 @@ class Uprooter extends MechBoss{
       MK.piston(c,P.sh.x+0.1,P.sh.y+0.2,(P.sh.x+P.el.x)/2,(P.sh.y+P.el.y)/2+0.12,0.09,0.6);
       MK.joint(c,P.el.x,P.el.y,0.2,'brass');
       MK.seg(c,P.el.x,P.el.y,P.tip.x,P.tip.y,0.16,'steel',{});
-      const a=Math.atan2(P.tip.y-P.el.y,P.tip.x-P.el.x);c.save();c.translate(P.tip.x,P.tip.y);c.rotate(a);
+      const a=Math.atan2(P.tip.y-P.el.y,P.tip.x-P.el.x)+(P.wa||0);c.save();c.translate(P.tip.x,P.tip.y);c.rotate(a);
       c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(0.9,-0.42,1.95,0.52);c.quadraticCurveTo(0.9,-0.04,0.05,0.24);c.closePath();
       c.fillStyle=MK.plateGrad(c,'steel',0,-0.4,1.9,0.9);c.fill();c.strokeStyle=MAT.steel.ed;c.lineWidth=0.03;c.stroke();
       c.strokeStyle='#f2f6f8';c.lineWidth=0.035;c.beginPath();c.moveTo(0.12,0.02);c.quadraticCurveTo(0.9,-0.38,1.88,0.46);c.stroke();
       MK.bolt(c,0.12,0.08,0.05,'brass');c.restore();}
     else MK.stump(c,P.sh.x+0.1,P.sh.y,0.18,P.sa,this.node('scythe').seed,t,'brass');
   }
+  /* коса в своих координатах (как в draw): предплечье el→tip и кромка лезвия до острия */
+  bladeLocal(){const P=this.P,pts=[];if(!P.tip)return pts;
+    const a=Math.atan2(P.tip.y-P.el.y,P.tip.x-P.el.x)+(P.wa||0),ca=Math.cos(a),sn=Math.sin(a);
+    for(let i=0;i<=4;i++){const k=i/4;pts.push([P.el.x+(P.tip.x-P.el.x)*k,P.el.y+(P.tip.y-P.el.y)*k]);}
+    for(let i=1;i<=8;i++){const k=i/8,u=1-k,lx=2*u*k*0.9+k*k*1.95,ly=-2*u*k*0.42+k*k*0.52;pts.push([P.tip.x+lx*ca-ly*sn,P.tip.y+lx*sn+ly*ca]);}
+    return pts;}
+  bladeHits(r,pad){
+    const cur=this.bladeLocal().map(q=>({x:this.cx+this.face*q[0],y:this.bottom+q[1]})),prev=this.bladePrev||cur;this.bladePrev=cur;
+    for(let i=0;i<cur.length;i++){const a=prev[i]||cur[i],b=cur[i];
+      for(let s=0;s<=1;s+=0.25){const x=a.x+(b.x-a.x)*s,y=a.y+(b.y-a.y)*s;
+        if(x>r.x-pad&&x<r.x+r.w+pad&&y>r.y-pad&&y<r.y+r.h+pad)return true;}}
+    return false;}
   drawFX(c,t){
-    /* след косы и искры барабана — поверх */
+    /* след косы — за остриём, там же, где она прошла; поверх */
     const s=this.state,P=this.P;
-    if((s==='low'||s==='high')&&this.st<0.25){c.save();c.globalCompositeOperation='lighter';const a=1-this.st/0.25;
-      c.strokeStyle=rgba('#e8f6ff',0.6*a);c.lineWidth=0.18;c.beginPath();
-      if(s==='low'){c.moveTo(-0.4,-0.6);c.quadraticCurveTo(3,-1.2,6.2,-0.5);}else{c.moveTo(-0.4,-1.9);c.quadraticCurveTo(3,-2.1,6.2,-1.35);}
-      c.stroke();c.restore();}
+    if((s==='low'||s==='high')&&P.trail&&P.trail.length>1){c.save();c.globalCompositeOperation='lighter';c.lineCap='round';
+      const T=P.trail,a=1-clamp(this.st/0.3,0,1);
+      for(let i=1;i<T.length;i++){const k=i/(T.length-1);c.strokeStyle=rgba('#e8f6ff',0.65*a*k);c.lineWidth=0.06+0.16*k;
+        c.beginPath();c.moveTo(T[i-1].x,T[i-1].y);c.lineTo(T[i].x,T[i].y);c.stroke();}
+      c.restore();}
   }
   partDebris(n){
     if(n.id==='drum')return {w:1.4,h:1.4,mass:2.4,mat:'steel',draw:(c,t)=>{c.fillStyle=MK.cylGrad(c,'iron',-0.6,0,0.6,0);c.beginPath();c.arc(0,0,0.6,0,TAU);c.fill();
