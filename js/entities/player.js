@@ -150,6 +150,7 @@ class Player extends Body{
       }
       let cap=sliding?C.slideSpeed:(this.crouch?C.crouchMax:C.maxRun*(this.chargeT>0.12?C.heavyMove:1));
       if(this.flingT>0&&!this.onGround&&mv*this.vx>=0)cap=Math.max(cap,Math.abs(this.vx));
+      if(this.walkCap){cap=Math.min(cap,this.walkCap);if(Math.abs(this.vx)>cap)this.vx=(this.vx>0?1:-1)*cap;}   /* сцена: шаг, а не бег */
       if(Math.abs(this.vx)>cap)this.vx=damp(this.vx,(this.vx>0?1:-1)*cap,C.overCap,dt);
     }else if(sliding){
       this.vx=damp(this.vx,0,1.6,dt);

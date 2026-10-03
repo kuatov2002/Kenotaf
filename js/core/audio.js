@@ -47,7 +47,7 @@ class AudioSystem{
     line(0.29,0.42);line(0.43,0.34);
     const sr=ctx.sampleRate,n=ctx.createBuffer(1,sr*2,sr),d=n.getChannelData(0);
     for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;this.noise=n;
-    this.ready=true;this.zone='';
+    this.ready=true;this.zone='';this.music=new Music(this);
     const inRoom=game&&game.world&&game.world.room&&game.state!=='menu';
     this.setZone(inRoom?game.world.room.zone:'sump');
   }

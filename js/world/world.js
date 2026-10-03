@@ -157,7 +157,7 @@ class World{
     this.updateMachines(dt);
     this.updateHazards();
     this.updateWaves(dt);
-    this.player.update(dt,g.input);
+    this.player.update(dt,g.scriptInput||g.input);   /* сцена (финал) ведёт курьера сама */
     this.entryT+=dt;
     if(!this.playerActed){const p=this.player,I=g.input;
       if(I.move!==0||p.jumpBuf>0||!p.onGround||p.atkPhase||p.dashT>0||p.pulseT>0||p.crouch||p.healT>0)this.playerActed=true;}

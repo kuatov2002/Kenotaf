@@ -209,3 +209,15 @@ kbd.kc{min-width:30px;height:30px;padding:0 8px;display:inline-grid;place-items:
 .maplegend .lg-sec{color:#e8c96a;width:auto;font-size:11px}
 .maplegend .lg-item{background:#f0e6c8;border-radius:50%;width:7px;height:7px;box-shadow:0 0 0 2px rgba(240,230,200,.3)}
 .maplegend .lg-lock{background:#ff6e50;width:7px;height:7px}
+/* финал: голос за кадром — крупно, светло, медленно проявляется; сверху — метка слоя / пропуск */
+#nar{position:absolute;inset:0;pointer-events:none;z-index:6;opacity:0;transition:opacity 1s}
+#nar.on{opacity:1}
+#nar .nl{position:absolute;left:8%;right:8%;bottom:17%;text-align:center;font-family:Oswald,sans-serif;font-weight:300;
+  font-size:clamp(17px,2.2vw,30px);letter-spacing:.24em;line-height:1.6;color:#f4ecd8;text-shadow:0 2px 18px rgba(0,0,0,.75),0 0 2px rgba(0,0,0,.9);
+  opacity:0;transform:translateY(8px);transition:opacity 1.6s ease,transform 2.4s ease}
+#nar .nl.on{opacity:1;transform:none}
+#nar .nk{position:absolute;left:0;right:0;top:13%;text-align:center;font-family:Oswald,sans-serif;font-weight:500;font-size:13px;
+  letter-spacing:.6em;color:rgba(240,230,207,.75);opacity:0;transition:opacity .8s}
+#nar .nk.on{opacity:1;animation:narK 3.2s ease forwards}
+#nar .nk.skip{animation:none;opacity:1;color:#ffcf7a}
+@keyframes narK{0%{opacity:0}15%{opacity:1}70%{opacity:1}100%{opacity:0}}

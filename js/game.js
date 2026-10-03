@@ -169,15 +169,15 @@ class Game{
     const el=document.getElementById('endcard'),c=el.querySelector('.c');
     /* B — правда сказана всем ярусам (вещательный массив); A — курьер вышел один */
     const F=this.gs.flags,b=!!F.broadcast_done;
-    const lines=['ТРАВА. ВЕТЕР. ОБЛАКА. ЛИСТ ИЗ КАПСУЛЫ БЫЛ ОТСЮДА.',
-      'МИР НЕ КОНЧИЛСЯ. ПЕЧАТЬ БЫЛА НЕ ЩИТОМ, А ЗАМКОМ — И ЗАПИРАЛАСЬ ИЗНУТРИ.',
-      'КУРЬЕРУ ВЕЛЕЛИ ВОЗИТЬ ПИСЬМА И НЕ ЧИТАТЬ ИХ. ОН ПРОЧИТАЛ.'];
+    /* то, что сцена уже сказала (трава, лист, «он прочитал»), здесь не повторяется */
+    const lines=['МИР НЕ КОНЧИЛСЯ. ПЕЧАТЬ БЫЛА НЕ ЩИТОМ, А ЗАМКОМ.'];
     if(b)lines.push('ГОЛОСА С ЦИЛИНДРОВ ИДУТ ПО ВСЕМ ЯРУСАМ. ВНИЗУ ОТКРЫВАЮТ ГЕРМОДВЕРИ — НЕ ПО ПРИКАЗУ.',
       'КЕНОТАФ — ПАМЯТНИК ТОМУ, ЧЕГО НЕ БЫЛО. ТЕПЕРЬ ЭТО ПРОСТО ДВЕРЬ. ЗА ТОБОЙ ИДУТ.');
     else lines.push('ТЫ ВЫШЕЛ ОДИН. ВНИЗУ ВСЁ ЕЩЁ ВЕРЯТ В КОНЕЦ СВЕТА: ИМ НИКТО НЕ СКАЗАЛ.',
       'ДВЕРЬ ОТКРЫТА. НО ЧТОБЫ ВЫЙТИ, НАДО ЗНАТЬ, ЧТО ОНА ЕСТЬ.');
     if(F.post_all)lines.push('ПОЧТМЕЙСТЕР ПЕРЕПИСАЛА ВСЕ ТРИДЦАТЬ ЗАПИСЕЙ. ИХ ЧИТАЮТ ВСЛУХ НА КАЖДОМ ЯРУСЕ.');
     if(F.got_letter)lines.push('НА ГРЕБНЕ — ДЫМ КОСТРА. ТЕ, КТО ПИСАЛ В ЗАБОРНИК, ВСЁ ЕЩЁ ЖДУТ.');
+    if(F.c38_met)lines.push('ТРИДЦАТЬ ВОСЬМОЙ НЕ ДОШЁЛ ГОД НАЗАД. ЕГО ЛИСТ ДОНЁС ДРУГОЙ КУРЬЕР.');
     let html='';
     lines.forEach(l=>html+='<p>'+l+'</p>');
     html+='<h3>КЕНОТАФ</h3><p class="cr">КОНЕЦ</p>';
@@ -187,12 +187,13 @@ class Game{
     c.innerHTML=html;
     el.classList.add('sky');el.style.opacity=1;el.classList.add('on');this.finale.startSky();
     const ps=[...c.querySelectorAll('p')],h3=c.querySelector('h3');
-    ps.forEach((p,i)=>setTimeout(()=>p.classList.add('on'),3000+i*2200));
-    setTimeout(()=>h3.classList.add('on'),3000+(ps.length-1)*2200);
+    /* медленно: по строке в три с половиной секунды, название — после паузы */
+    ps.forEach((p,i)=>setTimeout(()=>p.classList.add('on'),3500+i*3500));
+    setTimeout(()=>h3.classList.add('on'),3500+(ps.length-1)*3500+1500);
     const btn=c.querySelector('#btnEnd');
     /* выход: клик по кнопке или E / ПРОБЕЛ / ENTER, как только она проявилась */
     this.endReady=false;btn.onclick=()=>{if(this.state==='ending')this.toMenuState();};
-    setTimeout(()=>{btn.classList.add('on');const f=c.querySelector('.foot');if(f)f.classList.add('on');this.endReady=true;},3000+lines.length*2200+2200);
+    setTimeout(()=>{btn.classList.add('on');const f=c.querySelector('.foot');if(f)f.classList.add('on');this.endReady=true;},3500+lines.length*3500+3500);
     this.audio.sky();
   }
   resize(){
@@ -282,9 +283,26 @@ class Game{
     }
     /* схема в паузе живая: пульсирует точка курьера */
     if(this.state==='pause'&&this.mapCv&&(this._mapT=(this._mapT||0)+dt)>0.05){this._mapT=0;this.map.render(this.mapCv);}
+    this.musicTick(dt);
     this.render(dt);
     this.input.endFrame();
   }
+  /* музыка: что играть — решает состояние мира; часы секвенсора идут сами и меняют тему на границе такта */
+  musicTick(dt){const A=this.audio;if(!A.music)return;
+    let want='menu',fight=0,phase=1;const W=this.world;
+    if(this.state==='finale'||this.state==='ending'||this.finale.active)want='finale';
+    else if((this.state==='play'||this.state==='pause'||this.state==='travel')&&W.room){
+      const b=W.boss;
+      if(b&&b.activated&&!b.dead){want=STYLES['boss_'+b.type]?'boss_'+b.type:'boss_mini';phase=b.phase||1;}
+      else if(W.miniBoss&&!W.miniBoss.dead&&W.miniBoss.engaged){want='boss_mini';phase=W.miniBoss.phase||1;}
+      else{want=W.room.zone==='surface'?'surface':(STYLES[W.room.zone]?W.room.zone:'sump');
+        const p=W.player;let k=0;
+        if(p)for(const e of W.enemies){if(e.dead)continue;const d=Math.hypot(e.cx-p.cx,e.cy-p.cy);
+          if(d<18&&(e.alert>0||e.state==='wind'||e.state==='strike'))k=Math.max(k,1-d/26);}
+        /* бой держится 4 с после последнего признака — слой не мигает */
+        if(k>0.25)this.fightHold=4;else if(this.fightHold>0)this.fightHold-=dt;
+        fight=this.fightHold>0?1:0;}}
+    A.music.set(want,fight,phase);A.music.update(dt);}
   menuEmit(dt){
     this._me=(this._me||0)+dt;
     if(this._me>0.07){
@@ -344,6 +362,7 @@ class Game{
     this.renderer.bloomPass(c);
     this.renderer.post(c,zone);
     c.setTransform(1,0,0,1,0,0);
+    if(this.finale.active)this.finale.drawOverlay(c);
     if(!inMenu&&this.world.inPollen&&this.state==='play'){
       /* в пыльце края экрана зеленеют тем сильнее, чем меньше заряд фильтра */
       const k=1-clamp((this.world.filter||0)/this.world.filterCap(),0,1);

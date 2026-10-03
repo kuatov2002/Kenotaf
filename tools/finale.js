@@ -1,4 +1,4 @@
-/* Прогон финала в реальном времени: колесо Печати → подъём → поверхность (идти вправо) → небо.
+/* Прогон финала в реальном времени: вся сцена без ввода — печать, взлёт, шахта, утро, небо.
    node tools/finale.js [папка] [--b]   (--b — концовка B: правда сказана ярусам)
    Снимки по ходу; в конце — состояние и текст финала. */
 'use strict';
@@ -16,17 +16,13 @@ const {serve,launch,openGame}=require('./lib');
       g.world.load('z5_boss',24,21.6-1.72);},B);
     await wait(800);
     await L.page.evaluate(()=>{const W=game.world,wh=W.interactables.find(i=>i.def.kind==='wheel');wh.use(game);});
-    await wait(2600);await shot('1_seal_lead');
-    await wait(3600);await shot('2_seal_light');
-    await wait(4200);await shot('3_ascent');
-    await wait(7000);await shot('4_ascent_late');
-    await wait(5600);await shot('5_surface');
-    const st0=await L.page.evaluate(()=>({state:game.state,room:game.world.room&&game.world.room.id,act:game.finale.act}));
-    /* идти вправо, пока не сработает гребень */
-    for(let i=0;i<60;i++){await L.page.evaluate(()=>{game.input.k=Object.create(null);game.input.k.KeyD=true;});await wait(200);
-      if(i===14)await shot('6_walk');
-      const s=await L.page.evaluate(()=>game.state);if(s==='ending')break;}
-    await L.page.evaluate(()=>{game.input.k=Object.create(null);});
+    /* сцена идёт сама: снимки по таймлайну (от поворота колеса) */
+    const T0=Date.now(),until=async(sec,name)=>{const d=sec*1000-(Date.now()-T0);if(d>0)await wait(d);await shot(name);};
+    await until(2.5,'01_wheel');await until(8,'02_layers');await until(15.5,'03_light');await until(19.5,'04_not_burn');
+    await until(24,'05_rise');await until(29.5,'06_rise_white');await until(36,'07_shaft_lead');await until(52,'08_shaft_concrete');await until(64,'09_shaft_roots');
+    await until(70,'10_dawn');await until(76,'11_look_up');await until(83,'12_grass');await until(90,'13_kneel');await until(95,'14_leaf');
+    const st0=await L.page.evaluate(()=>({state:game.state,room:game.world.room&&game.world.room.id,act:game.finale.act,x:game.world.player&&game.world.player.cx}));
+    for(let i=0;i<120;i++){await wait(500);const s=await L.page.evaluate(()=>game.state);if(s==='ending')break;if(i===16)await shot('15_walk');}
     await wait(3500);await shot('7_sky');
     await wait(9000);await shot('8_sky_lines');
     await wait(9000);await shot('9_title');
