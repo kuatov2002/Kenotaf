@@ -73,6 +73,7 @@ class World{
       if(BC)this.boss=new BC(this,b.x,b.y);
     }
     this.parallax.build(this.room);
+    g.trials.enter(this);
     if(!soft){
       g.camera.reset(clamp(px+0.3,1,Math.max(1,this.room.w-1)),clamp(py-1,1,Math.max(1,this.room.h-1)),1);
       g.particles.clear();
@@ -188,6 +189,7 @@ class World{
     /* сцена босса: вступление-«открытка» и смена зала в последней фазе (js/world/bossstage.js) */
     if(this.stage)BossStage.update(this,dt);
     this.updateMini(dt);
+    this.game.trials.update(this,dt);
     for(let i=0;i<this.pushables.length;i++)this.pushables[i].update(dt);
     this.updateProjectiles(dt);
     updateZones(this,dt);

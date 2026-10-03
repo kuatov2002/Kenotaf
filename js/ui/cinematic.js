@@ -37,7 +37,7 @@ class Cinematic{
     const ups=(d.upgrades||[]).concat(d.upgrade?[d.upgrade]:[]);
     for(const u of ups)grantUpgrade(g,u);
     if(ups.length)g.hud.showUpgradeCard(ups.length>1?{name:ups.map(u=>(UPGRADES[u]||{name:u}).name).join(' + '),
-      desc:ups.map(u=>(UPGRADES[u]||{desc:''}).desc).join(' ')}:UPGRADES[ups[0]]);
+      desc:ups.map(u=>(UPGRADES[u]||{desc:''}).desc).join(' ')}:Object.assign({kicker:MODULE_IDS.indexOf(ups[0])>=0?'МОДУЛЬ РАНЦА':''},UPGRADES[ups[0]]));
     const wasOn=!!g.gs.flags.post_on;
     for(const f of (d.setFlags||[]))g.gs.flag(f);
     /* сеть ожила — карточка объясняет, что теперь умеют станции */

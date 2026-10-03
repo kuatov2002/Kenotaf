@@ -73,6 +73,7 @@
         <div class="btns">
           <div class="btn" id="btnResume">ПРОДОЛЖИТЬ</div>
           <div class="btn" id="btnArchive">ЗАПИСИ</div>
+          <div class="btn" id="btnPack">РАНЕЦ</div>
           <div class="btn" id="btnUnstuck">ВЫБРАТЬСЯ К ВХОДУ</div>
           <div class="btn" id="btnPauseSet">НАСТРОЙКИ</div>
           <div class="btn" id="btnToMenu">В ГЛАВНОЕ МЕНЮ</div>
@@ -84,12 +85,19 @@
     <div class="archgrid"><div class="archlist" id="archList"></div><div class="archtext" id="archText"></div></div>
     <div class="btns"><div class="btn" id="btnArchBack">НАЗАД</div></div>
   </div></div>
+  <div id="pack" class="screen hidden"><div class="panel wide arch">
+    <h2>РАНЕЦ</h2><div class="hint" id="packInfo">ГНЁЗДА</div>
+    <div class="packslots" id="packSlots"></div>
+    <div class="archgrid"><div class="archlist" id="packList"></div><div class="archtext" id="packText"></div></div>
+    <div class="btns"><div class="btn" id="btnPackBack">НАЗАД</div></div>
+  </div></div>
   <div id="intro" class="screen hidden"><div class="iw"><div class="ik"></div><div class="it"></div>
     <svg class="leaf" viewBox="0 0 120 120"><path d="M60 108 C58 80 40 62 22 44 C40 30 80 26 98 18 C96 52 84 84 60 108 Z" fill="#6f9a4a" stroke="#c9e08a" stroke-width="2"/>
       <path d="M60 108 C62 80 74 52 92 26" fill="none" stroke="#d8ecaa" stroke-width="2"/></svg>
     <div class="in"><b>E</b> / ПРОБЕЛ — ДАЛЕЕ · <b>ESC</b> — ПРОПУСТИТЬ</div></div></div>
   <div id="travel" class="screen hidden"><div class="tv"></div></div>
   <div id="trans" class="layer"><div class="pl t"></div><div class="pl b"></div></div>
+  <div id="trialhud"></div>
   <div id="flash" class="layer"></div>
   <div id="endcard"><div class="c"></div></div>
 </div>
@@ -124,6 +132,7 @@
 <script src="js/world/rooms/z4x.js"></script>
 <script src="js/world/rooms/z5.js"></script>
 <script src="js/world/rooms/z5x.js"></script>
+<script src="js/world/rooms/trials.js"></script>
 <script src="js/world/maplayout.js"></script>
 <script src="js/world/post.js"></script>
 <script src="js/world/room.js"></script>
@@ -131,6 +140,7 @@
 <script src="js/world/lamp.js"></script>
 <script src="js/world/finale.js"></script>
 <script src="js/world/bossstage.js"></script>
+<script src="js/world/trials.js"></script>
 <script src="js/entities/enemies.js"></script>
 <script src="js/combat/mechkit.js"></script>
 <script src="js/combat/nodes.js"></script>
@@ -163,6 +173,7 @@
 <script src="js/ui/map.js"></script>
 <script src="js/ui/menunav.js"></script>
 <script src="js/ui/settingsui.js"></script>
+<script src="js/ui/pack.js"></script>
 <script src="js/ui/tutorial.js"></script>
 <script src="js/render/worlddraw.js"></script>
 <script src="js/game.js"></script>

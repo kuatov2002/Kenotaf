@@ -117,7 +117,7 @@ class Mech extends Enemy{
       if(n.broken||n.locked||n.hidden||n.core)continue;
       if(!(n.damaged||n.exT>0))continue;
       if(Math.abs(n.wy-p.cy)>1.4)continue;
-      n.markT=C.markT*(this.world.game.gs.flags.mark_long?1.8:1);n.markA=(Math.random()-0.5)*0.6;any=true;}
+      n.markT=C.markT*(this.world.game.gs.mod('mark_long')?1.8:1);n.markA=(Math.random()-0.5)*0.6;any=true;}
     if(any)this.world.game.fx.mark(this.cx,this.cy);
     return any;
   }
@@ -126,7 +126,8 @@ class Mech extends Enemy{
     const C=CFG.combat,g=this.world.game;
     this.cancelAttack();
     n.hp=Math.min(n.hp,n.max*(C.damagedAt-0.08));n.exT=Math.max(n.exT,C.interruptOpen+0.2);n.hitT=0.22;
-    this.openT=C.interruptOpen*(g.gs.flags.stun_long?1.4:1);this.state='open';this.st=0;
+    this.openT=C.interruptOpen*(g.gs.mod('stun_long')?1.4:1);
+    if(g.gs.mod('weld_parry'))g.combat.gainWeld(18);   /* ОТРАЖАТЕЛЬ: шов — из сорванного замаха */this.state='open';this.st=0;
     g.fx.interrupt(n.wx,n.wy,n.mat,this.isBoss);
     /* срыв замаха — давление в резаке перегревается: запас на разрыв или аварийный импульс */
     if(p&&p.gainHeat)p.gainHeat(1,n.wx,n.wy);

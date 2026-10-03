@@ -20,14 +20,15 @@ class Combat{
     this.holder=e;e.token=true;return true;
   }
   releaseToken(e){if(this.holder===e){this.holder=null;this.nextGrant=this.game.world.time+CFG.combat.tokenGap;}e.token=false;}
-  /* рывок сквозь механизм: толчок на входе, след на выходе */
+  /* рывок сквозь механизм: толчок на входе, след на выходе; ТАРАННЫЙ КЛАПАН — ещё и лёгкий удар по узлу */
   update(dt){
     const W=this.game.world,p=W.player;if(!p)return;
     const b=W.boss,list=b&&b.isMech&&b.activated&&!b.dead?W.enemies.concat([b]):W.enemies;
     for(const e of list){
       if(!e.isMech||e.dead){e._dashHot=false;continue;}
       const ov=p.dashT>0&&!p.dead&&aabb(p.rect(),e.rect());
-      if(ov&&e._dashIn!==p.dashId){e._dashIn=p.dashId;e._dashHot=true;e.dashShove(p);}
+      if(ov&&e._dashIn!==p.dashId){e._dashIn=p.dashId;e._dashHot=true;e.dashShove(p);
+        if(this.game.gs.mod('ram_valve'))e.takeHit({kind:'melee',sd:'side',dmg:CFG.player.attackDmg*0.6,hb:p.rect(),sx:p.cx,sy:p.cy,fromX:p.cx-p.face,dir:p.face,ky:-1,heavy:false});}
       else if(e._dashHot&&!ov){e._dashHot=false;e.dashMark(p);}
     }
   }
@@ -46,7 +47,7 @@ class Combat{
     let hitAny=false,pogo=false,deflect=false,mechHit=false,plain=false;
     const strike=e=>{
       if(e.isMech){const r=e.takeHit(hit);if(!r)return;
-        if(r==='deflect'){deflect=true;}else{hitAny=true;mechHit=true;this.gainWeld(heavy?CFG.combat.weldHeavy:C.weldHit);}
+        if(r==='deflect'){deflect=true;}else{hitAny=true;mechHit=true;if(!g.gs.mod('weld_parry'))this.gainWeld(heavy?CFG.combat.weldHeavy:C.weldHit);}
         if(sd==='down')pogo=true;return;}
       e.hurt(C.attackDmg*(heavy?2.2:1)*(o.bonus?1.5:1),kx*(heavy?1.6:1),ky);hitAny=true;plain=true;this.gainWeld(C.weldHit);
       if(sd==='down')pogo=true;
@@ -98,7 +99,9 @@ class Combat{
   /* импульс резака: позиция, траектория, срыв — без урона */
   pulse(p){
     const w=this.game.world,g=this.game,C=CFG.player,dir=p.face,pw=g.gs.flags.pulse_power?1.35:1,PR=C.pulseRange*pw;
-    const hb={x:p.cx+(dir>0?0:-PR),y:p.cy-PR*0.55,w:PR,h:PR*1.1};
+    /* ШИРОКОЕ СОПЛО: веер — та же дальность, вдвое выше и ниже */
+    const fan=g.gs.mod('pulse_wide')?2:1;
+    const hb={x:p.cx+(dir>0?0:-PR),y:p.cy-PR*0.55*fan,w:PR,h:PR*1.1*fan};
     let hitAny=false;
     for(const e of w.enemies){
       if(e.dead||!aabb(hb,e))continue;hitAny=true;
@@ -174,7 +177,16 @@ class Combat{
       life:0.45,size:0.24,grow:0.7,col:'#cfe6ee',drag:3});
     g.renderer.glowAdd(p.cx+dir*1.4,p.cy,1.6,'#cfe6ee',0.6);
     g.renderer.wave(p.cx+dir*0.6,p.cy,3.8*pw,0.38);
+    if(fan>1)for(const s of [-1,1])g.particles.spawn({kind:'ring',x:p.cx+dir*1.2,y:p.cy+s*PR*0.6,ringR:2.2,life:0.3,size:0.08,col:'#dff0f6',add:true,a:0.6});
   }
+  /* СБРОСНОЙ КЛАПАН: выхлоп бьёт вниз — механизмы под ногами получают импульс (срыв замаха в окне), обломки разлетаются */
+  ventBurst(p){const w=this.game.world,g=this.game,hb={x:p.cx-1.6,y:p.bottom-0.3,w:3.2,h:2.8};
+    const hitE=e=>{if(e.dead||!aabb(hb,e.isMech?e.hitBounds():e))return;const d=e.cx>=p.cx?1:-1;
+      if(e.isMech)e.applyPulse(p,d,0.8);else{e.vx+=d*8/(e.mass||1);e.vy+=3;}};
+    for(const e of w.enemies)hitE(e);const b=w.boss;if(b&&b.activated&&!b.dead&&b.isMech)hitE(b);
+    for(const d of w.debris)if(aabb(hb,d))d.launch((d.x>p.cx?1:-1)*8,4);
+    g.particles.spawn({kind:'ring',x:p.cx,y:p.bottom+0.6,ringR:2.2,life:0.3,size:0.09,col:'#dff0f6',add:true,a:0.8});
+    g.renderer.wave(p.cx,p.bottom+0.4,2.4,0.3);}
   damagePlayer(dmg,srcX){
     const p=this.game.world.player;if(!p)return false;
     return p.hurtBy(dmg,srcX===undefined?p.cx-1:srcX);

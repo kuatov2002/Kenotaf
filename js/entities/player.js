@@ -66,7 +66,7 @@ class Player extends Body{
     if(this.pulseT>0)this.pulseT-=dt;
     if(this.slideCd>0)this.slideCd-=dt;
     if(this.dashCd>0)this.dashCd-=dt;
-    if(this.hookCd>0)this.hookCd-=dt;if(this.flingT>0)this.flingT-=dt;if(this.hookMiss>0)this.hookMiss-=dt;if(this.vjT>0)this.vjT-=dt;
+    if(this.hookCd>0)this.hookCd-=dt;if(this.flingT>0)this.flingT-=dt;if(this.carryT>0)this.carryT-=dt;if(this.detachT>0)this.detachT-=dt;if(this.hookMiss>0)this.hookMiss-=dt;if(this.vjT>0)this.vjT-=dt;
     if(this.wallLock>0)this.wallLock-=dt;
     if(this.grabbed>0)this.grabbed-=dt;
     if(this.landT>0)this.landT-=dt;
@@ -94,7 +94,8 @@ class Player extends Body{
     /* буфер ввода: нажатие ждёт в очереди (до 220 мс), пока действие не станет доступным —
        удар, нажатый за мгновение до конца восстановления, не теряется */
     const dashReq=canAct&&!this.onCeil&&gs.has('dash')&&this.dashCd<=0&&(this.onGround||this.airDash>0)&&inp.consume('dash');
-    if(dashReq&&this.hook)this.hook=null;
+    if(dashReq&&this.hook){this.hook=null;this.flow('dash');}
+    else if(dashReq&&this.flingT>0&&!this.onGround)this.flow('dash');
     const holdDn=inp.dn;
     /* РЕМОНТ: держать Q/I стоя на месте — сварка шва на куртке, ячейка за порцию РЕМОНТА */
     const healing=this.updateHeal(dt,inp,canAct&&!dashReq&&this.jumpBuf<=0);
@@ -149,7 +150,10 @@ class Player extends Body{
         if(Math.abs(this.vx)<=f*dt)this.vx=0;else this.vx-=(this.vx>0?1:-1)*f*dt;
       }
       let cap=sliding?C.slideSpeed:(this.crouch?C.crouchMax:C.maxRun*(this.chargeT>0.12?C.heavyMove:1));
-      if(this.flingT>0&&!this.onGround&&mv*this.vx>=0)cap=Math.max(cap,Math.abs(this.vx));
+      /* бросок гарпуна: скорость броска держится, но не растёт от удержания направления */
+      if(this.flingT>0&&!this.onGround&&mv*this.vx>=0)cap=Math.max(cap,this.flingV||0);
+      /* прыжок из рывка: разгон рывка держится 0.3 с (фиксированная скорость, не растёт) */
+      if(this.carryT>0&&!this.onGround&&mv*this.vx>=0)cap=Math.max(cap,this.carryV);
       if(this.walkCap){cap=Math.min(cap,this.walkCap);if(Math.abs(this.vx)>cap)this.vx=(this.vx>0?1:-1)*cap;}   /* сцена: шаг, а не бег */
       if(Math.abs(this.vx)>cap)this.vx=damp(this.vx,(this.vx>0?1:-1)*cap,C.overCap,dt);
     }else if(sliding){
@@ -166,7 +170,7 @@ class Player extends Body{
       const d=mv!==0?mv:this.face;this.face=d>0?1:-1;
       this.vx=d*C.dashSpeed;this.vy=0;this.slideT=0;
       g.audio.dash();g.camera.addShake(0.3);g.camera.impulse(-d*0.4,0);g.hitstop(CFG.hsDash);
-      this.noiseLevel=0.6;
+      this.noiseLevel=gs.mod('felt_soles')?0.3:0.6;
       g.particles.burst(this.cx,this.cy,20,{kind:'steam',col:'#dff0f6',spd:5,life:0.4,size:0.3,grow:0.8,drag:3,
         ang:d>0?PI:0,spread:1.1});
       g.particles.spawn({kind:'ring',x:this.cx,y:this.cy,ringR:1.8,life:0.3,size:0.1,col:'#cfe6ee',add:true,a:0.5});
@@ -175,7 +179,7 @@ class Player extends Body{
       this.dashT-=dt;this.vy=0;
       if(Math.random()<0.9)g.particles.spawn({kind:'steam',x:this.cx-this.face*0.5,y:this.cy+(Math.random()-0.5)*0.7,
         vx:-this.face*3,vy:(Math.random()-0.5),life:0.32,size:0.24,grow:0.5,col:'#cfe6ee',drag:2.2});
-      if(this.dashT<=0){this.vx*=C.dashEnd;this.dashCd=C.dashCd*(gs.flags.dash_cd?0.55:1);}
+      if(this.dashT<=0){this.vx*=C.dashEnd;this.dashCd=C.dashCd*(gs.flags.dash_cd?0.55:1)*(gs.mod('ram_valve')?1.5:1);}
     }
 
     /* 4b. ГАРПУН: трос к латунному рыму, лебёдка тянет курьера к нему */
@@ -195,6 +199,11 @@ class Player extends Body{
 
     /* 6. JUMP (до интеграции = мгновенный отклик на земле) */
     this.didJump=false;
+    /* СВЯЗКА: прыжок отменяет рывок в любой точке — разгон рывка уходит в прыжок (на земле — прыжок,
+       в воздухе — выхлоп, у рифлёной стены — отскок); без этого прыжок ждал конца рывка */
+    if(this.jumpBuf>0&&canAct&&this.dashT>0&&(this.onGround||this.coyote>0||this.airJump>0||(this.wallT>0&&gs.has('claws')))){
+      const dir=this.vx>=0?1:-1;this.dashT=0;this.dashCd=C.dashCd*(gs.flags.dash_cd?0.55:1)*(gs.mod('ram_valve')?1.5:1);
+      this.vx=dir*Math.max(C.maxRun,Math.abs(this.vx)*C.dashEnd);this.carryV=Math.abs(this.vx);this.carryT=0.3;this.flow('jump');}
     if(this.jumpBuf>0&&canAct){
       if(this.onGround||this.coyote>0)this.doJump();
       else if(this.wallT>0&&gs.has('claws')&&!sliding)this.doWallJump(this.wallDir||this.wall||this.face);
@@ -214,7 +223,7 @@ class Player extends Body{
     this.justLanded=!wasG&&this.onGround;
     this.justLeftGround=wasG&&!this.onGround;
     this.wasGrounded=this.onGround;
-    if(this.onGround){this.coyote=C.coyote;this.airDash=this.airDashes();this.airJump=this.airJumps();this.wallT=0;}
+    if(this.onGround){this.coyote=C.coyote;this.airDash=this.airDashes();this.airJump=this.airJumps();this.wallT=0;this.chain=0;}
     else{
       if(this.justLeftGround&&!this.didJump)this.coyote=C.coyote;
       else if(!this.didJump)this.coyote-=dt;
@@ -259,9 +268,10 @@ class Player extends Body{
       if(rects)for(let i=0;i<rects.length;i++){
         const m=rects[i];
         if(this.cx<m.x-0.25||this.cx>m.x+m.w+0.25)continue;
+        if(this.detachT>0&&m===this.lastCeil)continue;   /* только что отцепился — та же траверса не ловит обратно */
         const cb=m.y+m.h;
         if((this.ceilHit||this.vy<=2.0)&&this.y>=cb-0.7&&this.y<=cb+0.34){
-          this.onCeil=true;this.ceiling=m;this.gravDir=-1;this.jumpBuf=0;
+          this.onCeil=true;this.ceiling=m;this.gravDir=-1;this.jumpBuf=0;this.dashT=0;   /* рывок в латунь — рывок кончился */
           this.y=cb;this.vy=0;this.vx*=0.4;
           if(!this.setH(C.h)){this.onCeil=false;this.gravDir=1;}
           g.audio.hitMetal();g.tutorial.notify('magnet');
@@ -280,22 +290,27 @@ class Player extends Body{
     this.updateSwing(dt,inp,canAct&&!sliding&&!healing);
     if(canAct&&gs.has('pulse')&&this.pulseCd<=0&&!healing&&inp.consume('pulse')){
       /* давления нет — импульс на перегреве (аварийный): заряд сгорает; это и есть выбор — импульс или разрыв */
-      const em=this.energy<C.pulseCost&&(gs.heat||0)>=1;
-      if(this.energy>=C.pulseCost||em){
+      /* цена импульса: ШИРОКОЕ СОПЛО — вдвое дороже, ХОЛОДНЫЙ КОТЁЛ — вдвое дешевле */
+      const cost=C.pulseCost*(gs.mod('pulse_wide')?2:1)*(gs.mod('cold_core')?0.5:1);
+      const em=this.energy<cost&&(gs.heat||0)>=1;
+      if(this.energy>=cost||em){
         if(em){gs.heat--;g.hud.heatPulse();g.particles.burst(this.cx,this.cy,12,{kind:'spark',col:'#ff7a40',spd:5,life:0.4,size:0.05,add:true,g:8});}
-        else{this.energy-=C.pulseCost;this.energyDelay=C.energyDelay;}
+        else{this.energy-=cost;this.energyDelay=C.energyDelay;}
         this.pulseCd=C.pulseCd;this.pulseT=0.28;
         g.audio.pulse();g.camera.addShake(0.34);g.camera.impulse(-this.face*0.22,0);
         /* ранец стравливает давление: пар из вентиля назад-вверх */
         for(let i=0;i<8;i++)g.particles.spawn({kind:'steam',x:this.cx-this.face*0.42,y:this.bottom-this.h*0.72,vx:-this.face*(1.5+Math.random()*2.5),vy:-1.5-Math.random()*2,
           life:0.45,size:0.18,grow:0.6,col:'#dff0f6',drag:2.4,a:0.7});
-        this.noiseLevel=1;g.combat.pulse(this);w.emitNoise(this.cx,this.cy,CFG.noisePulse);
+        this.noiseLevel=1;g.combat.pulse(this);w.emitNoise(this.cx,this.cy,CFG.noisePulse*(gs.mod('felt_soles')?1.4:1));
       }else g.audio.denied();
     }
 
     /* noise & steps */
     this.noiseLevel=Math.max(0,this.noiseLevel-dt*0.9);
-    if(this.onGround&&Math.abs(this.vx)>5.5)this.noiseLevel=Math.max(this.noiseLevel,0.85);
+    /* ВОЙЛОЧНЫЕ ПОДОШВЫ: бег и рывок ниже порога слуха механизмов (0.45) */
+    const felt=gs.mod('felt_soles');
+    if(felt&&this.dashT<=0)this.noiseLevel=Math.min(this.noiseLevel,this.pulseT>0?1:0.3);
+    if(this.onGround&&Math.abs(this.vx)>5.5)this.noiseLevel=Math.max(this.noiseLevel,felt?0.3:0.85);
     else if(this.onGround&&Math.abs(this.vx)>1)this.noiseLevel=Math.max(this.noiseLevel,0.15);
     if(sliding)this.noiseLevel=0;
     if(this.onGround&&Math.abs(this.vx)>2){
@@ -320,6 +335,8 @@ class Player extends Body{
     if(hz)for(let i=0;i<hz.length;i++){
       const h=hz[i];
       if(!aabb(this,h))continue;
+      /* испытательный стенд: опасность не ранит — возвращает к столбу */
+      if(w.room.trial&&(h.kind!=='steam'||h.active)){g.trials.fail(w,'КАСАНИЕ');return;}
       if(h.kind==='pit'&&h.back){this.pitFall(h);return;}
       if(h.kind==='coolant'||h.kind==='pit'){this.kill();return;}
       if(h.kind==='spikes'){g.combat.damagePlayer(1,this.cx);this.vy=-13;this.y-=0.35;}
@@ -339,7 +356,8 @@ class Player extends Body{
     else this.state='idle';
   }
   /* перегрев резака: заряды за срыв замаха и идеальное уклонение (gs.heat — переживает переходы, сгорает смертью) */
-  gainHeat(n,x,y){const g=this.world.game,gs=g.gs,was=gs.heat||0;gs.heat=Math.min(HEAT_MAX,was+n);if(gs.heat<=was)return;
+  gainHeat(n,x,y){const g=this.world.game,gs=g.gs,was=gs.heat||0;
+    if(gs.mod('cold_core'))return;   /* ХОЛОДНЫЙ КОТЁЛ: перегрева нет */gs.heat=Math.min(HEAT_MAX,was+n);if(gs.heat<=was)return;
     g.audio.heat(gs.heat);g.hud.heatPulse();
     g.particles.spawn({kind:'ring',x:this.cx,y:this.cy,ringR:1.5,life:0.35,size:0.08,col:'#ff9a5a',add:true,a:0.85});
     if(!gs.flags.heat_learned){gs.flag('heat_learned');
@@ -375,7 +393,7 @@ class Player extends Body{
     if(held&&(this.atkPhase==='recover'||this.atkPhase===null)&&this.slashFace===this.face){
       const was=this.chargeT;this.chargeT+=dt;
       if(was<0.12&&this.chargeT>=0.12)g.audio.charge();
-      if(!this.charged&&this.chargeT>=C.heavyHold*(g.gs.flags.heavy_fast?0.6:1)){this.charged=true;g.audio.chargeFull();
+      if(!this.charged&&this.chargeT>=C.heavyHold*(g.gs.mod('heavy_fast')?0.6:1)){this.charged=true;g.audio.chargeFull();
         g.particles.spawn({kind:'ring',x:this.cx,y:this.cy,ringR:1.6,life:0.3,size:0.08,col:'#ffcf7a',add:true,a:0.8});}
       if(this.chargeT>0.12&&Math.random()<dt*30)g.particles.spawn({kind:'steam',x:this.cx-this.face*0.45,y:this.bottom-this.h*0.7,
         vx:-this.face*1.5,vy:-1.5,life:0.4,size:0.18,grow:0.5,col:'#dff0f6',drag:2,a:0.6});
@@ -389,6 +407,7 @@ class Player extends Body{
   perfectEvade(srcX){
     const g=this.world.game,C=CFG.combat;
     this.pfDone=true;this.empowerT=C.empowerT;this.dashCd=0;this.airDash=this.airDashes();this.pulseCd=0;this.gainHeat(1,this.cx,this.cy);
+    if(g.gs.mod('weld_parry'))g.combat.gainWeld(14);   /* ОТРАЖАТЕЛЬ: шов — из уклонения */
     this.energy=Math.min(this.maxEnergy(),this.energy+20);
     g.slowmo(0.14,0.22);g.flash(0.14,'#dff4ff');g.audio.evade();g.camera.addShake(0.2);
     g.particles.spawn({kind:'ring',x:this.cx,y:this.cy,ringR:2.4,life:0.35,size:0.08,col:'#dff4ff',add:true,a:0.9});
@@ -397,8 +416,13 @@ class Player extends Body{
     const gh=HeroArt.snap(this);this.ghosts=gh?[Object.assign(gh,{a:0.85})]:[];
   }
   /* выхлоп ранца: второй прыжок в воздухе — струя пара вниз */
+  /* звено связки: короткий голубой отклик — цепочка читается как один жест; счёт звеньев до касания земли */
+  flow(k){const g=this.world.game;this.chain=(this.chain||0)+1;
+    g.particles.spawn({kind:'ring',x:this.cx,y:this.cy,ringR:1.1+0.2*Math.min(this.chain,4),life:0.25,size:0.06,col:'#9fe0ff',add:true,a:0.8});
+    g.audio.tone(660+Math.min(this.chain,6)*110,0.12,'sine',0.018,880+Math.min(this.chain,6)*110);}
   doAirJump(){
-    const C=CFG.player,g=this.world.game;
+    const C=CFG.player,g=this.world.game;if(this.flingT>0||this.chain)this.flow('vjump');
+    if(g.gs.mod('vent_burst')&&this.energy>=15){this.energy-=15;this.energyDelay=C.energyDelay;g.combat.ventBurst(this);}
     this.vy=-C.jumpV*0.9;this.airJump--;this.jumpBuf=0;this.didJump=true;this.jumpCutDone=false;this.jumpStretch=0.14;this.vjT=0.3;
     g.audio.vjump();this.noiseLevel=Math.max(this.noiseLevel,0.5);
     g.particles.spawn({kind:'ring',x:this.cx,y:this.bottom,ringR:1.5,life:0.32,size:0.08,col:'#dff0f6',add:true,a:0.7});
@@ -410,7 +434,7 @@ class Player extends Body{
     const A=this.world.room.anchors;if(!A||!A.length)return null;
     let best=null,bs=1e9;
     for(const a of A){if(a.hidden)continue;const dx=a.x-this.cx,dy=a.y-this.cy,d=Math.hypot(dx,dy);
-      if(d>HOOK.reach||d<1.0)continue;
+      if(d>HOOK.reach*(this.world.game.gs.mod('long_cable')?1.33:1)||d<1.0)continue;
       if(dx*this.face<-1.0&&Math.abs(dx)>1.0)continue;
       if(!losCheck(this.world,this.cx,this.cy-0.3,a.x,a.y))continue;
       /* рым выше головы — в приоритете (он поднимает); на уровне ног — только если других нет */
@@ -421,6 +445,7 @@ class Player extends Body{
   fireHook(){
     const g=this.world.game,a=this.hookTarget();this.hookCd=0.28;
     if(!a){this.hookMiss=0.2;g.audio.hookMiss();return;}
+    if(this.dashT>0||this.flingT>0)this.flow('hook');   /* гарпун прямо из рывка / из броска — без потери хода */
     this.dashT=0;this.slideT=0;if(this.crouch&&this.setH(CFG.player.h))this.crouch=false;
     const dx0=a.x-this.cx;
     this.hook={a,mode:'fly',t:0,len:0,d0:Math.hypot(dx0,a.y-this.cy),stuck:0,
@@ -443,13 +468,13 @@ class Player extends Body{
       if(H.vert){this.vx=this.vx*0.3+this.face*2.5;this.vy=-Math.max(12.5,up);}
       else if(this.mvIn&&this.mvIn!==H.s){this.vx=this.mvIn*7;this.vy=-Math.max(10.5,up);this.face=this.mvIn;}   /* держишь назад — выброс вверх и назад */
       else{this.vx=H.s*Math.max(Math.abs(this.vx)*0.85,sp*0.7,12);this.vy=Math.min(this.vy*0.35,-Math.max(7.5,up));this.face=H.s;}
-      this.flingT=0.45;this.jumpCutDone=true;g.audio.snap();
+      this.flingT=0.45;this.flingV=Math.abs(this.vx);this.jumpCutDone=true;g.audio.snap();
       g.particles.burst(this.cx,this.cy,10,{kind:'steam',col:'#dff0f6',spd:4,life:0.35,size:0.22,grow:0.6,drag:2.5});};
     if(this.jumpBuf>0){this.jumpBuf=0;fling(C.jumpV*0.8);this.didJump=true;g.audio.jump();return;}
     /* «пролетел рым» — только на его высоте: крутой трос, пересечённый далеко внизу, тянет дальше вверх */
     const crossed=!H.vert&&Math.abs(dy)<2.2&&(H.s>0?this.cx>tx:this.cx<tx);
     if(crossed||d<(H.vert?0.9:1.25)||H.t>1.3){fling(0);return;}
-    const sp=Math.min(HOOK.speed,13+H.t*65);
+    const sp=Math.min(HOOK.speed*(g.gs.mod('long_cable')?0.8:1),13+H.t*65);
     this.vx=damp(this.vx,dx/d*sp,16,dt);this.vy=damp(this.vy,dy/d*sp,16,dt);this.face=H.vert?this.face:H.s;
     /* упёрся (стена, край) — трос не тянет сквозь сталь: отпускает с тем, что набрано */
     const prog=(H.pd===undefined?d:H.pd)-d;H.pd=d;
@@ -511,6 +536,7 @@ class Player extends Body{
     this.state='ceil';
   }
   detach(jump){
+    this.lastCeil=this.ceiling;this.detachT=0.25;
     this.onCeil=false;this.ceiling=null;this.gravDir=1;
     if(jump){this.vy=9.5;this.didJump=true;this.jumpCutDone=false;this.jumpBuf=0;this.world.game.audio.jump();}
   }

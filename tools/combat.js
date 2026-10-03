@@ -315,6 +315,58 @@ S.arc_climb=AR+`brk('glass');LAB.step(400);brk('cage');LAB.step(900);const L=(ga
   return {ok:b.md==='wheel'&&b.phase===3&&L&&L.kind==='pit'&&!b.node('core').broken,info:{md:b.md,ph:b.phase,lead:L&&L.kind}};`;
 /* ---------- экономика выбора: перегрев резака ---------- */
 /* срыв замаха перегревает резак: +1 заряд */
+/* СВЯЗКА: прыжок посреди рывка не пропадает (раньше рывок обнулял vy до конца) и уносит разгон рывка;
+   выхлоп в воздухе из рывка; выхлоп после броска гарпуна не гасит бросок; цепочка считает звенья */
+S.flow_chains=`if(!ROOMDEFS.__lab)ROOMDEFS.__lab=gs=>({id:'__lab',zone:'sump',name:'СТЕНД',w:60,h:22,noDress:true,build(R){R.solids=[S(-2,-2,64,2.4,'steel'),S(-2,0,2,22,'steel'),S(60,0,2,22,'steel'),S(0,17,60,5,'concrete')];}});
+  const ab=['pulse','dash','vjump','hook'],R={};
+  const run=(n,keys,press)=>{const p=LAB.p();let top=p.y,land=null,x0=p.x;
+    for(let i=0;i<n;i++){LAB.step(1,keys,press&&press[i]?{0:press[i]}:null);top=Math.min(top,p.y);if(land===null&&i>20&&p.onGround)land=p.x-x0;}
+    return {rise:+(17-1.68-top).toFixed(2),dist:land===null?null:+land.toFixed(2)};};
+  /* обычный прыжок с бега */
+  LAB.setup('__lab',6,17-1.68,ab);LAB.p().vx=9.2;R.runJump=run(160,['KeyD','Space'],{0:['jump']});
+  /* прыжок на 8-м кадре рывка */
+  LAB.setup('__lab',6,17-1.68,ab);LAB.p().vx=9.2;const pr={0:['dash']};pr[8]=['jump'];R.dashJump=run(160,['KeyD','Space'],pr);
+  /* в воздухе: рывок, на 6-м кадре — выхлоп */
+  LAB.setup('__lab',6,9,ab);let p=LAB.p();LAB.step(4);const pa={0:['dash']};pa[6]=['jump'];const aj0=p.airJump;
+  let vyMin=0;for(let i=0;i<20;i++){LAB.step(1,['KeyD','Space'],pa[i]?{0:pa[i]}:null);vyMin=Math.min(vyMin,p.vy);}
+  R.air={vyMin:+vyMin.toFixed(1),used:aj0-p.airJump,chain:p.chain};
+  /* бросок гарпуна → выхлоп: скорость броска сохраняется */
+  LAB.setup('__lab',6,9,ab);p=LAB.p();p.vx=14;p.vy=-6;p.flingT=0.45;p.flingV=14;p.airJump=1;LAB.step(2,['KeyD']);
+  LAB.step(1,['KeyD','Space'],{0:['jump']});LAB.step(10,['KeyD','Space']);R.fling={vx:+p.vx.toFixed(1),chain:p.chain};
+  const ok=R.dashJump.rise>2&&R.dashJump.dist>R.runJump.dist+1.5&&R.air.vyMin<-8&&R.air.used===1&&R.fling.vx>=12&&R.fling.chain>=1;
+  return {ok,info:R};`;
+
+/* РАНЕЦ: гнёзда (3 + боссы), старое сохранение надевает найденное само, модуль работает только надетым,
+   у каждого модуля — своё правило и своя цена; в бою ранец не пересобрать */
+S.pack_modules=`const g=game,gs=g.gs,R={};
+  gs.reset();for(const k of ['mark_long','heavy_fast','stun_long','evade_win','scrap_magnet'])gs.flags[k]=true;
+  const old=JSON.parse(JSON.stringify(gs.serialize()));delete old.equip;gs.deserialize(old);
+  R.migr=gs.equip.length+'/'+gs.slots();gs.bosses.primarch=gs.bosses.uprooter=gs.bosses.regulator=true;R.slots=gs.slots();
+  gs.equip=['evade_win'];R.win=[+perfectWin(gs).toFixed(3)];gs.equip=[];R.win.push(+perfectWin(gs).toFixed(3));
+  if(!ROOMDEFS.__lab)ROOMDEFS.__lab=gs=>({id:'__lab',zone:'sump',name:'СТЕНД',w:60,h:22,noDress:true,build(R){R.solids=[S(-2,-2,64,2.4,'steel'),S(-2,0,2,22,'steel'),S(60,0,2,22,'steel'),S(0,17,60,5,'concrete')];}});
+  LAB.setup('__lab',20,17-1.68,['pulse','dash','hook','vjump'],['pulse_wide','cold_core','felt_soles','long_cable','weld_parry','vent_burst','ram_valve']);
+  const p=LAB.p();LAB.step(5);
+  const cost=k=>{gs.equip=k?[k]:[];p.energy=100;p.pulseCd=0;LAB.step(1,[],{0:['pulse']});return +(100-p.energy).toFixed(0);};
+  R.cost={base:cost(null),wide:cost('pulse_wide'),cold:cost('cold_core')};
+  gs.equip=['cold_core'];gs.heat=0;p.gainHeat(1,p.cx,p.cy);R.coldHeat=gs.heat;gs.equip=[];p.gainHeat(1,p.cx,p.cy);R.heat=gs.heat;
+  LAB.step(90);p.x=10;gs.equip=['felt_soles'];p.vx=9;LAB.step(30,['KeyD']);R.feltNoise=+p.noiseLevel.toFixed(2);gs.equip=[];p.x=10;p.vx=9;LAB.step(30,['KeyD']);R.noise=+p.noiseLevel.toFixed(2);
+  /* трос: рым в 12 м — без модуля не достать, с модулем достать */
+  const W=g.world;p.x=20;p.face=1;W.room.anchors=[{x:p.cx+12*p.face,y:p.cy-1,mount:'top'}];gs.equip=[];R.reach=[!!p.hookTarget()];gs.equip=['long_cable'];R.reach.push(!!p.hookTarget());
+  /* ОТРАЖАТЕЛЬ: удар по узлу не даёт ремонта, срыв замаха даёт */
+  gs.equip=['weld_parry'];gs.weld=0;const e=LAB.e(LAB.spawn('repairer',p.cx+1.4*p.face,17-1.55));e.face=-p.face;e.alert=5;
+  g.combat.melee(p,'side',{});R.weldHit=gs.weld;e.interrupt(e.nodes.find(n=>!n.broken),p);R.weldInt=gs.weld;
+  /* таран: рывок сквозь механизм бьёт узел */
+  gs.equip=['ram_valve'];e.dead=true;W.enemies.length=0;const e2=LAB.e(LAB.spawn('repairer',30,17-1.55));e2.face=-1;const hp0=e2.nodes.reduce((s,n)=>s+(n.broken?0:n.hp),0);
+  p.x=e2.cx-3.5;p.y=17-1.68;p.vx=p.vy=0;p.face=1;p.dashCd=0;p.hurtT=0;p.invuln=1e9;p.atkPhase=null;g.hitstopT=0;g.slowT=0;LAB.step(2);LAB.step(40,['KeyD'],{0:['dash']});
+  R.ram=+(hp0-e2.nodes.reduce((s,n)=>s+(n.broken?0:n.hp),0)).toFixed(1);
+  /* интерфейс */
+  gs.equip=[];g.state='play';g.togglePause();g.packUI.open();const nb=document.querySelectorAll('#packList .btn:not(.dim)').length;
+  document.querySelector('#packList .btn:not(.dim)').click();R.ui={owned:nb,worn:gs.equip.length,slot:document.querySelectorAll('#packSlots .slot.on').length};
+  g.packUI.close();g.togglePause();
+  const ok=R.migr==='3/3'&&R.slots===6&&R.win[0]>R.win[1]&&R.cost.wide===2*R.cost.base&&R.cost.cold===R.cost.base/2&&R.coldHeat===0&&R.heat===1&&
+    R.feltNoise<0.45&&R.noise>0.45&&!R.reach[0]&&R.reach[1]&&R.weldHit===0&&R.weldInt>0&&R.ram>0&&R.ui.worn===1&&R.ui.slot===1;
+  return {ok,info:R};`;
+
 S.heat_gain=`${PRE()}game.gs.heat=0;
   const e=LAB.e(LAB.spawn('repairer',35.4,11-1.55));e.cd=0;
   LAB.until("e.state==='wind'&&e.nodes[0].teleHot",600);game.world.player.face=1;LAB.step(1,[],{0:['pulse']});LAB.step(2);

@@ -6,7 +6,8 @@ class Interactable{
   canUse(gs){const d=this.def;
     if(d.kind==='salvage'||d.kind==='lever'||d.kind==='valve'||d.kind==='gauge'||d.kind==='wheel'||d.kind==='mapplate')return !gs.flags[d.flag];
     if(d.kind==='lore')return !gs.loreIds[d.loreId];
-    if(d.kind==='station'||d.kind==='postmaster')return true;
+    if(d.kind==='station'||d.kind==='postmaster'||d.kind==='trialbell')return true;
+    if(d.kind==='trialpost')return !this.world.game.trials.run;
     if(d.kind==='broadcast')return !gs.flags.broadcast_done;
     if(d.kind==='talk'){if(gs.flags[d.flag]&&!d.again)return false;return d.ready?d.ready(this.world):true;}
     if(d.kind==='salvageBlocked'){
@@ -23,6 +24,8 @@ class Interactable{
     if(d.kind==='station'){const pend=PostNet.pending(this.world.game.gs);
       return 'ПНЕВМОПОЧТА · '+(pend||(STATIONS[d.station]?STATIONS[d.station].name+' · ПЕРЕЕЗД':''));}
     if(d.kind==='postmaster')return 'ГОВОРИТЬ · ПОЧТМЕЙСТЕР';
+    if(d.kind==='trialpost')return 'СТЕНД · СТАРТ';
+    if(d.kind==='trialbell')return 'ЗВОНОК · РЕКОРД';
     if(d.kind==='broadcast')return 'ВЕЩАТЬ НА ВСЕ ЯРУСЫ';
     return d.label||'ОСМОТРЕТЬ';}
   use(game){
@@ -64,6 +67,9 @@ class Interactable{
     }else if(d.kind==='postmaster'){
       const sc=postmasterScene(gs);
       game.cinematic.play({x:this.x,y:this.y,title:'ПОЧТМЕЙСТЕР',lines:sc.lines,upgrades:sc.upgrades,setFlags:sc.flags});
+    }else if(d.kind==='trialpost'){game.trials.arm(w,this);
+    }else if(d.kind==='trialbell'){const r=game.trials.rec(w.room.id),T=TRIALS[w.room.id];
+      game.hud.say('ЛУЧШЕЕ '+fmtT(r.best)+' · НОРМА '+fmtT(T&&T.par)+(gs.flags['trial_'+w.room.id]?' · СДАНО':''),T?T.n:'');
     }else if(d.kind==='mapplate'){
       gs.flag(d.flag);game.audio.lore();game.flash(0.15,'#9fd6ff');
       game.hud.say('ПЛАНШЕТ СВЕРЕН СО СХЕМОЙ: НЕВЗЯТОЕ В ПРОЙДЕННЫХ ЗАЛАХ ОТМЕЧЕНО',d.title);
@@ -91,6 +97,8 @@ class Interactable{
     if(!live&&d.kind!=='lever'&&d.kind!=='valve'&&d.kind!=='mapplate')return;
     if(d.kind==='station'){drawStation(c,this,t,gs);return;}
     if(d.kind==='postmaster')return;
+    if(d.kind==='trialpost'){drawTrialPost(c,this,t,gs);return;}
+    if(d.kind==='trialbell'){drawTrialBell(c,this,t,gs);return;}
     const p=live?0.5+0.5*Math.sin(t*3):0;
     /* 0 → 1: рукоять/штурвал доворачивается за доли секунды после E */
     const k=this.usedAt!==undefined?clamp((this.world.time-this.usedAt)/0.32,0,1):(live?0:1);

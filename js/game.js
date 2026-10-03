@@ -45,7 +45,7 @@ class Game{
   }
   bindUI(){
     const $=id=>document.getElementById(id);
-    this.settingsUI=new SettingsUI(this);this.archiveUI=new ArchiveUI(this);
+    this.settingsUI=new SettingsUI(this);this.archiveUI=new ArchiveUI(this);this.packUI=new PackUI(this);this.trials=new TrialSystem(this);
     const startNew=()=>{this.audio.init();SaveSystem.wipe();this.gs.reset();this.hud.syncAbilities();this.hud.buildHp();
       $('confirm').classList.add('hidden');this.playIntro(()=>this.begin('z1_start',3.2,9.3));};
     $('btnStart').onclick=()=>{if(SaveSystem.read()){$('menu').classList.add('hidden');$('confirm').classList.remove('hidden');}else startNew();};
@@ -60,6 +60,7 @@ class Game{
     $('btnSettings').onclick=()=>this.settingsUI.open('menu');
     $('btnPauseSet').onclick=()=>this.settingsUI.open('pause');
     $('btnArchive').onclick=()=>this.archiveUI.open();
+    $('btnPack').onclick=()=>this.packUI.open();
     $('btnResume').onclick=()=>this.togglePause();
     /* страховка от застревания: вернуться к точке входа в зал (не в бою с боссом и не на арене) */
     $('btnUnstuck').onclick=()=>{if($('btnUnstuck').classList.contains('dim'))return;this.togglePause();this.world.unstuck();};
@@ -77,7 +78,7 @@ class Game{
     this.finale.end();document.getElementById('endcard').classList.remove('sky');
     this.cinematic.abort();
     this.state='menu';this.timeScale=1;
-    for(const id of ['pause','settings','archive','controls','confirm'])document.getElementById(id).classList.add('hidden');
+    for(const id of ['pause','settings','archive','pack','controls','confirm'])document.getElementById(id).classList.add('hidden');
     document.getElementById('menu').classList.remove('hidden');
     /* концовка ставила inline opacity:1 — без сброса чёрный экран оставался поверх меню */
     const ec=document.getElementById('endcard');ec.classList.remove('on');ec.style.opacity='';
@@ -120,6 +121,7 @@ class Game{
   togglePause(){
     if(this.state==='travel'){this.travel.close();return;}
     if(this.state==='intro'){this.introEnd();return;}
+    if(this.state==='pause'&&!document.getElementById('pack').classList.contains('hidden')){this.packUI.close();return;}
     if(this.state==='pause'&&(this.settingsUI.from||!document.getElementById('archive').classList.contains('hidden'))){
       if(this.settingsUI.from)this.settingsUI.close();else this.archiveUI.close();return;}
     if(this.state==='menu'){const $=id=>document.getElementById(id);

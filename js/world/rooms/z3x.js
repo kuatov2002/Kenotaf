@@ -187,7 +187,7 @@ z3_vineyard:gs=>({id:'z3_vineyard',zone:'eden',sub:'orchard',name:'ВИНОГР�
       /* настил под рымом B: и бросок наискось с полки, и вертикальный бросок прямо с камина садят наверх */
       P(8,8,6.4,0.34,'marble'));
     RB.ring(R,14,10.6,'top',10.2);RB.ring(R,12.6,5.6,'top',5.2);
-    R.doors=[RB.L(43,'z3_quiet','ПИТОМНИК'),RB.L(8,'z3_dome','КУПОЛЬНЫЙ ПОДЪЁМ')];
+    R.doors=[RB.L(43,'z3_quiet','ПИТОМНИК'),RB.L(8,'z3_dome','КУПОЛЬНЫЙ ПОДЪЁМ'),RB.R(R,13.4,'z3_trial','ТРАВЕРСА ТЕПЛИЦ')];
     R.enemies.push({type:'lampada',x:18,y:28,amb:true},{type:'pollinator',x:3,y:14,amb:true});
     /* свет ведёт по пути: камин, рым A, рым B, дверь */
     R.lights=[lit(12,40,8,'#fff2c0',0.7),lit(10.8,30,6,'#ffe6a0',0.75),lit(10.8,21,6,'#ffe6a0',0.75),

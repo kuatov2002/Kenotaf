@@ -4,8 +4,13 @@ class GameState{
   constructor(){this.reset();}
   reset(){this.abilities={};this.flags={};this.hp=CFG.player.hp;this.energy=CFG.player.energy;this.weld=0;this.heat=0;
     this.lore=0;this.loreIds={};this.cp={room:'z1_start',x:3.2,y:9.32};
-    this.room='z1_start';this.visited={};this.bosses={};}
+    this.room='z1_start';this.visited={};this.bosses={};this.equip=[];this.trials={};}
   has(a){return !!this.abilities[a];}
+  /* модули ранца: работает только надетый (и найденный) */
+  mod(k){return !!this.flags[k]&&this.equip.indexOf(k)>=0;}
+  /* гнёзда ранца: три своих, по одному — за Примарха, Корчевателя и Регулятора */
+  slots(){return 3+['primarch','uprooter','regulator'].filter(b=>this.bosses[b]).length;}
+  ownedMods(){return MODULE_IDS.filter(k=>this.flags[k]);}
   /* пластины куртки (plate_N) — по ячейке сверх базовых */
   /* пластины куртки: две пластины — ещё одна ячейка (нечётная — половина собранной ячейки) */
   plates(){let n=0;for(const k in this.flags)if(k.indexOf('plate_')===0&&this.flags[k])n++;return n;}
@@ -15,10 +20,12 @@ class GameState{
   flag(k,v){this.flags[k]=v===undefined?true:v;this.save();}
   save(){SaveSystem.write(this);}
   serialize(){return {abilities:this.abilities,flags:this.flags,hp:this.hp,weld:this.weld,lore:this.lore,loreIds:this.loreIds,
-    cp:this.cp,room:this.room,visited:this.visited,bosses:this.bosses};}
+    cp:this.cp,room:this.room,visited:this.visited,bosses:this.bosses,equip:this.equip,trials:this.trials};}
   deserialize(d){this.abilities=d.abilities||{};this.flags=d.flags||{};this.hp=d.hp||5;this.weld=d.weld||0;this.lore=d.lore||0;
     this.loreIds=d.loreIds||{};this.cp=d.cp||this.cp;this.room=d.room||'z1_start';
-    this.visited=d.visited||{};this.bosses=d.bosses||{};}
+    this.visited=d.visited||{};this.bosses=d.bosses||{};this.trials=d.trials||{};
+    /* старое сохранение (до ранца): найденные улучшения-модули надеваются сами, сколько влезет */
+    this.equip=Array.isArray(d.equip)?d.equip.filter(k=>MODULE_IDS.indexOf(k)>=0):this.ownedMods().slice(0,this.slots());}
 }
 /* Сохранение: основной слот + резервная копия предыдущей записи. Запись — целиком JSON с версией
    и контрольной суммой; битый или чужой слот при чтении пропускается (берётся резерв, затем старые

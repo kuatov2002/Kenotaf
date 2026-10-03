@@ -15,6 +15,8 @@ const MAPLAYOUT={
   /* ЗОНА IV · ПЕЧАТЬ */
   z4_antechamber:[543,196],z4_exam_a:[543,180],z4_exam_b:[592,159],z4_exam_c:[590,199],z4_gearworks:[640,185],z4_pendulum:[703,163],z4_escapement:[731,206],z4_clocktower:[790,150],z4_boss:[820,131],z4_quiet:[872,140],z4_gate:[900,108],z4_pressure:[642,213],z4_vault:[686,232],z4_bellows:[670,137],z4_counter:[740,166],z4_bell:[818,111],
   z5_hall:[944,96],z5_busts:[994,100],z5_stacks:[1058,74],z5_reading:[1092,62],z5_council:[1150,56],z5_crypt:[1200,64],z5_lift:[1254,34],z5_boss:[1280,10],z5_broadcast:[944,60],z5_private:[1066,44],
+  /* ИСПЫТАТЕЛЬНЫЕ СТЕНДЫ */
+  z1_trial:[54,366],z2_trial:[187,243],z3_trial:[488,205],z4_trial:[615,128],z5_trial:[983,58],
   /* СНАРУЖИ */
   z5_surface:[1290,-30]
 };

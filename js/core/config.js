@@ -29,7 +29,7 @@ const CFG={
   noiseRun:13,noisePulse:22,colStep:0.18,probeEps:0.1
 };
 /* окно идеального уклонения: гироскоп расширяет его */
-function perfectWin(gs){return CFG.combat.perfectWin*(gs&&gs.flags.evade_win?1.6:1);}
+function perfectWin(gs){return CFG.combat.perfectWin*(gs&&gs.mod&&gs.mod('evade_win')?1.6:1);}
 /* перегрев резака: запас зарядов (срыв замаха / идеальное уклонение → +1) */
 const HEAT_MAX=3;
 /* гарпун: дальность троса и скорость лебёдки */

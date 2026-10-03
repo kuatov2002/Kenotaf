@@ -4,7 +4,7 @@
    ←/→ — изменить значение настройки, ENTER/ПРОБЕЛ/E или A — нажать, BACKSPACE/ESC или B — назад.
    В паузе Y геймпада переключает схему зона / весь мир. Фокус выглядит как наведение мышью;
    по умолчанию — «ПРОДОЛЖИТЬ», а не «НАЧАТЬ» (тот стирает сохранение). */
-const SCREEN_ORDER=['confirm','settings','controls','archive','pause','menu'];
+const SCREEN_ORDER=['confirm','settings','controls','archive','pack','pause','menu'];
 class MenuNav{
   constructor(game){
     this.game=game;this.scr=null;this.i=-1;
@@ -41,6 +41,7 @@ class MenuNav{
     if(id==='controls')document.getElementById('btnBack').click();
     else if(id==='settings')g.settingsUI.close();
     else if(id==='archive')g.archiveUI.close();
+    else if(id==='pack')g.packUI.close();
     else if(id==='confirm')document.getElementById('btnNewNo').click();
     else if(id==='pause')g.togglePause();
   }
@@ -59,6 +60,7 @@ class MenuNav{
     else if(m==='ok'){this.game.audio.init();this.scr=null;if(cur)cur.click();return;}
     this.paint(L);this.game.audio.tone(520,0.05,'sine',0.02);
     const nf=L[this.i];if(nf&&nf.dataset.arch!==undefined)this.game.archiveUI.show(+nf.dataset.arch);
+    if(nf&&nf.dataset.pack!==undefined)this.game.packUI.show(+nf.dataset.pack);
   }
   pad(c){
     const m={PadUp:'up',PadDown:'down',PadLeft:'left',PadRight:'right',PadA:'ok',PadB:'back'}[c];if(m){this.act(m);return;}

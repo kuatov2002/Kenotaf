@@ -146,7 +146,7 @@ z4_bellows:gs=>({id:'z4_bellows',zone:'seal',sub:'pressure',name:'МЕХИ',w:44
       /* обратный путь с пола под полкой: ступени-ящики к верху мехов (без них низ слева — ловушка) */
       S(12.4,17.2,2.6,1.8,'ply'),S(15,14.6,3,4.4,'ply'),S(24,16.6,2,2.4,'ply'));
     R.hazards=[{x:32.2,y:9,w:1.6,h:10,kind:'steam',per:3.0,on:1.0},{x:24.2,y:7,w:1.6,h:9.6,kind:'steam',per:3.0,on:1.0,off:1.5}];
-    R.doors=[RB.R(R,19,'z4_pendulum','МАЯТНИКОВАЯ ШАХТА')];
+    R.doors=[RB.R(R,19,'z4_pendulum','МАЯТНИКОВАЯ ШАХТА'),RB.L(19,'z4_trial','ПРОБА ХОДА')];
     RB.salvage(R,gs,{upgrade:'weld_kit2',x:10,y:9.4,flag:'got_weld_kit2',title:'СВАРОЧНЫЙ БАЛЛОН',
       lines:['НАД МЕХАМИ — ПОЛКА СМАЗЧИКА. БАЛЛОН АЦЕТИЛЕНА, ПОЛНЫЙ.','РЕМОНТА ХВАТИТ ЕЩЁ НА ОДИН ШОВ.']});
     R.enemies.push({type:'clockmaker',x:20,y:11.8-2.1,patrol:[18.4,23.6],amb:true},{type:'lampada',x:30,y:6,amb:true});

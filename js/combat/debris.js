@@ -68,7 +68,7 @@ class ScrapSystem{
     for(const s of this.list){
       s.age+=dt;
       const dx=p?p.cx-s.x:0,dy=p?p.cy-s.y:0,d=Math.hypot(dx,dy);
-      const mag=g.gs.flags.scrap_magnet;
+      const mag=g.gs.mod('scrap_magnet');
       if(p&&!p.dead&&s.age>0.4&&d<(mag?7:2.6))s.pull=true;
       if(s.pull&&p){const sp=8+s.age*6;s.vx=damp(s.vx,dx/(d||1)*sp,10,dt);s.vy=damp(s.vy,dy/(d||1)*sp,10,dt);
         s.x+=s.vx*dt;s.y+=s.vy*dt;s.rot+=dt*14;

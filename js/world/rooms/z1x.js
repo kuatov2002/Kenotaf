@@ -196,9 +196,12 @@ z1_boiler:gs=>({id:'z1_boiler',zone:'sump',sub:'boiler',name:'КОТЕЛЬНАЯ
   build(R){
     RB.shell(R,'steel',{ceil:0.4});
     R.solids.push(S(0,19,52,3,'rust'),S(5.2,17.4,1.4,1.6,'ply'),S(7,15.6,9,3.4,'steel'),S(16,17.6,1.1,1.4,'ply'),S(19,14.4,10,4.6,'steel'),
-      P(31,12.4,6),P(38,10.6,6),S(44.6,6,7.4,0.8,'steel'),S(40.2,16.6,1.6,2.4,'ply'));
+      P(31,12.4,6),P(38,10.6,6),S(44.6,6,7.4,0.8,'steel'),S(40.2,16.6,1.6,2.4,'ply'),
+      /* над котлом 3 — мостки к испытательному стенду обходчиков */
+      P(3.4,13.4,2.4),P(0,11.2,3.2));
     R.hazards=[{x:17.3,y:12,w:1.6,h:7,kind:'steam',per:2.8,on:0.9,off:0},{x:33,y:13,w:2,h:6,kind:'steam',per:2.4,on:0.8,off:1.2}];
-    R.doors=[RB.L(19,'z1_hub','НАСОСНАЯ СТАНЦИЯ'),RB.R(R,19,'z1_foundry','ЛИТЕЙНЫЙ ЦЕХ'),RB.R(R,6,'z1_cache','НИША КОЧЕГАРОВ')];
+    R.doors=[RB.L(19,'z1_hub','НАСОСНАЯ СТАНЦИЯ'),RB.R(R,19,'z1_foundry','ЛИТЕЙНЫЙ ЦЕХ'),RB.R(R,6,'z1_cache','НИША КОЧЕГАРОВ'),
+      RB.L(11.2,'z1_trial','СТЕНД ОБХОДЧИКОВ')];
     R.enemies.push({type:'wrench',x:22,y:14.4-1.55,patrol:[20,27.5],amb:true},{type:'riveter',x:42,y:19-1.55,patrol:[36,49],amb:true},
       {type:'lampada',x:40,y:5,amb:true});
     R.lights=[lit(4,4,8,'#ffbe63',0.8),lit(11.5,12,7,'#ff7a4a',0.7,{flicker:0.6}),lit(24,10,8,'#ff7a4a',0.7,{flicker:0.8}),

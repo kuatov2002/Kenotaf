@@ -317,6 +317,8 @@ class WorldRenderer{
       if(b.drawOverlay){this.worldTransform(c,cam,cam.zoom);b.drawOverlay(c,t);}}
     if(room.npcs)for(const n of room.npcs)this.outlined(c,n.bounds(),x=>n.draw(x,t),calm,1.6);
     const p=room.playerRef;
+    /* призрак лучшего прохода стенда — за курьером */
+    if(g.trials&&g.trials.run){this.worldTransform(c,cam,cam.zoom);g.trials.drawGhost(c,t);}
     if(p&&p.bottom!==undefined){
       this.worldTransform(c,cam,cam.zoom);p.drawFx(c,t);
       this.outlined(c,p.spriteBounds(),x=>p.draw(x,t),rgba(Z.ent,0.72),1.8);

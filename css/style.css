@@ -198,6 +198,21 @@ kbd.kc{min-width:30px;height:30px;padding:0 8px;display:inline-grid;place-items:
 .btn.arc{min-width:0;width:100%;text-align:left;padding:8px 26px;font-size:11px;letter-spacing:.16em}
 .btn.arc.dim{opacity:.28}
 .archtext{border-left:2px solid rgba(159,224,255,.45);padding:6px 0 6px 18px;min-height:160px}
+/* стенд: табло времени */
+#trialhud{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:2px;pointer-events:none;
+  font-family:'Oswald';color:#e6d9bd;text-shadow:0 1px 4px #000;z-index:6}
+#trialhud.on{display:flex}
+#trialhud b{font-weight:400;font-size:11px;letter-spacing:.42em;color:#c9a227}
+#trialhud .tt{font-size:28px;letter-spacing:.12em;color:#ffe6a3;font-variant-numeric:tabular-nums}
+#trialhud.live .tt{color:#9fe0ff}
+#trialhud span:last-child{font-size:10px;letter-spacing:.3em;color:#8d8577}
+/* ранец: гнёзда */
+.packslots{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:12px 0 4px}
+.packslots .slot{border:1px dashed rgba(201,162,39,.35);padding:10px 6px;font-size:10px;letter-spacing:.2em;color:#8d8577;text-align:center;min-height:34px;display:flex;align-items:center;justify-content:center}
+.packslots .slot.on{border-style:solid;border-color:#c9a227;color:#ffe6a3;background:rgba(201,162,39,.08);box-shadow:inset 0 0 14px rgba(201,162,39,.12)}
+.packslots .slot.shut{opacity:.35;border-color:rgba(120,110,95,.4)}
+.btn.arc.worn{color:#ffe6a3;border-color:rgba(255,207,122,.6)}
+@media (max-width:640px){.packslots{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .archtext .at{font-size:11px;letter-spacing:.42em;color:#9fe0ff;margin-bottom:12px}
 .archtext p{font-size:16px;letter-spacing:.1em;line-height:1.7;color:#efe4cd;font-weight:300}
 .archtext p.em{font-size:12px;color:#8d8577}

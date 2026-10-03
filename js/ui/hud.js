@@ -68,7 +68,7 @@ class HUD{
     el.querySelector('.n').textContent=ab.name;el.querySelector('.keys').innerHTML=keysHTML(ab.keys);
     el.querySelector('.d').textContent=ab.desc;el.classList.add('on');this.abT=5.5;}
   showUpgradeCard(u){if(!u)return;const el=this.el.abc;
-    el.querySelector('.k').textContent='УЛУЧШЕНИЕ';el.querySelector('.n').textContent=u.name;
+    el.querySelector('.k').textContent=u.kicker||'УЛУЧШЕНИЕ';el.querySelector('.n').textContent=u.name;
     el.querySelector('.keys').innerHTML='';el.querySelector('.d').textContent=u.desc;el.classList.add('on');this.abT=5;}
   hint(h){const el=this.el.hint;
     if(!h){el.classList.remove('on','done');return;}

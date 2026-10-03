@@ -81,7 +81,11 @@ z5_council:gs=>({id:'z5_council',zone:'archive',sub:'council',name:'ЗАЛ СО�
         'ГОЛОС ПЕРВЫЙ: «ПРОТИВ». ВТОРОЙ: «ПРОТИВ». ТРЕТИЙ, ЧЕТВЁРТЫЙ, ПЯТЫЙ: «ПРОТИВ».',
         'ШЕСТОЙ: «ПРОТИВ». СЕДЬМОЙ — ДОЛГОЕ ШИПЕНИЕ, ПОТОМ: «ПРОТИВ».',
         'В КРЕСЛАХ НИКОГО. СОВЕТ — ЭТО ПЛАСТИНКИ. ЗАПИСАНЫ ДВЕСТИ ЛЕТ НАЗАД.']});
+    /* последний пост у пластинок: его котёл остыл ещё при Совете */
+    if(gs.flags.elite_council)RB.salvage(R,gs,{upgrade:'cold_core',x:10,y:25,flag:'got_cold_core',title:'ХОЛОДНЫЙ КОТЁЛ',
+      lines:['КОТЁЛ СТРАЖА ХОЛОДНЫЙ. ЕГО ЗАГЛУШИЛИ, ЧТОБЫ НЕ ГРЕМЕЛ НА ЗАСЕДАНИЯХ.','С НИМ РЕЗАК НЕ ПЕРЕГРЕВАЕТСЯ. И ЕСТ ВДВОЕ МЕНЬШЕ.']});
     if(!gs.flags.elite_council)R.enemies.push({type:'censor',variant:'elite',elite:true,eliteName:'СТРАЖ СОВЕТА',eliteFlag:'elite_council',x:10,y:25-2.05,patrol:[3,15],
+      reward:{upgrade:'cold_core',x:10,y:25,flag:'got_cold_core',title:'ХОЛОДНЫЙ КОТЁЛ',lines:['КОТЁЛ СТРАЖА ХОЛОДНЫЙ. ЕГО ЗАГЛУШИЛИ, ЧТОБЫ НЕ ГРЕМЕЛ НА ЗАСЕДАНИЯХ.','С НИМ РЕЗАК НЕ ПЕРЕГРЕВАЕТСЯ. И ЕСТ ВДВОЕ МЕНЬШЕ.']},
       mini:{k:'ЗОНА V · ЗАЛ СОВЕТА',e:'ПОСЛЕДНИЙ ПОСТ У ПЛАСТИНОК',l:'«СОВЕТ НЕ ПРИНИМАЕТ.»',addons:['parry','paper'],prop:'buckler'}});
     R.enemies.push({type:'keeper',x:36,y:25-2.05,patrol:[30,43],amb:true});
     R.lights=[lit(23,6,14,'#e8c96a',0.8),lit(11,18,6,'#ffcf8a',0.5),lit(35,18,6,'#ffcf8a',0.5)];
@@ -159,7 +163,7 @@ z5_broadcast:gs=>({id:'z5_broadcast',zone:'archive',sub:'broadcast',name:'ВЕЩ
   build(R){
     RB.shell(R,'steel',{ceil:0.4});
     R.solids.push(S(0,17,36,3,'steel'),S(22,15.4,6,1.6,'steel'));
-    R.doors=[RB.L(17,'z5_hall','ПРИХОЖАЯ')];
+    R.doors=[RB.L(17,'z5_hall','ПРИХОЖАЯ'),RB.R(R,17,'z5_trial','ЭКЗАМЕН ПОЧТАЛЬОНА')];
     RB.lore(R,gs,28,10,17);
     R.interactables.push({kind:'broadcast',x:25,y:15.4,w:2.4,h:2,label:'ВЕЩАТЕЛЬНЫЙ МАССИВ'});
     R.lights=[lit(18,4,10,'#9fd6ff',0.7),lit(25,13,5,'#69d68f',0.7)];
