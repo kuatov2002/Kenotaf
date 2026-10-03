@@ -276,10 +276,17 @@ class Archivist extends MechBoss{
         break;
       case 'contraWind':{const Wd=0.9/des;this.telegraph(this.node('horn'),this.st/Wd,this.st>Wd-0.3);
         if(this.st>=Wd){this.state='contra';this.st=0;this.act={n:0};}break;}
-      case 'contra':{const a=this.act,WD=['СНАРУЖИ','НИЧЕГО','НЕТ'];
-        if(a&&a.n<3&&this.st>=a.n*0.6){const x=this.has('horn')?this.node('horn').wx:this.cx,y=this.has('horn')?this.node('horn').wy:this.cy;
-          BossFX.ring(W,x,y,{vr:8.5,rmax:30,band:0.55,col:'#ffe6a3',label:WD[a.n]});a.n++;g.audio.tone(120,0.6,'sawtooth',0.035,60);g.camera.addShake(0.3);}
-        if(this.st>2.0){this.state='recover';this.st=0;this.act=null;}break;}
+      /* три звона «СНАРУЖИ · НИЧЕГО · НЕТ»: ответ — рывок сквозь кольцо. Шаг 0.85 с — рывок с откатом (0.64 с)
+         успевает на каждый; перед каждым звоном раструб вдыхает (вспышка и щелчок за 0.3 с) */
+      case 'contra':{const a=this.act,WD=['СНАРУЖИ','НИЧЕГО','НЕТ'],GAP=0.85;
+        const hn=this.has('horn')?this.node('horn'):null,x=hn?hn.wx:this.cx,y=hn?hn.wy:this.cy;
+        if(a&&a.n<3){const next=a.n*GAP;
+          if(a.n>0&&!a.pre&&this.st>=next-0.3){a.pre=true;g.audio.tone(640,0.12,'sine',0.03,900);
+            g.particles.spawn({kind:'ring',x,y,ringR:1.6,life:0.3,size:0.08,col:'#ffe6a3',add:true,a:0.9});
+            if(hn){hn.tele=1;hn.hitT=0.3;}}
+          if(this.st>=next){BossFX.ring(W,x,y,{vr:8.5,rmax:30,band:0.55,col:'#ffe6a3',label:WD[a.n]});a.n++;a.pre=false;
+            g.audio.tone(120,0.6,'sawtooth',0.035,60);g.camera.addShake(0.3);}}
+        if(this.st>2.6){this.state='recover';this.st=0;this.act=null;}break;}
       case 'dropsWind':{const Wd=0.7/des;this.telegraph(this.node('horn'),this.st/Wd,this.st>Wd-0.28);
         if(this.st>=Wd){this.state='drops';this.st=0;
           const xs=[p.cx,p.cx-3.2,p.cx+3.2,p.cx+(Math.random()<0.5?-6:6)];

@@ -302,6 +302,26 @@ S.arc_lunge=AR+`brk('glass');LAB.step(400);game.world.player.invuln=1e9;p.x=4;b.
   const cg=b.node('cage');game.world.player.invuln=0;return {ok:seen&&cg.exT>0,info:{st:b.state,ex:cg.exT,tr:tr.join(' ')}};`;
 S.arc_climb=AR+`brk('glass');LAB.step(400);brk('cage');LAB.step(900);const L=(game.world.room.hazards||[]).find(h=>h.ctl==='archlead');
   return {ok:b.md==='wheel'&&b.phase===3&&L&&L.kind==='pit'&&!b.node('core').broken,info:{md:b.md,ph:b.phase,lead:L&&L.kind}};`;
+/* «СНАРУЖИ · НИЧЕГО · НЕТ»: три звона уклоняемы идеальным вводом — рывок ровно перед касанием кольца
+   (к ближней стене / к центру площадки), с разных точек арены фазы III. Сложно, но не гарантированный урон */
+S.arc_contra_dodge=AR+`brk('glass');LAB.step(400);brk('cage');LAB.step(900);const W=game.world,R=W.room;
+  const spots=[[0.6,30],[49.4,30],[25,21.6],[7,25.6],[43,25.6]],res=[];
+  for(const [sx,sy] of spots){
+    for(const h of R.hazards)if(h.ctl==='arch'||h.ctl==='arch3')h.active=false;
+    W.projectiles.length=0;W.zones=[];p.x=sx-p.w/2;p.y=sy-p.h;p.vx=p.vy=0;p.invuln=0;p.dashT=0;p.dashCd=0;game.gs.hp=5;LAB.step(20);
+    b.cd=99;BossDyn.clear(b);b.state='contraWind';b.st=0;let hp0=game.gs.hp,dashes=0;
+    for(let i=0;i<900;i++){b.cd=99;if(i>300&&!W.projectiles.some(q=>q.kind==='ring'))break;
+      for(const h of R.hazards)if(h.ctl==='arch'||h.ctl==='arch3')h.active=false;
+      /* идеальный уклонист: время до касания ближайшего кольца */
+      let tmin=9;for(const pr of W.projectiles){if(pr.kind!=='ring'||pr.hit)continue;
+        const pts=[[p.cx,p.cy],[p.cx,p.y+0.15],[p.cx,p.bottom-0.1],[p.x+0.08,p.cy],[p.x+p.w-0.08,p.cy]];
+        for(const q of pts){const d=Math.hypot(q[0]-pr.x,q[1]-pr.y),gap=d-pr.r-pr.band*0.5;if(gap>-0.01)tmin=Math.min(tmin,gap/pr.vr);}}
+      const keys=[];let press=null;
+      if(tmin<0.05&&p.dashT<=0&&p.dashCd<=0){const onPlat=Math.abs(p.bottom-21.6)<0.2,hx=b.has('horn')?b.node('horn').wx:b.cx;
+        let dir=onPlat?(p.cx<25?1:-1):(p.cx<25?-1:1);keys.push(dir>0?'KeyD':'KeyA');press={0:['dash']};dashes++;}
+      LAB.step(1,keys,press);}
+    res.push({x:sx,y:sy,dmg:hp0-game.gs.hp,dashes});}
+  return {ok:res.every(r=>r.dmg===0),info:res};`;
 S.arc_kill=AR+`brk('glass');LAB.step(400);brk('cage');LAB.step(500);b.node('core').locked=false;brk('core');LAB.step(60);
   return {ok:b.dead&&!!game.gs.flags.archivist_dead,info:{dead:b.dead,flag:!!game.gs.flags.archivist_dead}};`;
 
