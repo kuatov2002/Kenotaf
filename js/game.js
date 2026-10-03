@@ -55,6 +55,9 @@ class Game{
       const sv=SaveSystem.read();if(!sv)return;this.gs.reset();this.gs.deserialize(sv);this.gs.hp=this.gs.maxHp();
       this.hud.syncAbilities();this.hud.buildHp();this.begin(this.gs.cp.room,this.gs.cp.x,this.gs.cp.y);};
     $('intro').onclick=()=>{if(this.state==='intro'&&this.introT>0.3)this.introNext();};
+    /* после финала: пять стражей подряд на время (js/world/exam.js) */
+    $('btnExam').onclick=()=>{this.audio.init();CouncilExam.start(this);};
+    this.examButton();
     $('btnCtrls').onclick=()=>{buildControls(SaveSystem.read()?this.gs:null);$('menu').classList.add('hidden');$('controls').classList.remove('hidden');};
     $('btnBack').onclick=()=>{$('controls').classList.add('hidden');$('menu').classList.remove('hidden');};
     $('btnSettings').onclick=()=>this.settingsUI.open('menu');
@@ -74,7 +77,11 @@ class Game{
     addEventListener('pagehide',flush);addEventListener('beforeunload',flush);
     document.addEventListener('visibilitychange',()=>{if(document.hidden){flush();if(this.state==='play')this.togglePause();}});
   }
+  /* кнопка экзамена: только после финала; под ней — рекорд */
+  examButton(){const b=document.getElementById('btnExam');if(!b)return;const on=CouncilExam.available(),r=CouncilExam.rec();
+    b.classList.toggle('hidden',!on);b.innerHTML='ЭКЗАМЕН СОВЕТА'+(r.best!==undefined?'<small>РЕКОРД '+fmtT(r.best)+(r.done?' · ШАРФ МАСТЕРА':'')+'</small>':'');}
   toMenuState(){
+    CouncilExam.abort();
     this.finale.end();document.getElementById('endcard').classList.remove('sky');
     this.cinematic.abort();
     this.state='menu';this.timeScale=1;
@@ -83,6 +90,7 @@ class Game{
     /* концовка ставила inline opacity:1 — без сброса чёрный экран оставался поверх меню */
     const ec=document.getElementById('endcard');ec.classList.remove('on');ec.style.opacity='';
     document.getElementById('btnContinue').classList.toggle('dim',!SaveSystem.read());
+    this.examButton();
     this.hud.show(false);this.hud.hint(null);this.input.enabled=true;this.input.clearAll();
     this.camera.reset(18,24,1.14);
     this.audio.setZone('sump');
@@ -164,6 +172,7 @@ class Game{
   /* замедление времени (идеальное уклонение, прерывание): реальные секунды, множитель */
   slowmo(t,k){this.slowT=Math.max(this.slowT,t);this.slowK=Math.min(this.slowT>t?this.slowK:1,k);}
   onPlayerDeath(){
+    if(CouncilExam.on&&!CouncilExam.done){CouncilExam.fail();return;}   /* экзамен: упал — не сдан */
     this.gs.hp=this.gs.maxHp();this.world.slain={};this.gs.heat=0;
     this.transition(()=>{this.world.load(this.gs.cp.room,this.gs.cp.x,this.gs.cp.y);this.hud.syncHp();});
   }
@@ -336,6 +345,8 @@ class Game{
       c.save();c.setTransform(1,0,0,1,0,0);
       c.fillStyle=rgba(zone.haze,seq[i][1]);c.fillRect(0,0,this.vw,this.vh);c.restore();
     }
+    /* ориентиры зоны — в проёмах задней стены, за игровым слоем (js/render/landmarks.js) */
+    if(!inMenu)drawLandmarks(c,room,this,t);
     const GL=par.layers.game;
     if(GL)this.renderer.drawLayerTo(c,GL,cam,zoom,1);
     /* мир в метрах */

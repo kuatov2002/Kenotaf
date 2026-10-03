@@ -197,6 +197,7 @@ class World{
     if(this.stage)BossStage.update(this,dt);
     this.updateMini(dt);
     this.game.trials.update(this,dt);
+    if(CouncilExam.on)CouncilExam.update(this,dt);
     this.chalk38();
     for(let i=0;i<this.pushables.length;i++)this.pushables[i].update(dt);
     this.updateProjectiles(dt);
@@ -500,7 +501,7 @@ class World{
     const g=this.game,R=this.room,p=this.player;
     this.nearDoor=null;this.nearInter=null;this.nearRest=null;
     if(this.doorCd>0)this.doorCd-=dt;
-    const busy=this.bossDoorClosed||this.arenaLock||(R.waves&&this.waveIdx>=0&&!g.gs.flags[R.clearFlag]);
+    const busy=this.bossDoorClosed||this.arenaLock||(CouncilExam.on&&!CouncilExam.done)||(R.waves&&this.waveIdx>=0&&!g.gs.flags[R.clearFlag]);
     if(!busy&&!p.dead){
       for(let i=0;i<R.doors.length;i++){
         const d=R.doors[i];

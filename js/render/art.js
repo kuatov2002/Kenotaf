@@ -87,6 +87,8 @@ function drawSolids(c,R,zoneKey){
    extraTop — детали ПОВЕРХ твёрдых блоков (иначе drawSolids их закрывает). */
 function finishGameLayer(c,L,R,r,zoneKey){
   const V=READ[zoneKey];
+  /* проёмы в задней стене к ориентирам зоны (js/render/landmarks.js) */
+  if(typeof cutLandmarkWindows==='function')try{cutLandmarkWindows(c,L,R);}catch(e){console.error(e);}
   if(V&&V.veil){c.fillStyle=V.veil;c.fillRect(0,0,L.w,L.h);}
   if(typeof drawDress==='function')drawDress(c,R);
   if(R.extraGame)R.extraGame(c,L,r);

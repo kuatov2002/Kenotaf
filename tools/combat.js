@@ -418,6 +418,35 @@ S.listen=`const g=game,gs=g.gs,R={};
   g.archiveUI.close();g.togglePause();
   return {ok:R.drop&&R.floor===11&&R.flag&&R.cap.indexOf('ФОНОГРАММА')>=0&&!R.again&&R.variant==='stamper'&&R.arch,info:R};`;
 
+/* ОРИЕНТИРЫ: в каждой зоне ≥2 сооружения, каждое видно (в проёме задней стены) минимум из двух комнат; кадр рисуется */
+S.landmarks=`const g=game,vw=g.vw/g.ppm,vh=g.vh/g.ppm,Z={};let errs=0;
+  for(const m of LANDMARKS){const v=landmarkViews(m,vw,vh);(Z[m.zone]=Z[m.zone]||[]).push(m.id+':'+v.length);}
+  for(const id of ['z1_boiler','z2_laundry','z3_dome','z4_pendulum','z5_reading']){LAB.setup(id,10,10,[]);try{LAB.render();}catch(e){errs++;}
+    if(!(g.world.room._lmWin||[]).length)errs++;}
+  const ok=errs===0&&Object.keys(Z).length===5&&Object.values(Z).every(L=>L.filter(s=>+s.split(':')[1]>=2).length>=2);
+  return {ok,info:{errs,Z}};`;
+
+/* ЭКЗАМЕН СОВЕТА: после финала; пять стражей подряд на копии сохранения; время, рекорд, шарф мастера;
+   падение — не сдан; настоящее сохранение не меняется */
+S.council_exam=`const g=game,R={};try{localStorage.removeItem(EXAM_KEY);}catch(e){}
+  const gs0=new GameState();for(const a of ABILITY_ORDER)gs0.abilities[a]=true;Object.assign(gs0.flags,{wheel_turned:true,archivist_dead:true,boss1_dead:true,post_on:true});
+  gs0.bosses={overseer:true,primarch:true,uprooter:true,regulator:true,archivist:true};gs0.cp={room:'z5_boss',x:3,y:28};SaveSystem.write(gs0);
+  const before=localStorage.getItem(SaveSystem.KEY);g.toMenuState();R.btn=!document.getElementById('btnExam').classList.contains('hidden');
+  CouncilExam.start(g);g.transitionT=0;
+  const run=(n)=>{for(let i=0;i<n;i++){if(g.transitionT>=0){const cb=g.transitionCb;g.transitionCb=null;g.transitionT=-1;if(cb)cb();}LAB.step(1);}};
+  const seen=[],rid=()=>g.world.room?g.world.room.id:null;
+  for(let k=0;k<5;k++){let n=0;while(rid()!==EXAM_SEQ[k]&&n<400){run(1);n++;}
+    const W=g.world;seen.push(W.room.id+':'+(W.boss?W.boss.type:'-'));const p=W.player;p.invuln=1e9;
+    const tr=W.room.bossTrigger;p.x=tr.x+tr.w/2;p.y=tr.y+tr.h-p.h-0.2;run(3);
+    if(W.boss){W.boss.activated=true;W.bossDoorClosed=true;W.boss.die({dir:1});}run(400);}
+  R.seen=seen.join(' ');R.done=CouncilExam.done;R.state=g.state;const rec=CouncilExam.rec();R.best=rec.best;R.master=CouncilExam.master();
+  R.saveSame=localStorage.getItem(SaveSystem.KEY)===before;
+  g.toMenuState();R.gsBack=!!g.gs.flags.wheel_turned&&!!g.gs.bosses.archivist;
+  /* провал: упал — не сдан */
+  CouncilExam.start(g);let n=0;while(rid()!=='z1_boss'&&n<400){run(1);n++;}g.world.player.kill();run(200);R.fail=CouncilExam.done&&g.state==='ending'&&document.querySelector('#endcard h3').textContent.indexOf('НЕ СДАН')>=0;
+  g.toMenuState();
+  return {ok:R.btn&&R.seen.split(' ').length===5&&R.seen.indexOf(':-')<0&&R.done&&R.state==='ending'&&R.best>0&&R.master&&R.saveSame&&R.gsBack&&R.fail,info:R};`;
+
 S.heat_gain=`${PRE()}game.gs.heat=0;
   const e=LAB.e(LAB.spawn('repairer',35.4,11-1.55));e.cd=0;
   LAB.until("e.state==='wind'&&e.nodes[0].teleHot",600);game.world.player.face=1;LAB.step(1,[],{0:['pulse']});LAB.step(2);

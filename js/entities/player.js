@@ -662,11 +662,12 @@ class Player extends Body{
     /* шарф — мировые координаты: два тона, к концу сужается, кончик бахромой */
     const S=this.scarf;
     c.save();c.lineCap='round';c.lineJoin='round';
+    const gold=CouncilExam.master(),sc1=gold?'#7a5f1c':'#7a2418',sc2=gold?'#e8c96a':'#a8382a';   /* шарф мастера — за экзамен Совета */
     for(let i=1;i<S.length;i++){const w=0.15*(1-i/S.length*0.55);
-      c.strokeStyle='#7a2418';c.lineWidth=w+0.02;c.beginPath();c.moveTo(S[i-1].x,S[i-1].y);c.lineTo(S[i].x,S[i].y);c.stroke();
-      c.strokeStyle='#a8382a';c.lineWidth=w*0.55;c.beginPath();c.moveTo(S[i-1].x,S[i-1].y-0.015);c.lineTo(S[i].x,S[i].y-0.015);c.stroke();}
+      c.strokeStyle=sc1;c.lineWidth=w+0.02;c.beginPath();c.moveTo(S[i-1].x,S[i-1].y);c.lineTo(S[i].x,S[i].y);c.stroke();
+      c.strokeStyle=sc2;c.lineWidth=w*0.55;c.beginPath();c.moveTo(S[i-1].x,S[i-1].y-0.015);c.lineTo(S[i].x,S[i].y-0.015);c.stroke();}
     const e=S[S.length-1],q=S[S.length-2],ang=Math.atan2(e.y-q.y,e.x-q.x);
-    c.strokeStyle='#7a2418';c.lineWidth=0.025;
+    c.strokeStyle=sc1;c.lineWidth=0.025;
     for(const o of [-0.5,0,0.5]){c.beginPath();c.moveTo(e.x,e.y);c.lineTo(e.x+Math.cos(ang+o)*0.12,e.y+Math.sin(ang+o)*0.12);c.stroke();}
     c.restore();
     c.save();

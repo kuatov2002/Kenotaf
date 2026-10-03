@@ -6,7 +6,7 @@
    после Регулятора — в Прихожую. У каждого — своё: она считает цилиндры и метки 38 и знает,
    где курьер что-то пропустил; он слышит сквозняк в стенах и знает про заначки. */
 const HUB_SPOT={
-  z3_greenhouse:{pm:{x:10.6,y:30,face:1},gd:{x:21.5,y:30,face:-1}},
+  z3_greenhouse:{pm:{x:18.4,y:30,face:1},gd:{x:22.6,y:30,face:-1}},
   z4_antechamber:{pm:{x:26.6,y:24,face:-1},gd:{x:31.4,y:24,face:-1}},
   z5_hall:{pm:{x:18.2,y:21,face:-1},gd:{x:22.8,y:21,face:-1}}
 };
@@ -23,7 +23,7 @@ const HubNPC={
     if(!S)return;
     for(const who of ['pm','gd']){if(this.room(gs,who)!==id)continue;const s=S[who];
       W.interactables.push(new Interactable({kind:'hubtalk',who,x:s.x,y:s.y,w:1.8,h:2.2},W));
-      (W.room.npcs=W.room.npcs||[]).push({bounds:()=>({x:s.x-1.6,y:s.y-2.8,w:3.2,h:3.0}),draw:(c,t)=>{
+      (W.room.npcs=W.room.npcs||[]).push({bounds:()=>({x:s.x-1.8,y:s.y-3.7,w:3.6,h:3.9}),draw:(c,t)=>{
         const p=W.player,look=p&&Math.abs(p.cx-s.x)<4.5?(p.cx<s.x?-1:1):0;
         if(who==='pm')drawPostmaster(c,s.x,s.y-1.2,t,look);
         else Kit.gardener(c,s.x,s.y,2,look||s.face,t,{});}});}},

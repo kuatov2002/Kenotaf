@@ -13,9 +13,9 @@ const {serve,launch,openGame}=require('./lib');
   const ev=(fn,arg)=>L.page.evaluate(fn,arg);
   try{
     await openGame(L.page,url);
-    /* 1. меню: только название и четыре пункта; отладки нет */
+    /* 1. меню: только название и четыре пункта (ЭКЗАМЕН СОВЕТА — только после финала); отладки нет */
     const menu=await ev(()=>({title:document.querySelector('#menu h1').textContent.trim(),
-      btns:[...document.querySelectorAll('#menu .btn')].map(b=>b.textContent.trim()),
+      btns:[...document.querySelectorAll('#menu .btn')].filter(b=>b.offsetParent!==null).map(b=>b.textContent.trim()),
       dev:typeof debugOpts!=='undefined'||!!document.getElementById('debug')||typeof LevelAudit!=='undefined'}));
     await shot('01_menu');
     report(menu.title==='КЕНОТАФ'&&menu.btns.join('|')==='НАЧАТЬ|ПРОДОЛЖИТЬ|УПРАВЛЕНИЕ|НАСТРОЙКИ'&&!menu.dev,'меню и отсутствие отладки',menu);
@@ -35,7 +35,8 @@ const {serve,launch,openGame}=require('./lib');
     await ev(()=>{SaveSystem.wipe();document.getElementById('menu').classList.remove('hidden');document.getElementById('btnStart').click();});
     await L.page.waitForTimeout(1200);await shot('03_intro');
     const intro=await ev(()=>game.state);
-    for(let i=0;i<8;i++){await L.page.keyboard.press('Enter');await L.page.waitForTimeout(350);}
+    /* листать, пока вступление не кончится (под нагрузкой карточки проявляются медленнее) */
+    for(let i=0;i<30&&(await ev(()=>game.state))==='intro';i++){await L.page.keyboard.press('Enter');await L.page.waitForTimeout(350);}
     await L.page.waitForTimeout(1500);
     const st=await ev(()=>({state:game.state,room:game.world.room&&game.world.room.id}));
     report(intro==='intro'&&st.room==='z1_start','вступление ведёт в стартовую нишу',{intro,...st});
