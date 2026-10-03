@@ -118,9 +118,9 @@ class Primarch extends MechBoss{
         if(this.st>=Wd){this.state='breath';this.st=0;g.audio.steamBurst();}
         break;}
       case 'breath':{this.vx=0;
-        const hb={x:this.face>0?this.cx+1:this.cx-7,y:this.y+0.2,w:6,h:2.4};
+        const hb={x:this.face>0?this.cx+1.2:this.cx-7.6,y:this.bottom-2.7,w:6.4,h:2.6};   /* струя от решётки до пола */
         if(!this.hitDone&&aabb(hb,p.rect())){this.hitDone=true;this.damagePlayer();}
-        if(Math.random()<dt*110)g.particles.spawn({kind:'steam',x:this.cx+this.face*1.4,y:this.y+0.9,vx:this.face*(9+Math.random()*4),
+        if(Math.random()<dt*110)g.particles.spawn({kind:'steam',x:this.cx+this.face*1.6,y:this.bottom-1.45+(Math.random()-0.5)*1.4,vx:this.face*(9+Math.random()*4),
           vy:(Math.random()-0.5)*2,life:0.6,size:0.4,grow:1.4,col:'#efe8dc',drag:1.2});
         if(this.st>1.1){this.state='recover';this.st=0;}
         break;}

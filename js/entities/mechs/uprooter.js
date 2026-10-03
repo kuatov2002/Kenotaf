@@ -87,7 +87,7 @@ class Uprooter extends MechBoss{
         if(this.st>=Wd){this.state=low?'low':'high';this.st=0;this.hitDone=false;g.audio.heavy();g.audio.melee();g.camera.addShake(0.3);}
         break;}
       case 'low':case 'high':{this.vx=damp(this.vx,this.face*2.2,4,dt);
-        const low=this.state==='low',hb={x:this.face>0?this.cx-0.5:this.cx-6.3,y:low?this.bottom-1.15:this.bottom-2.7,w:6.8,h:low?1.15:1.55};
+        const low=this.state==='low',hb={x:this.face>0?this.cx-0.5:this.cx-6.3,y:low?this.bottom-1.15:this.bottom-2.0,w:6.8,h:low?1.15:0.75};   /* верх — на уровне головы: присел — прошла над тобой */
         if(!this.hitDone&&this.st>0.05&&this.st<0.3&&aabb(hb,p.rect())){this.hitDone=true;this.damagePlayer();}
         if(low&&this.st<0.25&&Math.random()<dt*60)g.particles.spawn({kind:'leaf',x:this.cx+this.face*(1+Math.random()*5),y:this.bottom-0.2,vx:this.face*4,vy:-3,life:1.2,size:0.14,col:'#6f9a4a',rot:Math.random()*6,vr:8,drag:0.8,a:0.9});
         if(this.st>0.4){this.state='recover';this.st=0;}
@@ -170,7 +170,7 @@ class Uprooter extends MechBoss{
     if(s==='lowWind'){const k=kw(0.85);sa=lerp(-2.2,-0.4,EZ.out(k));sb=lerp(1.5,2.6,k);}
     else if(s==='low'){const k=clamp(this.st/0.2,0,1);sa=lerp(-0.4,0.35,EZ.out(k));sb=lerp(2.6,0.4,k);}
     else if(s==='highWind'){const k=kw(0.85);sa=lerp(-2.2,-2.9,EZ.out(k));sb=lerp(1.5,0.4,k);}
-    else if(s==='high'){const k=clamp(this.st/0.2,0,1);sa=lerp(-2.9,-1.2,EZ.out(k));sb=lerp(0.4,-0.1,k);}
+    else if(s==='high'){const k=clamp(this.st/0.2,0,1);sa=lerp(-2.9,0.7,EZ.out(k));sb=lerp(0.4,-0.5,k);}
     else if(s==='throwWind'){sa=-3.0;sb=0.6;}
     else if(s==='stunWall'||s==='choke'||this.openT>0){sa=-0.8+Math.sin(t*7)*0.06;sb=1.9;}
     P.sa=dt?damp(P.sa,sa,s==='low'||s==='high'?40:10,dt):sa;P.sb=dt?damp(P.sb,sb,s==='low'||s==='high'?40:10,dt):sb;
@@ -291,7 +291,7 @@ class Uprooter extends MechBoss{
     const s=this.state,P=this.P;
     if((s==='low'||s==='high')&&this.st<0.25){c.save();c.globalCompositeOperation='lighter';const a=1-this.st/0.25;
       c.strokeStyle=rgba('#e8f6ff',0.6*a);c.lineWidth=0.18;c.beginPath();
-      if(s==='low'){c.moveTo(-0.4,-0.6);c.quadraticCurveTo(3,-1.2,6.2,-0.5);}else{c.moveTo(-0.4,-2.6);c.quadraticCurveTo(3,-3.0,6.2,-2.0);}
+      if(s==='low'){c.moveTo(-0.4,-0.6);c.quadraticCurveTo(3,-1.2,6.2,-0.5);}else{c.moveTo(-0.4,-1.9);c.quadraticCurveTo(3,-2.1,6.2,-1.35);}
       c.stroke();c.restore();}
   }
   partDebris(n){
