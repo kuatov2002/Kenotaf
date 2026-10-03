@@ -95,15 +95,18 @@ const {serve,launch,openGame}=require('./lib');
     /* 8. финал: колесо Печати → поверхность → концовка; A и B */
     const fin=await ev(async()=>{const g=game,W=g.world;g.gs.flags.archivist_dead=true;g.gs.bosses.archivist=true;
       W.load('z5_boss',22,21.6-1.72);const wh=W.interactables.find(i=>i.def.kind==='wheel');if(!wh)return {err:'нет колеса'};
-      wh.use(g);for(let k=0;k<700;k++)W.update(1/120);
-      if(g.transitionCb){const cb=g.transitionCb;g.transitionCb=null;cb();}
+      /* I печать (8.6 с) → II подъём (14 с, свой кадр) → III поверхность */
+      wh.use(g);const acts=[];for(let k=0;k<60*9;k++){if(g.state==='play'){W.update(1/120);W.update(1/120);}g.finale.update(1/60);if(acts[acts.length-1]!==g.finale.act)acts.push(g.finale.act);}
+      for(let k=0;k<60*15;k++){g.finale.update(1/60);if(g.state==='play')break;}
+      for(let k=0;k<240;k++){W.update(1/120);g.finale.update(1/120);}
+      window.__acts=acts.concat([g.finale.act]);
       const room=W.room.id;W.player.x=47.5;for(let k=0;k<120;k++)W.update(1/120);
       const A=document.querySelector('#endcard .c').innerText;
-      return {room,state:g.state,A};});
+      return {room,state:g.state,A,acts:window.__acts};});
     await L.page.waitForTimeout(16000);await shot('09_ending_A');
     const finB=await ev(()=>{const g=game;g.gs.flags.broadcast_done=true;g.gs.lore=18;g.ending();return document.querySelector('#endcard .c').innerText;});
     await L.page.waitForTimeout(18000);await shot('10_ending_B');
-    report(fin.room==='z5_surface'&&fin.state==='ending'&&/КОНЦОВКА A/.test(fin.A)&&/КОНЦОВКА B/.test(finB),'финал: колесо → поверхность → концовки A и B',{room:fin.room,state:fin.state,err:fin.err});
+    report(fin.room==='z5_surface'&&fin.state==='ending'&&/КОНЦОВКА A/.test(fin.A)&&/КОНЦОВКА B/.test(finB),'финал: печать → подъём → поверхность → небо (A и B)',{room:fin.room,state:fin.state,acts:fin.acts,err:fin.err});
     console.log('\nфинал A:\n  '+(fin.A||'').split('\n').filter(Boolean).join('\n  '));
     console.log('финал B:\n  '+finB.split('\n').filter(Boolean).join('\n  '));
     if(L.errors.length){bad++;console.log('ОШИБКИ СТРАНИЦЫ:\n  '+L.errors.slice(0,8).join('\n  '));}

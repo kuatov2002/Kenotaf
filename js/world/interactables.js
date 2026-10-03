@@ -69,8 +69,7 @@ class Interactable{
       else game.hud.say(d.label+' · ПОД ДАВЛЕНИЕМ','');
       w.later(900,()=>w.reload());
     }else if(d.kind==='wheel'){
-      gs.flag(d.flag);game.audio.wheel();w.wheelSeq=true;w.wheelT=0;
-      game.hud.say('КОЛЕСО ИДЁТ. СВИНЕЦ. СТАЛЬ. БЕТОН.','ПЕЧАТЬ СНИМАЕТСЯ');
+      gs.flag(d.flag);gs.flag('wheel_open');game.audio.wheel();game.finale.startSeal();
     }else if(d.kind==='lore'){
       game.salvage.lore({loreId:d.loreId});
       w.interactables=w.interactables.filter(i=>i!==this);

@@ -164,6 +164,12 @@ kbd.kc{min-width:30px;height:30px;padding:0 8px;display:inline-grid;place-items:
 #endcard .c h3{font-size:46px;letter-spacing:.5em;color:#f0e6cf;font-weight:300;margin-bottom:22px;opacity:0;transition:opacity 1.6s}
 #endcard .c .btn{display:inline-block;margin:26px auto 0;opacity:0;transition:opacity 1s}
 #endcard.on{opacity:1;pointer-events:auto}
+/* финал над миром: фон прозрачный, по краям — лёгкая виньетка, текст с тенью */
+#endcard.sky{background:radial-gradient(ellipse at 50% 42%,rgba(0,0,0,0) 35%,rgba(0,0,0,.42) 100%)}
+#endcard.sky .c p{color:#fffaf0;text-shadow:0 2px 14px rgba(0,0,0,.85),0 0 2px rgba(0,0,0,.9)}
+#endcard.sky .c h3{color:#fffaf0;text-shadow:0 2px 24px rgba(0,0,0,.7);margin:26px 0 6px;font-size:58px}
+#endcard .c p.cr{font-size:12px;letter-spacing:.6em;color:#e8dcc0}
+#endcard .c .foot{opacity:0;transition:opacity 1.2s;text-shadow:0 1px 8px rgba(0,0,0,.8)}#endcard .c .foot.on{opacity:1}
 #endcard .c p.on,#endcard .c h3.on,#endcard .c .btn.on{opacity:1}
 
 /* фонарь: ячейки наполняются по одной; пустые у раненого курьера тлеют */

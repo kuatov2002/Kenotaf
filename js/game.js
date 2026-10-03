@@ -19,7 +19,7 @@ class Game{
     this.lamps=new LampSystem(this);
     this.salvage=new SalvageSystem(this);
     this.abilities=new AbilitySystem(this);
-    this.cinematic=new Cinematic(this);
+    this.cinematic=new Cinematic(this);this.finale=new Finale(this);
     this.tutorial=new TutorialSystem(this);
     this.map=new WorldMap(this);
     this.travel=new TravelMenu(this);
@@ -74,6 +74,7 @@ class Game{
     document.addEventListener('visibilitychange',()=>{if(document.hidden){flush();if(this.state==='play')this.togglePause();}});
   }
   toMenuState(){
+    this.finale.end();document.getElementById('endcard').classList.remove('sky');
     this.cinematic.abort();
     this.state='menu';this.timeScale=1;
     for(const id of ['pause','settings','archive','controls','confirm'])document.getElementById(id).classList.add('hidden');
@@ -177,19 +178,21 @@ class Game{
       'ДВЕРЬ ОТКРЫТА. НО ЧТОБЫ ВЫЙТИ, НАДО ЗНАТЬ, ЧТО ОНА ЕСТЬ.');
     if(F.post_all)lines.push('ПОЧТМЕЙСТЕР ПЕРЕПИСАЛА ВСЕ ТРИДЦАТЬ ЗАПИСЕЙ. ИХ ЧИТАЮТ ВСЛУХ НА КАЖДОМ ЯРУСЕ.');
     if(F.got_letter)lines.push('НА ГРЕБНЕ — ДЫМ КОСТРА. ТЕ, КТО ПИСАЛ В ЗАБОРНИК, ВСЁ ЕЩЁ ЖДУТ.');
-    let html='<h3>КЕНОТАФ</h3>';
+    let html='';
     lines.forEach(l=>html+='<p>'+l+'</p>');
+    html+='<h3>КЕНОТАФ</h3><p class="cr">КОНЕЦ</p>';
     html+='<div class="btn" id="btnEnd">В МЕНЮ</div>';
-    html+='<div style="margin-top:16px;font-size:11px;letter-spacing:.3em;color:#6d6455">ЦИЛИНДРОВ: '+
+    html+='<div class="foot" style="margin-top:16px;font-size:11px;letter-spacing:.3em;color:#e8dcc0">ЦИЛИНДРОВ: '+
       this.gs.lore+' / '+LORE_TOTAL+' · '+(b?'КОНЦОВКА B · ПРАВДА':'КОНЦОВКА A · ДВЕРЬ')+'</div>';
     c.innerHTML=html;
-    el.style.opacity=1;el.classList.add('on');
-    const h3=c.querySelector('h3');setTimeout(()=>h3.classList.add('on'),400);
-    c.querySelectorAll('p').forEach((p,i)=>setTimeout(()=>p.classList.add('on'),1600+i*1800));
+    el.classList.add('sky');el.style.opacity=1;el.classList.add('on');this.finale.startSky();
+    const ps=[...c.querySelectorAll('p')],h3=c.querySelector('h3');
+    ps.forEach((p,i)=>setTimeout(()=>p.classList.add('on'),3000+i*2200));
+    setTimeout(()=>h3.classList.add('on'),3000+(ps.length-1)*2200);
     const btn=c.querySelector('#btnEnd');
     /* выход: клик по кнопке или E / ПРОБЕЛ / ENTER, как только она проявилась */
     this.endReady=false;btn.onclick=()=>{if(this.state==='ending')this.toMenuState();};
-    setTimeout(()=>{btn.classList.add('on');this.endReady=true;},1600+lines.length*1800+400);
+    setTimeout(()=>{btn.classList.add('on');const f=c.querySelector('.foot');if(f)f.classList.add('on');this.endReady=true;},3000+lines.length*2200+2200);
     this.audio.sky();
   }
   resize(){
@@ -238,13 +241,20 @@ class Game{
           this.acc-=STEP;n++;}
         if(n>=8)this.acc=0;
       }
+      if(this.finale.active)this.finale.update(dt);
       this.camera.update(dt,this.world.player,this.world.room,this.vw,this.vh,this.ppm);
       this.hud.update(dt);
       this.tutorial.update(dt);
     }else if(this.state==='travel'){
       /* меню пневмопочты: мир замер, частицы дотлевают */
       this.travel.update();this.particles.update(dt);this.hud.update(dt);
+    }else if(this.state==='finale'){
+      /* подъём: свой кадр, мир стоит */
+      this.finale.update(dt);
     }else if(this.state==='ending'){
+      /* небо: мир живёт (ветер, птицы, люди из люка), камера уходит вверх */
+      this.finale.update(dt);this.world.time+=dt;this.particles.update(dt);if(this.world.updateEmitters)this.world.updateEmitters(dt);
+      this.camera.update(dt,this.world.player,this.world.room,this.vw,this.vh,this.ppm);
       if(this.endReady&&this.input.skip){this.endReady=false;this.toMenuState();}
     }else if(this.state==='intro'){
       this.introT+=dt;
@@ -286,6 +296,7 @@ class Game{
     }
   }
   render(dt){
+    if(this.state==='finale'){this.finale.drawScreen(this.ctx,dt);return;}
     const c=this.ctx,inMenu=this.state==='menu'||this.state==='intro';
     const room=inMenu?this.menuRoom:this.world.room;
     const par=inMenu?this.menuPar:this.world.parallax;
@@ -325,6 +336,7 @@ class Game{
     }
     this.renderer.worldTransform(c,cam,zoom);
     this.particles.render(c,'add',pv);
+    if(this.finale.active&&!inMenu){this.renderer.worldTransform(c,cam,zoom);this.finale.drawWorld(c,t);}
     c.setTransform(1,0,0,1,0,0);
     if(!inMenu)this.renderer.distortPass(c,dt);
     this.renderer.foreground(c,par,cam,zoom,room);
