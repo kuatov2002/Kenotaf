@@ -165,8 +165,8 @@ z1_pipes:gs=>({id:'z1_pipes',zone:'sump',sub:'drains',name:'ТРУБНЫЙ КО�
   build(R){
     RB.shell(R,'rust',{ceil:0.4});
     R.solids.push(S(0,39,18,3,'rust'),S(0,10,7.2,1.0,'steel'),
-      P(11.5,34.6,5),P(2,28.8,5),P(11.5,23.2,5.5),P(1.5,17.4,5.5));
-    RB.ring(R,9,32,'top',1.0);RB.ring(R,8.5,26.5,'top',1.0);RB.ring(R,10,21,'top',1.0);RB.ring(R,8.5,15,'top',1.0);RB.ring(R,8.2,8.2,'top',1.0);
+      P(11,34.6,7),P(0,28.8,7),P(11,23.2,7),P(0,17.4,7),P(4.2,14.9,2.6),P(0.6,12.5,2.6));
+    RB.ring(R,9,32,'top',1.0);RB.ring(R,8.5,26.5,'top',1.0);RB.ring(R,10,21,'top',1.0);RB.ring(R,8.5,15,'top',1.0);RB.ring(R,8.0,9.0,'top',1.0);
     R.doors=[RB.L(39,'z1_quiet','ДИСПЕТЧЕРСКАЯ'),RB.L(10,'z1_sluice','СЕВЕРНЫЙ ШЛЮЗ')];
     RB.lore(R,gs,14,14.6,23.2);
     R.enemies.push({type:'lampada',x:13,y:13,amb:true});

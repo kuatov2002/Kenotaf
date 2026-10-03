@@ -97,7 +97,7 @@ class Player extends Body{
     const holdDn=inp.dn;
     /* РЕМОНТ: держать Q/I стоя на месте — сварка шва на куртке, ячейка за порцию РЕМОНТА */
     const healing=this.updateHeal(dt,inp,canAct&&!dashReq&&this.jumpBuf<=0);
-    const mv=(this.wallLock>0||healing||this.restT>0)?0:inp.move;
+    const mv=(this.wallLock>0||healing||this.restT>0)?0:inp.move;this.mvIn=inp.move;
     /* взгляд вверх/вниз: стоишь и держишь ↑ (или сидишь) — камера заглядывает туда */
     const still=this.onGround&&Math.abs(this.vx)<0.4&&!healing;
     this.lookT=still&&(inp.up||this.crouch)?(this.lookT||0)+dt:0;
@@ -397,7 +397,8 @@ class Player extends Body{
       if(d>HOOK.reach||d<1.0)continue;
       if(dx*this.face<-1.0&&Math.abs(dx)>1.0)continue;
       if(!losCheck(this.world,this.cx,this.cy-0.3,a.x,a.y))continue;
-      const s=d-Math.max(0,-dy)*0.3-(dx*this.face>0?0.8:0);
+      /* рым выше головы — в приоритете (он поднимает); на уровне ног — только если других нет */
+      const s=(dy<-0.8?0:6)+d*0.35+dy*0.6-(dx*this.face>0?0.6:0);
       if(s<bs){bs=s;best=a;}}
     return best;
   }
@@ -424,6 +425,7 @@ class Player extends Body{
     const fling=(up)=>{const sp=Math.hypot(this.vx,this.vy);
       this.hook=null;this.hookCd=0.16;this.airDash=this.airDashes();this.airJump=this.airJumps();
       if(H.vert){this.vx=this.vx*0.3+this.face*2.5;this.vy=-Math.max(12.5,up);}
+      else if(this.mvIn&&this.mvIn!==H.s){this.vx=this.mvIn*7;this.vy=-Math.max(10.5,up);this.face=this.mvIn;}   /* держишь назад — выброс вверх и назад */
       else{this.vx=H.s*Math.max(Math.abs(this.vx)*0.85,sp*0.7,12);this.vy=Math.min(this.vy*0.35,-Math.max(7.5,up));this.face=H.s;}
       this.flingT=0.45;this.jumpCutDone=true;g.audio.snap();
       g.particles.burst(this.cx,this.cy,10,{kind:'steam',col:'#dff0f6',spd:4,life:0.35,size:0.22,grow:0.6,drag:2.5});};

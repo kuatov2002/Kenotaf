@@ -63,7 +63,7 @@ z4_exam_a:gs=>({id:'z4_exam_a',zone:'seal',name:'ЭКЗАМЕН A · ПАРОВ�
       {x:44.4,y:8.5,w:1.4,h:2.1,to:'z4_antechamber',link:'a_end',label:'ПРЕДПЕЧАТЬЕ'}];
     R.interactables=gs.flags.gaugeA?[]:[{kind:'gauge',x:42.4,y:10.4,label:'МАНОМЕТР A',flag:'gaugeA'}];
     R.checkpoint={x:2.4,y:10.6,h:1.7,lit:gs.cp.room==='z4_exam_a'};
-    R.lights=[lit(6,3,7,'#e8e8e8',0.75),lit(20,3,7,'#e8e8e8',0.75),lit(34,3,7,'#e8e8e8',0.75),
+    R.amb=[160,128,114];R.lights=[lit(6,3,7,'#ffb090',0.75),lit(20,3,7,'#ffb090',0.75),lit(34,3,7,'#ffb090',0.75),
       lit(42.4,9.6,4,gs.flags.gaugeA?'#69d68f':'#c8452f',0.9),lit(1.4,9.2,3,'#e8e8e8',0.5)];
     R.emitters=[{type:'dust',rate:8}];
     R.extraGame=(c,L,r)=>{
@@ -99,7 +99,7 @@ z4_exam_b:gs=>({id:'z4_exam_b',zone:'seal',name:'ЭКЗАМЕН B · ШАХТА 
     if(!gs.flags.gaugeB)R.interactables.push({kind:'gauge',x:1.6,y:12.6,label:'МАНОМЕТР B',flag:'gaugeB'});
     R.checkpoint={x:2.6,y:32,h:1.7,lit:gs.cp.room==='z4_exam_b'};
     R.enemies.push({type:'lampada',x:12,y:4,amb:true});
-    R.lights=[lit(3,29,6,'#e8e8e8',0.65),lit(12,25,7,'#8fb6c9',0.6),lit(22.4,28,5,'#e8e8e8',0.6),
+    R.amb=[118,138,160];R.lights=[lit(3,29,6,'#9fe0ff',0.65),lit(12,25,7,'#8fb6c9',0.6),lit(22.4,28,5,'#9fe0ff',0.6),
       lit(22.4,19,5,'#e8e8e8',0.6),lit(18,12,6,'#8fb6c9',0.6),lit(9,7.5,7,'#8fb6c9',0.6),
       lit(1.6,11.6,4,gs.flags.gaugeB?'#69d68f':'#c8452f',0.9),lit(12,33.6,6,'#c8452f',0.4)];
     R.emitters=[{type:'dust',rate:10}];
@@ -135,7 +135,7 @@ z4_exam_c:gs=>({id:'z4_exam_c',zone:'seal',name:'ЭКЗАМЕН C · ЗАЛ АР
     if(!gs.loreIds[12])R.interactables.push({kind:'lore',loreId:12,x:4.6,y:17,title:'ЦИЛИНДР №12 · ТЕЛЕМЕТРИЯ ПОВЕРХНОСТИ',
       text:'«ЗАПИСЬ ЗА ВЧЕРА: +22°C, ВЕТЕР ЮГО-ЗАПАДНЫЙ, ОБЛАЧНОСТЬ 30%. ТРАВА. ПТИЦЫ. ДАТЧИКИ ИСПРАВНЫ 214 ЛЕТ. ЧИТАЛ ТОЛЬКО СОВЕТ.»'});
     R.checkpoint={x:2.6,y:17,h:1.7,lit:gs.cp.room==='z4_exam_c'};
-    R.lights=[lit(8,4,8,'#e8e8e8',0.7),lit(21,3.4,9,'#e8e8e8',0.75),lit(34,4,8,'#e8e8e8',0.7),
+    R.amb=[172,152,120];R.lights=[lit(8,4,8,'#ffd9a0',0.7),lit(21,3.4,9,'#ffd9a0',0.75),lit(34,4,8,'#ffd9a0',0.7),
       lit(38.6,16,4,gs.flags.gaugeC?'#69d68f':'#c8452f',0.9),lit(35,15.4,4,'#8fb6c9',0.5),lit(1.4,15.6,3,'#e8e8e8',0.5)];
     R.emitters=[{type:'dust',rate:10}];
     R.extraGame=(c,L,r)=>{

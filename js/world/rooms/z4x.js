@@ -115,7 +115,7 @@ z4_gate:gs=>({id:'z4_gate',zone:'seal',sub:'gears',name:'ВОРОТА АРХИВ
   art:RB.art('seal','gears'),
   build(R){
     RB.shell(R,'lead',{ceil:0.4});
-    R.solids.push(S(0,27,40,3,'lead'),P(4,24.6,5),P(11,22.2,5),P(18,19.8,5),P(25,17.4,5),S(31,12.6,9,0.8,'lead'),P(30,8,10,0.6));
+    R.solids.push(S(0,27,40,3,'lead'),P(4,24.6,5),P(11,22.2,5),P(18,19.8,5),P(25,17.4,5),P(31,13.8,4,0.6,'lead'),P(35.5,10.6,4.5,0.6,'lead'),P(30,8,10,0.6));
     R.doors=[RB.L(27,'z4_quiet','КАМОРКА'),RB.R(R,8,'z5_hall','АРХИВ СОВЕТА')];
     R.signs=[{x:24,y:10,keys:['SPACE','SPACE'],text:'В ВОЗДУХЕ — ЕЩЁ РАЗ',need:'vjump'}];
     R.enemies.push({type:'lampada',x:20,y:12,amb:true},{type:'clockmaker',x:20,y:27-2.1,patrol:[10,30],amb:true});

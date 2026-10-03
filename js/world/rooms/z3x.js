@@ -112,7 +112,7 @@ z3_sunhall:gs=>({id:'z3_sunhall',zone:'eden',sub:'sunhall',name:'ЗАЛ ЛАМП
     RB.lore(R,gs,20,48.5,9.8);
     R.enemies.push({type:'lampada',x:20,y:12,amb:true},{type:'lampada',x:30,y:8,amb:true},{type:'lampada',x:12,y:16,amb:true},
       {type:'gardener',x:33,y:19.4-1.8,patrol:[30.5,35.5],amb:true});
-    R.lights=[lit(26,3,20,'#fff6d8',1.1),lit(10,24,8,'#fff2c0',0.6),lit(40,14,8,'#fff2c0',0.6)];
+    R.lights=[lit(26,3,14,'#fff6d8',0.85),lit(10,24,8,'#fff2c0',0.55),lit(40,14,8,'#fff2c0',0.55)];
     R.emitters=[{type:'dust',rate:16},{type:'leaf',rate:1.5}];
     R.extraGame=(c,L,r)=>{Kit.sign(c,2,24,4.2,0.85,'ГРАФИК СВЕТА · 14/10','#5a7a3a','#f0f0e0',1041);};
   }}),
@@ -170,8 +170,10 @@ z3_vineyard:gs=>({id:'z3_vineyard',zone:'eden',sub:'orchard',name:'ВИНОГР�
   build(R){
     RB.shell(R,'marble',{ceil:0.4});
     R.solids.push(S(0,43,24,3,'marble'),P(14,40.6,5),P(8,38.2,5),P(14,35.8,5),
-      S(8,18,1.2,16,'marble',{grip:'r'}),S(12.4,20,1.2,14,'marble',{grip:'l'}),P(2,17.6,6),S(0,8,6,1,'marble'));
-    RB.ring(R,10,11.5,'top',11.1);RB.ring(R,5,5.6,'top',5.2);
+      S(8,18,1.2,16,'marble',{grip:'r'}),S(12.4,20,1.2,14,'marble',{grip:'l'}),P(0,17.6,8.4),S(0,8,6,1,'marble'),
+      /* полки-передышки в камине: подъём по 5 м, а не 16 сразу */
+      P(9.2,29,3.2,0.34,'marble'),P(9.2,24,3.2,0.34,'marble'));
+    RB.ring(R,7.9,12.6,'top',12.2);RB.ring(R,7.4,6.4,'top',6.0);
     R.doors=[RB.L(43,'z3_quiet','ПИТОМНИК'),RB.L(8,'z3_dome','КУПОЛЬНЫЙ ПОДЪЁМ')];
     R.enemies.push({type:'lampada',x:16,y:28,amb:true},{type:'pollinator',x:6,y:12,amb:true});
     R.lights=[lit(12,40,8,'#fff2c0',0.7),lit(10,26,7,'#fff2c0',0.6),lit(6,14,7,'#fff2c0',0.6),lit(3,6,5,'#fff2c0',0.7)];

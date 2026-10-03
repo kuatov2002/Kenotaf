@@ -177,11 +177,11 @@ const LevelAudit={
       for(const sk in E){if(canExit.has(sk))continue;if(E[sk].some(q=>q.ek&&canExit.has(q.ek))){canExit.add(sk);ch=true;}}}}
     const traps=[...seen].filter(k=>E[k]&&!canExit.has(k)).map(k=>({x:+pos[k].x.toFixed(1),y:+pos[k].y.toFixed(1)}));
     /* СТРОГО: переход засчитывается, только если он не требует пиксельной точности —
-       повторяется при сдвиге старта на ±0.25 м и при запаздывании нажатий на 2 кадра (33 мс) */
+       повторяется при сдвиге старта на ±0.3 м и при запаздывании нажатий на 3 кадра (50 мс) */
     let strictN=0,fragile=0,checks=0;
     if(opts.strict){
       const near=(a,b)=>a&&b&&Math.abs(a.x-b.x)<=1.05&&Math.abs(a.y-b.y)<=0.35;
-      const PERT=[{dx:-0.25},{dx:0.25},{skew:2}];
+      const PERT=[{dx:-0.3},{dx:0.3},{skew:3}];
       const robust=(s,ed)=>{checks++;let ok=0,valid=0;const need=ed.h?Object.keys(ed.h).filter(q=>q[0]!=='s'):[];
         for(const pt of PERT){const e=sim(s.x,s.y,pols[ed.pi],pt);const h=H||{};H=null;if(e==='nostart')continue;valid++;
           const landOk=!ed.ek||near(e,pos[ed.ek]),hitOk=need.every(q=>h[q]);if(landOk&&hitOk)ok++;}
