@@ -131,9 +131,12 @@ class Overseer extends MechBoss{
       case 'grab':this.updateHarpoon(dt,p);break;
       case 'ventWind':{const W=0.8;this.vx=damp(this.vx,0,6,dt);
         this.telegraph(this.node('core'),this.st/W,this.st>W-0.35);
-        if(this.st>=W){this.state='vent';this.st=0;this.hitDone=false;g.audio.steamBurst();g.camera.addShake(0.6);}
+        if(this.st>=W){this.state='vent';this.st=0;this.hitDone=false;g.audio.steamBurst();g.camera.addShake(0.6);
+          /* пар бьёт из бортов в стороны, по всей высоте — облако там же, где урон */
+          for(const s of [-1,1])for(const h of [0.6,1.6,2.6])g.particles.burst(this.cx+s*1.8,this.bottom-h,10,{kind:'steam',col:'#efe8dc',spd:9,life:0.8,size:0.7,grow:1.6,drag:2.4,ang:s>0?0:PI,spread:0.7,jitter:0.6});}
         break;}
-      case 'vent':{const hb={x:this.cx-4,y:this.y-1,w:8,h:this.h+1};
+      case 'vent':{const hw=lerp(2.6,4,clamp((this.st-0.1)/0.2,0,1)),hb={x:this.cx-hw,y:this.y-1,w:hw*2,h:this.h+1};   /* растёт вместе с облаком */
+        if(Math.random()<dt*60){const s=Math.random()<0.5?-1:1;g.particles.spawn({kind:'steam',x:this.cx+s*2.2,y:this.bottom-0.4-Math.random()*2.6,vx:s*(5+Math.random()*4),vy:-0.5,life:0.5,size:0.5,grow:1.6,col:'#efe8dc',drag:2.2});}
         if(!this.hitDone&&this.st>0.1&&aabb(hb,p.rect())){this.hitDone=true;this.damagePlayer();}
         if(Math.random()<dt*110)g.particles.spawn({kind:'steam',x:this.cx+(Math.random()-0.5)*5,y:this.y+0.5,vx:(Math.random()-0.5)*8,vy:-3-Math.random()*4,life:0.8,size:0.6,grow:1.4,col:'#efe8dc',drag:1.2});
         if(this.st>0.7){this.state='recover';this.st=0;}
@@ -162,6 +165,8 @@ class Overseer extends MechBoss{
     g.particles.burst(ix,this.bottom-0.1,18,{kind:'spark',col:'#ffb45a',spd:10,life:0.5,size:0.06,add:true,g:20});
     g.particles.spawn({kind:'shock',x:ix,y:this.bottom-0.1,ringR:3.2,life:0.3,size:0.08,col:'#ffcf7a',add:true,a:0.6});
     this.state='stuck';this.st=0;this.stuckArm='both';this.pulling=false;
+    /* крюки — в полу в тот же кадр, что и урон: хитстоп застывает на касании, а не на замахе */
+    for(const id of ['armR','armL'])if(this.P.arms[id])this.P.arms[id].snap=true;
     for(const id of ['armR','armL'])if(this.has(id))this.node(id).exT=Math.max(this.node(id).exT,1.9);
   }
   /* --- гарпун: крюк на тросе. Летит туда, где курьер был; рывок проходит сквозь, натянутый трос рвёт --- */
@@ -311,6 +316,7 @@ class Overseer extends MechBoss{
         ta=Math.atan2(r.ky-sh.y,r.kx-sh.x);tb=Math.atan2(r.fy-r.ky,r.fx-r.kx)-ta;}
       let A=P.arms[id];
       if(!A||!dt){A=P.arms[id]={a:ta,b:tb,e:q.e||0,trail:[]};}
+      else if(A.snap){A.a=ta;A.b=tb;A.e=q.e||0;A.snap=false;}
       else{A.a=damp(A.a,ta,q.rate,dt);A.b=damp(A.b,tb,q.rate,dt);A.e=damp(A.e,q.e||0,q.rate,dt);}
       const l2=OVS.L2+A.e*OVS.EXT,fa=A.a+A.b;
       A.sh=sh;A.el={x:sh.x+Math.cos(A.a)*OVS.L1,y:sh.y+Math.sin(A.a)*OVS.L1};

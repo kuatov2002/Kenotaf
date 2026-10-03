@@ -62,7 +62,7 @@ class Regulator extends MechBoss{
       /* пятка: короткий удар назад ходулей */
       case 'heelWind':{const Wd=0.5/tp;this.vx=damp(this.vx,0,8,dt);this.telegraph(this.node('balance')&&this.has('balance')?this.node('balance'):this.node('core'),this.st/Wd,this.st>Wd-0.25);
         if(this.st>=Wd){this.state='heel';this.st=0;g.audio.mat('brass',1);g.camera.addShake(0.3);
-          const hb={x:this.face>0?this.cx-2.6:this.cx+0.2,y:this.bottom-2.2,w:2.4,h:2.2};if(aabb(hb,p.rect()))this.damagePlayer(1,this.cx);}break;}
+          this.pose(0);if(this.geoHit(this.legSegs(1),p))this.damagePlayer(1,this.cx);}break;}   /* бьёт сама ходуля, выброшенная назад */
       case 'heel':this.vx=0;if(this.st>0.3){this.state='recover';this.st=0;}break;
       /* марш: три размашистых шага по долям к курьеру (стрелки на взводе) */
       case 'marchWind':{this.vx=damp(this.vx,0,8,dt);if(this.st>=0.3/tp){this.state='march';this.st=0;this.steps=0;}break;}
@@ -76,7 +76,9 @@ class Regulator extends MechBoss{
       case 'hourWind':{const Wd=0.95/tp;this.vx=damp(this.vx,0,8,dt);this.telegraph(this.node('hour'),this.st/Wd,this.st>Wd-0.36);
         if(this.st>=Wd){this.state='hour';this.st=0;const ix=this.cx+this.face*2.6;
           g.audio.explosion();g.audio.mat('brass',1);g.camera.addShake(0.8);g.hitstop(0.05);
-          if(aabb({x:ix-1.4,y:this.bottom-2.6,w:2.8,h:2.6},p.rect()))this.damagePlayer();
+          /* стрелка выстреливает телескопом и бьёт молотом в пол в тот же кадр, что и урон */
+          this.ha=0.83;this.P.hx=1;this.pose(0);
+          if(this.geoHit(this.handSegs(),p)||aabb({x:ix-1.0,y:this.bottom-0.8,w:2.0,h:0.8},p.rect()))this.damagePlayer();
           for(const s of [-1,1])W.projectiles.push({x:ix+s*1.3,y:this.bottom-0.4,vx:s*8.5,vy:0,r:0.45,dmg:1,life:2.6,kind:'wave'});
           g.particles.burst(ix,this.bottom,26,{kind:'debris',col:'#8a8478',spd:8,life:0.9,size:0.13,g:30});}
         break;}
@@ -142,24 +144,35 @@ class Regulator extends MechBoss{
       if(h.armT>0){h.armT-=dt;h.warn=true;}else h.warn=false;
       if(h.fireT>0){h.fireT-=dt;h.active=true;}else h.active=false;
       if(this.dead){h.active=false;h.warn=false;}}}
+  /* честные попадания по геометрии детали: отрезки [ax,ay,bx,by,радиус] в своих координатах */
+  geoHit(segs,p){const r=p.rect();
+    for(const [ax,ay,bx,by,rad] of segs){const x0=this.cx+this.face*ax,y0=this.bottom+ay,x1=this.cx+this.face*bx,y1=this.bottom+by,n=Math.max(1,Math.ceil(Math.hypot(x1-x0,y1-y0)/0.2));
+      for(let i=0;i<=n;i++){const x=lerp(x0,x1,i/n),y=lerp(y0,y1,i/n),nx=clamp(x,r.x,r.x+r.w),ny=clamp(y,r.y,r.y+r.h);if(Math.hypot(nx-x,ny-y)<=rad)return true;}}
+    return false;}
+  legSegs(i){const L=this.P.legs[i];return [[L.hx,L.hy,L.kx,L.ky,0.22],[L.kx,L.ky,L.fx,L.fy,0.22],[L.fx,L.fy,L.fx,L.fy,0.34]];}
+  handSegs(){const P=this.P,E=2.95*(P.hx||0),c=Math.cos(this.ha),s=Math.sin(this.ha),at=d=>[P.shH.x+c*d,P.shH.y+s*d];
+    const a=at(0),h=at(1.78+E);return [[a[0],a[1],h[0],h[1],0.2],[h[0],h[1],h[0],h[1],0.55]];}
   pose(dt){
     const P=this.P,s=this.state,t=this.t;dt=dt||0;const tp=this.tempo();
     this.walk+=this.vx*this.face*dt*1.3;this.bal+=dt*tp*(this.has('balance')?6:2+3*Math.abs(Math.sin(t)));
     this.pend=Math.sin(t*2.2*tp)*0.35;
     const kw=W=>clamp(this.st/(W/tp),0,1);
     let ha=-1.4+Math.sin(t*1.3)*0.05,ma=this.state==='minute'?this.ma:-0.4+Math.sin(t*1.1)*0.05;
-    if(s==='hourWind')ha=lerp(-1.4,-2.9,EZ.out(kw(0.95)));if(s==='hour')ha=0.6;
+    if(s==='hourWind')ha=lerp(-1.4,-2.9,EZ.out(kw(0.95)));if(s==='hour')ha=0.83;
     if(s==='minuteWind'||s==='slide')ma=lerp(-0.4,-2.4,EZ.out(s==='slide'?1:kw(0.85)));
     if(s==='chimeWind'||s==='chime'){ha=-2.2;ma=-1.0;}
     if(this.openT>0){ha=-0.6+Math.sin(t*8)*0.1;ma=0.4;}
-    this.ha=dt?damp(this.ha,ha,s==='hour'?40:10,dt):ha;if(s!=='minute')this.ma=dt?damp(this.ma,ma,10,dt):ma;
+    this.ha=dt?damp(this.ha,ha,s==='hour'?40:10,dt):(s==='hour'?this.ha:ha);
+    const hx=s==='hour'&&this.st<0.3?1:0;P.hx=dt?damp(P.hx||0,hx,hx?40:7,dt):(P.hx||0);   /* телескоп часовой стрелки */if(s!=='minute')this.ma=dt?damp(this.ma,ma,10,dt):ma;
     P.bob=Math.sin(this.walk)*0.05;P.hip=-2.2+P.bob;
     const legs=[];for(let i=0;i<2;i++){const q=this.walk+(i?PI:0),mv=Math.abs(this.vx)>0.3;
-      const fx=(i?-0.45:0.45)+(mv?Math.sin(q)*0.4:0),fy=mv?-Math.max(0,Math.cos(q))*0.2:0;
+      let fx=(i?-0.45:0.45)+(mv?Math.sin(q)*0.4:0),fy=mv?-Math.max(0,Math.cos(q))*0.2:0;
+      if(i===1&&s==='heelWind'){const k=kw(0.5);fx=lerp(fx,0.15,k);fy=lerp(fy,-0.75,k);}   /* ходуля поджата под корпус */
+      if(i===1&&s==='heel'){fx=-1.95;fy=-0.45;}                                          /* и выброшена назад вдоль пола */
       const K=ik2(i?-0.35:0.35,P.hip,fx,fy,1.2,1.15,-1);legs.push({hx:i?-0.35:0.35,hy:P.hip,kx:K.kx,ky:K.ky,fx:K.fx,fy:K.fy});}
     P.legs=legs;
     P.shH={x:-0.95,y:-4.0+P.bob};P.shM={x:0.95,y:-4.0+P.bob};
-    P.hourTip={x:P.shH.x+Math.cos(this.ha)*2.0,y:P.shH.y+Math.sin(this.ha)*2.0};
+    const hl=2.0+2.95*(P.hx||0);P.hourTip={x:P.shH.x+Math.cos(this.ha)*hl,y:P.shH.y+Math.sin(this.ha)*hl};
     P.minTip={x:P.shM.x+Math.cos(this.ma)*5.0,y:P.shM.y+Math.sin(this.ma)*5.0};if(P.minTip.y>-0.1)P.minTip.y=-0.1;
     const hn=this.node('hour');hn.lx=(P.shH.x+P.hourTip.x)/2;hn.ly=(P.shH.y+P.hourTip.y)/2;
     const mn=this.node('minute');mn.lx=P.shM.x+Math.cos(this.ma)*1.4;mn.ly=P.shM.y+Math.sin(this.ma)*1.4;
@@ -240,9 +253,13 @@ class Regulator extends MechBoss{
     if(this.has('hour')){const a=this.ha;c.save();c.translate(P.shH.x,P.shH.y);c.rotate(a);
       c.fillStyle=MK.plateGrad(c,'brass',0,-0.14,2,0.28);c.beginPath();c.moveTo(-0.45,-0.07);c.lineTo(1.35,-0.11);c.lineTo(1.35,0.11);c.lineTo(-0.45,0.07);c.closePath();c.fill();
       c.beginPath();c.arc(-0.45,0,0.16,0,TAU);c.fill();
+      const E=2.95*(P.hx||0);if(E>0.02){c.fillStyle=MK.plateGrad(c,'steel',0,-0.07,2,0.14);c.fillRect(1.2,-0.065,E+0.1,0.13);
+        c.fillStyle='#3a2a14';for(let k=1;k<=3;k++)if(E*k/3>0.15)c.fillRect(1.2+E*k/3-0.04,-0.09,0.08,0.18);
+        c.fillStyle=MK.plateGrad(c,'brass',0,-0.14,2,0.28);}
+      c.save();c.translate(E,0);
       c.beginPath();c.moveTo(1.25,0);c.lineTo(1.75,-0.48);c.lineTo(2.3,0);c.lineTo(1.75,0.48);c.closePath();c.fill();c.strokeStyle=MAT.brass.ed;c.lineWidth=0.035;c.stroke();
       c.fillStyle='#1a120a';c.beginPath();c.moveTo(1.55,0);c.lineTo(1.75,-0.2);c.lineTo(1.98,0);c.lineTo(1.75,0.2);c.closePath();c.fill();
-      c.fillStyle='rgba(255,246,216,.35)';c.fillRect(0,-0.1,1.3,0.03);c.restore();}
+      c.restore();c.fillStyle='rgba(255,246,216,.35)';c.fillRect(0,-0.1,1.3,0.03);c.restore();}
     else MK.stump(c,P.shH.x,P.shH.y,0.16,this.ha,this.node('hour').seed,t,'brass');
     /* минутная стрелка — длинный клинок с ажуром и противовесом */
     if(this.has('minute')){const a=this.ma;c.save();c.translate(P.shM.x,P.shM.y);c.rotate(a);

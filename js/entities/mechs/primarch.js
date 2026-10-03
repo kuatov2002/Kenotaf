@@ -104,7 +104,7 @@ class Primarch extends MechBoss{
       case 'slamWind':{const Wd=0.9/des;this.vx=damp(this.vx,0,7,dt);
         this.telegraph(this.node('claw'),this.st/Wd,this.st>Wd-0.36);
         if(this.st>=Wd){this.state='slam';this.st=0;g.audio.explosion();g.audio.mat('brass',1);g.camera.addShake(0.8);
-          const hb={x:this.face>0?this.cx+0.4:this.cx-4.6,y:this.y-0.4,w:4.2,h:this.h+0.8};
+          const hb={x:this.face>0?this.cx+1.0:this.cx-3.8,y:this.bottom-3.2,w:2.8,h:3.2};   /* столб, по которому прошла клешня, и место удара; дальше — волна */
           if(aabb(hb,p.rect()))this.damagePlayer();
           g.particles.burst(this.cx+this.face*3,this.bottom,26,{kind:'debris',col:'#8a7a6a',spd:8,life:0.9,size:0.14,g:30});
           W.projectiles.push({x:this.cx+this.face*2.6,y:this.bottom-0.4,vx:this.face*9,vy:0,r:0.45,dmg:1,life:2.6,kind:'wave'});
@@ -175,11 +175,15 @@ class Primarch extends MechBoss{
       case 'stunWall':this.vx=0;if(this.st>1.4){this.state='recover';this.st=0;}break;
       case 'stompWind':{const Wd=0.6/des;this.vx=damp(this.vx,0,7,dt);
         this.telegraph(this.node('armor')||this.node('core'),this.st/Wd,this.st>Wd-0.3);
-        if(this.st>=Wd){this.state='stomp';this.st=0;g.audio.explosion();g.camera.addShake(0.6);
-          if(Math.abs(p.cx-this.cx)<3.4&&p.bottom>this.bottom-1.2)this.damagePlayer();
-          g.particles.burst(this.cx,this.bottom,30,{kind:'dust',col:'#7a6c5c',spd:7,life:0.8,size:0.2,g:10});}
+        if(this.st>=Wd){this.state='stomp';this.st=0;this.hitDone=false;g.audio.explosion();g.camera.addShake(0.6);
+          g.particles.burst(this.cx,this.bottom,30,{kind:'dust',col:'#7a6c5c',spd:7,life:0.8,size:0.2,g:10});
+          /* ударное кольцо — ровно по радиусу урона */
+          g.particles.spawn({kind:'shock',x:this.cx,y:this.bottom-0.1,ringR:3.4,life:0.15,size:0.08,col:'#ffcf7a',add:true,a:0.8});
+          for(const s of [-1,1])g.particles.burst(this.cx+s*2.2,this.bottom-0.1,10,{kind:'dust',col:'#8a7c6a',spd:6,life:0.5,size:0.25,g:6,ang:s>0?-0.15:PI+0.15,spread:0.4});}
         break;}
-      case 'stomp':if(this.st>0.3){this.state='recover';this.st=0;}break;
+      case 'stomp':{const r=3.4*clamp(this.st/0.15,0,1);   /* урон расходится вместе с кольцом */
+        if(!this.hitDone&&Math.abs(p.cx-this.cx)<r&&p.bottom>this.bottom-1.2){this.hitDone=true;this.damagePlayer();}
+        if(this.st>0.3){this.state='recover';this.st=0;}break;}
       case 'stun':
         this.vx=damp(this.vx,0,8,dt);
         if(Math.random()<dt*40)g.particles.spawn({kind:'steam',x:this.cx-this.face*1.4,y:this.cy-0.4,vx:-this.face*1.5,vy:-1.5,life:1.0,size:0.4,grow:0.8,col:'#cfc9b8',drag:1.2});

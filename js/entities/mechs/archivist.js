@@ -124,7 +124,7 @@ class Archivist extends MechBoss{
     g.particles.spawn({kind:'shock',x:h.x,y:h.surf-0.1,ringR:2.6,life:0.3,size:0.08,col:'#cfe6ff',add:true,a:0.6});
     for(let i=0;i<10;i++)g.particles.spawn({kind:'debris',x:h.x+(Math.random()-0.5)*1.4,y:h.surf-0.2,vx:(Math.random()-0.5)*6,vy:-4-Math.random()*5,
       life:1.4,size:0.12,col:'#e8e0cc',g:14,rot:Math.random()*6,vr:(Math.random()-0.5)*10});
-    if(!p.dead&&Math.abs(p.cx-h.x)<1.8&&p.bottom>h.surf-2.4&&p.bottom<=h.surf+0.3)this.damagePlayer(1,h.x);
+    if(!p.dead&&Math.abs(p.cx-h.x)<1.2&&p.bottom>h.surf-2.4&&p.bottom<=h.surf+0.3)this.damagePlayer(1,h.x);   /* рука и её ударное кольцо; дальше — волны */
     if(h.surf>=ARC.FY-0.01)for(const s of [-1,1])W.projectiles.push({x:h.x+s*1.2,y:ARC.FY-0.4,vx:s*7.5,vy:0,r:0.42,dmg:1,life:this.md==='rail'?1.3:2.0,kind:'wave'});
     const n=this.node('hand'+k);if(n&&!n.broken)n.exT=Math.max(n.exT,1.25);}
   tickSweep(dt,p,g,W){if(['sweepWind','sweep'].indexOf(this.state)<0||!this.act||!this.act.h)return false;const a=this.act,h=this.hand[a.h],des=this.des();
@@ -215,11 +215,12 @@ class Archivist extends MechBoss{
       case 'grabWind':{const Wd=0.75/des;this.vx=damp(this.vx,0,8,dt);
         for(const k of hs){const h=H[k];h.tx=this.cx+this.face*1.6;h.ty=ARC.FY-4.2+(k==='L'?-0.4:0.4);h.k=9;
           this.telegraph(this.node('hand'+k),this.st/Wd,this.st>Wd-0.3);}
-        if(this.st>=Wd){this.state='grab';this.st=0;g.audio.mat('brass',1);g.audio.hydraulic(1);
-          const hb={x:this.face>0?this.cx+1.2:this.cx-1.2-3.2,y:ARC.FY-3.4,w:3.2,h:3.4};
-          if(!p.dead&&aabb(hb,p.rect())&&this.damagePlayer(1,this.cx)){p.vx=this.face*15;p.vy=-9;}}
+        if(this.st>=Wd){this.state='grab';this.st=0;this.hitDone=false;g.audio.mat('brass',1);g.audio.hydraulic(1);}
         break;}
-      case 'grab':for(const k of hs){const h=H[k];h.tx=this.cx+this.face*3.0;h.ty=ARC.FY-1.4;h.k=22;}
+      case 'grab':for(const k of hs){const h=H[k];h.tx=this.cx+this.face*3.4;h.ty=ARC.FY-1.4;h.k=22;}
+        /* хватают сами кисти — пока летят вперёд на уровне груди */
+        if(!this.hitDone&&this.st<0.3&&!p.dead){const pr=p.rect();for(const k of hs){const h=H[k];
+          if(h.x+0.7>pr.x&&h.x-0.7<pr.x+pr.w&&h.y+0.62>pr.y&&h.y-0.62<pr.y+pr.h){this.hitDone=true;if(this.damagePlayer(1,this.cx)){p.vx=this.face*15;p.vy=-9;}break;}}}
         if(this.st>0.45){this.state='recover';this.st=0;}break;
       case 'hornWind':{const Wd=1.0/des;this.vx=damp(this.vx,0,8,dt);this.telegraph(this.node('horn'),this.st/Wd,this.st>Wd-0.34);
         if(this.st>=Wd){this.state='horn';this.st=0;this.act={n:0};}
