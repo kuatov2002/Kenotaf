@@ -39,7 +39,7 @@ window.ProgressProbe={
         const R=this.build(id),targets=[];
         if(R.bossTrigger)targets.push(Object.assign({id:'boss'},R.bossTrigger));
         const r=LevelAudit.bfs(id,st.ab,Object.assign({starts,targets,max:(opts&&opts.max)||1400,timeMs:(opts&&opts.timeMs)||60000},opts||{}));
-        return {states:r.states,left:r.left,ms:r.ms,raw:r.raw};
+        return {states:r.states,left:r.left,ms:r.ms,raw:r.raw,traps:r.traps,fragile:r.fragile};
       }finally{g.state=keep.st;g.onPlayerDeath=keep.od;W.room=keep.room;W.player=keep.pl;W.interactables=keep.it;
         W.pushables=keep.pu;if(W.room)W.room.playerRef=W.player;g.particles.spawn=keep.ps;g.particles.burst=keep.pb;g.audio.ready=keep.ar;}
     });

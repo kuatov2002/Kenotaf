@@ -30,7 +30,29 @@ class Archivist extends MechBoss{
     this.hand={L:hs(-1),R:hs(1)};this.act=null;this.turnT=0;this.drawerK=1;this.coreT=0;this.lead=null;this.said={};
     this.pose(0);
   }
-  des(){return this.phase>=3?1.3:this.phase>=2?1.18:1;}
+  des(){return (this.phase>=3?1.3:this.phase>=2?1.18:1)*(BossDyn.linking(this)?1.2:1);}
+  /* связки по фазам: под сводом — обе руки поочерёдно, метла и пломбы; на полу — хватка, раструб, бросок;
+     на колесе — кольца, метла, капсулы */
+  pickString(ad){const hs=this.handsUp().length,hn=this.has('horn'),gl=this.has('glass');const o=[];
+    if(this.md==='rail')o.push([['slam','slam'],hs>=2?3:0],[['slam','sweep'],hs?2:0],[['volley','slam'],gl&&hs?2.4:0],
+      [['sweep','volley'],gl&&hs?1.6:0],[['slam','volley','slam'],gl&&hs>=2?1.4:0],[['volley'],gl&&!hs?2:0.4]);
+    else if(this.md==='floor'){if(ad<4.5)o.push([['grab','horn'],hs&&hn?3:0],[['grab','slam'],hs?2.2:0],[['horn','lunge'],hn?1.6:0],[['slam','grab','lunge'],hs?1.4:0]);
+      else o.push([['lunge'],2.4],[['volley','lunge'],1.6],[['horn','slam'],hn&&hs?1.6:0],[['sweep','lunge'],hs?1.4:0],[['lunge','grab'],hs?1.6:0]);
+      if(!o.some(q=>q[1]>0))o.push([['lunge'],1]);}
+    else o.push([['contra','drops'],2.4],[['sweep','contra'],hs?2.2:0],[['volley','sweep'],hs?1.6:0],[['drops','sweep','contra'],hs?1.4:0],[['contra','volley'],1.4]);
+    return BossDyn.pick(o)||['volley'];}
+  /* начать атаку по имени (для рук — выбор руки: в связке «рука-рука» — другая) */
+  beginA(k){const g=this.world.game,p=this.world.player,hs=this.handsUp();
+    if((k==='slam'||k==='sweep'||k==='grab')&&!hs.length)k=this.md==='floor'?'lunge':'volley';
+    if(k==='slam'){const h=hs.length>1&&this.lastHand?hs.find(q=>q!==this.lastHand):hs.sort((a,b)=>Math.abs(this.hand[a].x-p.cx)-Math.abs(this.hand[b].x-p.cx))[0];
+      this.lastHand=h;this.startSlam(h);return;}
+    if(k==='sweep'){this.startSweep(hs[(Math.random()*hs.length)|0]);return;}
+    if(k==='horn'&&!this.has('horn'))k='volley';
+    if(this.md==='wheel'&&(k==='lunge'||k==='grab'))k='contra';
+    this.state=k+'Wind';this.st=0;this.hitDone=false;
+    if(k==='lunge'){g.audio.hydraulic(1);g.audio.elevator();}else if(k==='grab')g.audio.hydraulic(0.8);
+    else if(k==='horn')g.audio.tone(140,0.9,'sawtooth',0.03,70);else if(k==='contra')g.audio.tone(160,0.6,'sine',0.03,80);
+    else g.audio.tone(330,0.5,'sine',0.03,660);}
   /* камера: под сводом — шире и выше, на полу — ближе, на колесе — на колесо */
   get camZoom(){return this.md==='rail'||this.md==='drop'?0.64:this.md==='floor'?0.74:0.68;}
   camFrame(){if(this.md==='rail'||this.md==='drop')return {x:this.cx,y:this.bottom,w:0.3};
@@ -45,7 +67,7 @@ class Archivist extends MechBoss{
     if(s==='hornWind'||s==='volleyWind'||s==='contraWind'||s==='dropsWind')return n.id==='horn'||n.id==='glass';
     if(s==='lungeWind')return n.id==='cage';
     return false;}
-  cancelAttack(){super.cancelAttack();
+  cancelAttack(){super.cancelAttack();BossDyn.clear(this);
     if(['open','stunWall','fall','climb','stuck'].indexOf(this.state)<0){this.state='recover';this.st=0;this.act=null;}}
   get coreX(){const n=this.node(this.has('glass')?'glass':this.has('cage')?'cage':'core');return n.wx;}
   get coreY(){const n=this.node(this.has('glass')?'glass':this.has('cage')?'cage':'core');return n.wy;}
@@ -135,17 +157,18 @@ class Archivist extends MechBoss{
     switch(this.state){
       case 'wake':this.vx=0;if(this.st>1.2){this.state='idle';this.st=0;this.cd=0.5;g.audio.bossRoar();g.camera.addShake(0.6);}break;
       case 'idle':{this.face=dd>0?1:-1;
-        const tx=clamp(p.cx-Math.sign(dd||1)*3,8,42);this.vx=damp(this.vx,clamp((tx-this.cx)*1.2,-3.2,3.2),3,dt);
-        if(this.cd<=0){const o=[],hs=this.handsUp();
-          if(hs.length)o.push(['slam',3]);if(hs.length)o.push(['sweep',1.8]);
-          if(this.has('glass'))o.push(['volley',this.said.vol?2.2:4]);
-          if(!o.length)o.push(['volley',1]);
-          const pk=BossFX.pick(o);
-          if(pk==='slam'){const k=hs.sort((a,b)=>Math.abs(this.hand[a].x-p.cx)-Math.abs(this.hand[b].x-p.cx))[0];this.startSlam(k);}
-          else if(pk==='sweep')this.startSweep(hs[(Math.random()*hs.length)|0]);
-          else{this.state='volleyWind';this.st=0;this.said.vol=1;g.audio.tone(330,0.5,'sine',0.03,660);}}
+        /* рельс: шкаф ездит над курьером, не отпускает */
+        const tx=clamp(p.cx-Math.sign(dd||1)*2.5,8,42);this.vx=damp(this.vx,clamp((tx-this.cx)*1.6,-4.6,4.6),3.5,dt);
+        if(this.cd<=0)this.beginA(BossDyn.queue(this,this.pickString(Math.abs(dd))));
         break;}
-      case 'recover':this.vx=damp(this.vx,0,4,dt);if(this.st>0.6/des){this.state='idle';this.st=0;this.cd=(0.7+Math.random()*0.6)/des;}break;
+      case 'recover':{this.vx=damp(this.vx,0,5,dt);
+        if(BossDyn.more(this)){if(this.st>0.2){this.face=p.cx>this.cx?1:-1;this.beginA(BossDyn.next(this));}break;}
+        if(this.st>0.45/des){const n=this.qn||0;BossDyn.clear(this);this.lastHand=null;
+          if(this.phase>=3&&n>=3){this.state='overheat';this.st=0;g.audio.steamBurst();for(const q of this.nodes)if(!q.broken&&!q.locked)q.exT=Math.max(q.exT,1.4);break;}
+          this.state='idle';this.st=0;this.cd=(0.35+Math.random()*0.3)/des;}
+        break;}
+      case 'overheat':this.vx=damp(this.vx,0,8,dt);if(Math.random()<dt*40)g.particles.spawn({kind:'steam',x:this.cx+(Math.random()-0.5)*3,y:this.bottom-2-Math.random()*2,vx:0,vy:-3,life:0.9,size:0.45,grow:1,col:'#dfe6ec',drag:1.2});
+        if(this.st>1.4){this.state='idle';this.st=0;this.cd=0.2;}break;
       default:this.state='idle';this.st=0;
     }
   }
@@ -170,21 +193,9 @@ class Archivist extends MechBoss{
     switch(this.state){
       case 'idle':{
         if(want!==this.face){this.turnT+=dt;if(this.turnT>0.45/des){this.face=want;this.turnT=0;g.audio.hydraulic(0.5);}}else this.turnT=0;
-        const spd=(hs.length===2?3.0:hs.length?2.4:1.8)*des;
+        const spd=(hs.length===2?3.8:hs.length?3.2:2.5)*Math.min(des,1.3);
         this.vx=damp(this.vx,this.face===want&&ad>3.4?this.face*spd:0,3,dt);this.walk+=dt*Math.abs(this.vx)*1.3;
-        if(this.cd<=0&&this.face===want){const o=[];
-          if(ad>4.5)o.push(['lunge',2.6]);
-          if(hs.length&&ad<4.2)o.push(['grab',3]);
-          if(this.has('horn'))o.push(['horn',2.2]);
-          if(ad>5)o.push(['volley',1.2]);
-          if(hs.length)o.push(['slam',1.4]);
-          if(hs.length&&ad>3)o.push(['sweep',1]);
-          const pk=BossFX.pick(o);
-          if(pk==='slam'){const k=hs.sort((a,b)=>Math.abs(H[a].x-p.cx)-Math.abs(H[b].x-p.cx))[0];this.startSlam(k);}
-          else if(pk==='sweep')this.startSweep(hs[(Math.random()*hs.length)|0]);
-          else{this.state=pk+'Wind';this.st=0;this.hitDone=false;
-            if(pk==='lunge'){g.audio.hydraulic(1);g.audio.elevator();}else if(pk==='grab')g.audio.hydraulic(0.8);
-            else if(pk==='horn')g.audio.tone(140,0.9,'sawtooth',0.03,70);else g.audio.tone(330,0.5,'sine',0.03,660);}}
+        if(this.cd<=0&&this.face===want)this.beginA(BossDyn.queue(this,this.pickString(ad)));
         break;}
       case 'lungeWind':{const Wd=0.85/des;this.vx=damp(this.vx,-this.face*1.2,6,dt);
         this.telegraph(this.node('cage'),this.st/Wd,this.st>Wd-0.32);
@@ -218,7 +229,14 @@ class Archivist extends MechBoss{
           g.audio.tone(110,0.7,'sawtooth',0.04,55);g.camera.addShake(0.4);}
         if(this.st>N*0.55+0.3){this.state='recover';this.st=0;this.act=null;}
         break;}
-      case 'recover':this.vx=damp(this.vx,0,6,dt);if(this.st>0.65/des){this.state='idle';this.st=0;this.cd=(0.6+Math.random()*0.5)/des;}break;
+      case 'recover':{this.vx=damp(this.vx,0,5,dt);
+        if(BossDyn.more(this)){if(this.st>0.2){this.face=p.cx>this.cx?1:-1;this.beginA(BossDyn.next(this));}break;}
+        if(this.st>0.45/des){const n=this.qn||0;BossDyn.clear(this);this.lastHand=null;
+          if(this.phase>=3&&n>=3){this.state='overheat';this.st=0;g.audio.steamBurst();for(const q of this.nodes)if(!q.broken&&!q.locked)q.exT=Math.max(q.exT,1.4);break;}
+          this.state='idle';this.st=0;this.cd=(0.3+Math.random()*0.3)/des;}
+        break;}
+      case 'overheat':this.vx=damp(this.vx,0,8,dt);if(Math.random()<dt*40)g.particles.spawn({kind:'steam',x:this.cx+(Math.random()-0.5)*3,y:this.bottom-2-Math.random()*2,vx:0,vy:-3,life:0.9,size:0.45,grow:1,col:'#dfe6ec',drag:1.2});
+        if(this.st>1.4){this.state='idle';this.st=0;this.cd=0.2;}break;
       case 'fall':break;
       default:this.state='idle';this.st=0;
     }
@@ -253,11 +271,7 @@ class Archivist extends MechBoss{
     if(this.tickSweep(dt,p,g,W)||this.tickVolley(dt,p,g,W)){this.restHands(dt);return;}
     this.restHands(dt);
     switch(this.state){
-      case 'idle':if(this.cd<=0){const o=[['contra',2.6],['drops',1.8],['volley',1.5]],hs=this.handsUp();
-          if(hs.length)o.push(['sweep',2.4]);
-          const pk=BossFX.pick(o);
-          if(pk==='sweep')this.startSweep(hs[(Math.random()*hs.length)|0]);
-          else{this.state=pk+'Wind';this.st=0;g.audio.tone(pk==='contra'?160:330,0.6,'sine',0.03,pk==='contra'?80:660);}}
+      case 'idle':if(this.cd<=0)this.beginA(BossDyn.queue(this,this.pickString(Math.abs(p.cx-this.cx))));
         break;
       case 'contraWind':{const Wd=0.9/des;this.telegraph(this.node('horn'),this.st/Wd,this.st>Wd-0.3);
         if(this.st>=Wd){this.state='contra';this.st=0;this.act={n:0};}break;}
@@ -271,7 +285,14 @@ class Archivist extends MechBoss{
           xs.forEach((x,i)=>BossFX.drop(W,clamp(x,1.5,48.5),{look:'capsule',r:0.42,rad:1.3,delay:0.7+i*0.18}));g.audio.mat('brass',0.6);}
         break;}
       case 'drops':if(this.st>0.8){this.state='recover';this.st=0;}break;
-      case 'recover':if(this.st>0.6/des){this.state='idle';this.st=0;this.cd=(0.5+Math.random()*0.5)/des;}break;
+      case 'recover':{this.vx=damp(this.vx,0,5,dt);
+        if(BossDyn.more(this)){if(this.st>0.2){this.face=p.cx>this.cx?1:-1;this.beginA(BossDyn.next(this));}break;}
+        if(this.st>0.45/des){const n=this.qn||0;BossDyn.clear(this);this.lastHand=null;
+          if(this.phase>=3&&n>=3){this.state='overheat';this.st=0;g.audio.steamBurst();for(const q of this.nodes)if(!q.broken&&!q.locked)q.exT=Math.max(q.exT,1.4);break;}
+          this.state='idle';this.st=0;this.cd=(0.35+Math.random()*0.3)/des;}
+        break;}
+      case 'overheat':this.vx=damp(this.vx,0,8,dt);if(Math.random()<dt*40)g.particles.spawn({kind:'steam',x:this.cx+(Math.random()-0.5)*3,y:this.bottom-2-Math.random()*2,vx:0,vy:-3,life:0.9,size:0.45,grow:1,col:'#dfe6ec',drag:1.2});
+        if(this.st>1.4){this.state='idle';this.st=0;this.cd=0.2;}break;
       default:this.state='idle';this.st=0;
     }
   }

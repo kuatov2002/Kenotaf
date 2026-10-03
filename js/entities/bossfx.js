@@ -11,8 +11,9 @@ const BOSS_PR={drop:1,ring:1,gear:1,seal:1,erupt:1};
 const BossFX={
   /* случайный выбор по весам: [['имя',вес],...] */
   pick(o){let tot=o.reduce((a,b)=>a+b[1],0),r=Math.random()*tot;for(const q of o){r-=q[1];if(r<=0)return q[0];}return o[0][0];},
-  drop(W,x,o){o=o||{};const R=W.room;let fy=R.h;
-    for(const s of R.solids){if(s.hidden||x<s.x||x>s.x+s.w)continue;if(s.y>2&&s.y<fy)fy=s.y;}
+  drop(W,x,o){o=o||{};const R=W.room,y0=o.y0===undefined?1.2:o.y0;let fy=R.h;
+    for(const s of R.solids){if(s.hidden||x<s.x||x>s.x+s.w)continue;if(s.y>y0+0.5&&s.y<fy)fy=s.y;}
+
     W.projectiles.push(Object.assign({kind:'drop',x:x,y:(o.y0===undefined?1.2:o.y0),vx:0,vy:0,r:o.r||0.5,dmg:1,life:6,delay:o.delay===undefined?0.7:o.delay,fy:fy,rad:o.rad||1.6,look:o.look||'capsule',rot:0},o));},
   ring(W,x,y,o){o=o||{};W.projectiles.push(Object.assign({kind:'ring',x,y,r:o.r0||0.6,vr:o.vr||7,band:o.band||0.5,rmax:o.rmax||14,dmg:1,life:4,col:o.col||'#ffe6a3'},o));},
   gear(W,x,y,dir,o){o=o||{};W.projectiles.push(Object.assign({kind:'gear',x,y,vx:dir*(o.spd||7),vy:0,r:o.r||0.55,dmg:1,life:o.life||6,bounces:o.bounces||2,rot:0},o));},
@@ -31,15 +32,17 @@ function updateBossProjectile(W,pr,dt){
       g.particles.burst(pr.x,pr.fy,22,{kind:'debris',col:pr.look==='boulder'?'#6a5a3a':'#8a7a6a',spd:7,life:0.8,size:0.13,g:28});
       g.particles.burst(pr.x,pr.fy-0.2,12,{kind:'spark',col:'#ffcf7a',spd:6,life:0.4,size:0.05,add:true,g:16});
       g.particles.spawn({kind:'shock',x:pr.x,y:pr.fy-0.1,ringR:pr.rad*1.4,life:0.3,size:0.08,col:'#ffcf7a',add:true,a:0.6});
-      if(p&&!p.dead&&Math.abs(p.cx-pr.x)<pr.rad&&p.bottom>pr.fy-2.4)p.hurtBy(pr.dmg,pr.x);
+      /* удар — только по тем, кто на этой поверхности или прямо над ней (в пределах круга) */
+      if(p&&!p.dead&&p.x<pr.x+pr.rad&&p.x+p.w>pr.x-pr.rad&&p.bottom>pr.fy-1.6&&p.bottom<pr.fy+0.35)p.hurtBy(pr.dmg,pr.x);
       if(pr.onLand)pr.onLand(pr);
       return true;}
     if(p&&!p.dead&&aabb({x:pr.x-pr.r,y:pr.y-pr.r,w:pr.r*2,h:pr.r*2},p.rect())){p.hurtBy(pr.dmg,pr.x);return true;}
     return false;}
   if(pr.kind==='ring'){
     pr.r+=pr.vr*dt;
-    if(!pr.hit&&p&&!p.dead){const d=Math.hypot(p.cx-pr.x,p.cy-pr.y);
-      if(Math.abs(d-pr.r)<pr.band*0.5+0.45&&(!pr.ground||p.bottom>pr.y-0.6)){if(p.hurtBy(pr.dmg,pr.x)||p.dashT>0||p.evIF>0)pr.hit=true;}}
+    if(!pr.hit&&p&&!p.dead){const pts=[[p.cx,p.cy],[p.cx,p.y+0.15],[p.cx,p.bottom-0.1],[p.x+0.08,p.cy],[p.x+p.w-0.08,p.cy]];
+      const on=pts.some(q=>Math.abs(Math.hypot(q[0]-pr.x,q[1]-pr.y)-pr.r)<pr.band*0.5);
+      if(on&&(!pr.ground||p.bottom>pr.y-0.6)){if(p.hurtBy(pr.dmg,pr.x)||p.dashT>0||p.evIF>0)pr.hit=true;}}
     return pr.r>pr.rmax;}
   if(pr.kind==='gear'){
     pr.vy+=40*dt;const nx=pr.x+pr.vx*dt,ny=pr.y+pr.vy*dt;pr.rot+=pr.vx*dt/pr.r;
@@ -71,7 +74,7 @@ function updateZones(W,dt){
       /* сдутое в механизм облако разъедает его баллон */
       const b=W.boss;if(z.pushed&&b&&b.activated&&!b.dead&&b.cloudHit&&Math.hypot(b.cx-z.x,b.cy-z.y)<z.r+1.4){b.cloudHit(z);z.life=0;}}
     if(p&&!p.dead&&z.hitCd<=0&&z.t>(z.arm||0.4)){
-      const inside=z.kind==='brand'?(Math.abs(p.cx-z.x)<z.r&&Math.abs(p.bottom-z.y)<0.5):(Math.hypot(p.cx-z.x,p.cy-z.y)<z.r*0.8);
+      const inside=z.kind==='brand'?(p.x+p.w-0.12>z.x-z.r&&p.x+0.12<z.x+z.r&&Math.abs(p.bottom-z.y)<0.35):(Math.hypot(p.cx-z.x,p.cy-z.y)<z.r*0.75);
       if(inside&&p.hurtBy(1,z.x))z.hitCd=1.0;}}
   W.zones=Z.filter(z=>z.t<z.life);
 }

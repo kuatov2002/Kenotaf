@@ -31,7 +31,7 @@ const CFG={
 /* окно идеального уклонения: гироскоп расширяет его */
 function perfectWin(gs){return CFG.combat.perfectWin*(gs&&gs.flags.evade_win?1.6:1);}
 /* гарпун: дальность троса и скорость лебёдки */
-const HOOK={reach:9.6,speed:25};
+const HOOK={reach:10,speed:24};
 const ZONES={
   sump:{name:'ОТСТОЙНИК',num:'ЗОНА I',ambRGB:[104,90,78],haze:'#5a4636',void:'#0a0806',fogA:0.09,grain:0.045},
   hives:{name:'ЖИЛЫЕ СОТЫ',num:'ЗОНА II',ambRGB:[100,80,74],haze:'#40282a',void:'#080606',fogA:0.1,grain:0.05},

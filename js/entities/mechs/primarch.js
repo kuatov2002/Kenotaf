@@ -25,7 +25,20 @@ class Primarch extends MechBoss{
     this.popCd=0;this.beam=null;this.combo=0;this.leap=null;
     this.face=-1;this.pose(0);
   }
-  des(){return this.phase>=3?1.45:this.phase>=2?1.2:1;}
+  /* звено связки замахивается на 20% быстрее; телеграф остаётся */
+  des(){return (this.phase>=3?1.4:this.phase>=2?1.18:1)*(BossDyn.linking(this)?1.2:1);}
+  /* связки: ближе — клешня и пар, средняя — прыжок со штампом и таран, далеко — догнать */
+  pickString(ad){const ph=this.phase,cl=this.has('claw'),tk=this.has('tank'),st=this.has('stamp'),lp=this.has('lamp');
+    const o=[];
+    if(ad<4.8){o.push([['slam','breath'],cl&&tk?3:0],[['slam','slam'],cl?(ph>=2?2.4:1.4):0],[['breath','stomp'],tk?1.6:0],
+      [['stomp','charge'],cl?0:2.2],[['slam','leap'],cl&&st&&ph>=2?1.6:0],[['slam','breath','slam'],cl&&tk&&ph>=3?2:0]);}
+    else if(ad<10){o.push([['leap','slam'],st&&cl?2.6:0],[['leap','breath'],st&&tk?1.6:0],[['charge'],1.5],
+      [['search','leap'],lp&&st&&ph>=2?1.6:0],[['seal','leap'],ph>=3&&st?2:0],[['charge','slam'],cl&&ph>=2?1.4:0]);}
+    else o.push([['leap'],st?2.6:0],[['charge'],2],[['search','charge'],lp&&ph>=2?1.6:0],[['seal','leap'],ph>=3?1.8:0]);
+    return BossDyn.pick(o)||['charge'];}
+  begin(pick){const g=this.world.game;this.state=pick+'Wind';this.st=0;this.hitDone=false;
+    if(pick==='slam')g.audio.hydraulic(1);else if(pick==='breath')g.audio.steam(0.6);else if(pick==='charge')g.audio.elevator();
+    else if(pick==='leap'){g.audio.hydraulic(1);g.audio.steam(0.8);}else if(pick==='search')g.audio.tone(220,0.6,'sine',0.03,440);}
   behind(px){return Math.sign(px-this.cx)===-this.face;}
   safe(){return super.safe()||this.state==='stun';}
   threat(){if(super.threat())return true;return ['slam','breath','charge','leap','land'].indexOf(this.state)>=0;}
@@ -34,7 +47,7 @@ class Primarch extends MechBoss{
     if(s==='slamWind')return n.id==='claw';if(s==='breathWind'||s==='breath')return n.id==='tank';
     if(s==='chargeWind'||s==='charge')return n.id==='armor';if(s==='leapWind')return n.id==='stamp';
     if(s==='searchWind'||s==='search')return n.id==='lamp';if(s==='sealWind')return n.id==='claw'||n.id==='core';return false;}
-  cancelAttack(){super.cancelAttack();this.beam=null;if(['open','stun','stunWall'].indexOf(this.state)<0){this.state='recover';this.st=0;}}
+  cancelAttack(){super.cancelAttack();this.beam=null;BossDyn.clear(this);if(['open','stun','stunWall'].indexOf(this.state)<0){this.state='recover';this.st=0;}}
   /* импульс в спину срывает вентиль баллона — но не чаще раза в 12 с */
   applyPulse(p,dir,pw){
     if(this.activated&&this.behind(p.cx)&&this.has('tank')&&this.state!=='stun'&&this.popCd<=0&&this.state!=='leap'){this.popTank();return;}
@@ -73,26 +86,20 @@ class Primarch extends MechBoss{
     switch(this.state){
       case 'wake':this.vx=0;if(this.st>1.0){this.state='idle';this.st=0;this.cd=0.6;g.audio.bossRoar();g.camera.addShake(0.6);}break;
       case 'idle':{
-        if(this.behind(p.cx)){this.behindT+=dt;if(this.behindT>(this.phase>=2?0.5:0.8)){this.face=-this.face;this.behindT=0;g.audio.hydraulic(0.6);}}
+        /* разворот медленный (окно для баллона), но после разворота — сразу связка */
+        if(this.behind(p.cx)){this.behindT+=dt;if(this.behindT>(this.phase>=3?0.38:this.phase>=2?0.48:0.7)){this.face=-this.face;this.behindT=0;this.cd=Math.min(this.cd,0.05);g.audio.hydraulic(0.6);}}
         else this.behindT=0;
-        const spd=(this.phase>=2?2.6:1.8);
-        this.vx=damp(this.vx,this.behind(p.cx)?0:this.face*(ad>3.2?spd:0),2.2,dt);
-        if(this.cd<=0&&!this.behind(p.cx)){
-          const o=[];
-          if(this.has('claw')&&ad<4.8)o.push(['slam',3]);
-          if(this.has('tank')&&ad<7.5)o.push(['breath',2]);
-          if(this.has('stamp')&&ad>3&&ad<16)o.push(['leap',2.4]);
-          if(this.has('lamp')&&this.phase>=2)o.push(['search',1.8]);
-          if(this.phase>=2&&ad>4)o.push(['charge',2]);
-          if(this.phase>=3)o.push(['seal',2.2]);
-          if(!this.has('claw')&&ad<3.2)o.push(['stomp',2.5]);
-          if(!o.length)o.push([ad<3.2?'stomp':'charge',1]);
-          const pick=BossFX.pick(o);
-          this.state=pick+'Wind';this.st=0;this.hitDone=false;
-          if(pick==='slam')g.audio.hydraulic(1);else if(pick==='breath')g.audio.steam(0.6);else if(pick==='charge')g.audio.elevator();
-          else if(pick==='leap'){g.audio.hydraulic(1);g.audio.steam(0.8);}else if(pick==='search')g.audio.tone(220,0.6,'sine',0.03,440);
-        }
+        /* преследование: идёт на курьера, а не ждёт его */
+        const spd=this.phase>=3?4.2:this.phase>=2?3.5:2.7;
+        this.vx=damp(this.vx,this.behind(p.cx)?0:this.face*(ad>3.0?spd:0),3,dt);
+        if(this.cd<=0&&!this.behind(p.cx))this.begin(BossDyn.queue(this,this.pickString(ad)));
         break;}
+      /* рык: фаза сменилась — пар из всех швов, отброс, дальше другой ритм */
+      case 'roar':this.vx=0;if(this.st>1.0){this.state='idle';this.st=0;this.cd=0.15;}break;
+      /* перегрев после длинной связки (фаза III): стравливает пар, детали вскрыты */
+      case 'overheat':this.vx=damp(this.vx,0,8,dt);
+        if(Math.random()<dt*50)g.particles.spawn({kind:'steam',x:this.cx+(Math.random()-0.5)*2.6,y:this.y+0.4,vx:(Math.random()-0.5)*2,vy:-3-Math.random()*2,life:0.9,size:0.45,grow:1,col:'#efe8dc',drag:1.2});
+        if(this.st>1.5){this.state='idle';this.st=0;this.cd=0.2;}break;
       case 'slamWind':{const Wd=0.9/des;this.vx=damp(this.vx,0,7,dt);
         this.telegraph(this.node('claw'),this.st/Wd,this.st>Wd-0.36);
         if(this.st>=Wd){this.state='slam';this.st=0;g.audio.explosion();g.audio.mat('brass',1);g.camera.addShake(0.8);
@@ -130,7 +137,7 @@ class Primarch extends MechBoss{
           for(const s of [-1,1])W.projectiles.push({x:this.cx+s*2.2,y:this.bottom-0.4,vx:s*8,vy:0,r:0.45,dmg:1,life:1.8,kind:'wave'});
           g.particles.burst(this.cx,this.bottom,40,{kind:'debris',col:'#8a7a6a',spd:10,life:1,size:0.15,g:28});}
         break;}
-      case 'land':this.vx=0;if(this.st>0.7){this.state='recover';this.st=0;}break;
+      case 'land':this.vx=0;if(this.st>(BossDyn.more(this)?0.35:0.6)){this.state='recover';this.st=0;}break;
       /* прожектор: луч обходит зал; задержался в луче — капсулы на голову */
       case 'searchWind':{const Wd=0.6;this.vx=0;this.telegraph(this.node('lamp'),this.st/Wd,this.st>Wd-0.3);
         if(this.st>=Wd){this.state='search';this.st=0;this.beam={a:-this.face,lock:0,fired:0};}
@@ -177,11 +184,18 @@ class Primarch extends MechBoss{
         if(Math.random()<dt*40)g.particles.spawn({kind:'steam',x:this.cx-this.face*1.4,y:this.cy-0.4,vx:-this.face*1.5,vy:-1.5,life:1.0,size:0.4,grow:0.8,col:'#cfc9b8',drag:1.2});
         if(this.st>1.7){this.state='recover';this.st=0;this.stunHits=0;}
         break;
-      case 'recover':this.vx=damp(this.vx,0,6,dt);if(this.st>0.7/Math.min(des,1.2)){this.state='idle';this.st=0;this.cd=(0.8+Math.random()*0.6)/des;}break;
+      case 'recover':{this.vx=damp(this.vx,0,6,dt);
+        /* связка: следующее звено после короткой сцепки; лицом к курьеру */
+        if(BossDyn.more(this)){if(this.st>0.2){this.face=p.cx>this.cx?1:-1;this.begin(BossDyn.next(this));}break;}
+        if(this.st>0.42/Math.min(des,1.2)){const n=this.qn||0;BossDyn.clear(this);
+          if(this.phase>=3&&n>=3){this.state='overheat';this.st=0;g.audio.steamBurst();for(const q of this.nodes)if(!q.broken&&!q.locked)q.exT=Math.max(q.exT,1.5);break;}
+          this.state='idle';this.st=0;this.cd=(0.3+Math.random()*0.35)/des;}
+        break;}
       default:this.state='idle';this.st=0;
     }
     const core=this.node('core'),broken=this.nodes.filter(n=>!n.core&&n.broken).length;
     this.phase=(this.integrity()<0.38||(!core.locked&&broken>=3))?3:(!core.locked||this.integrity()<0.66||broken>=2)?2:1;
+    if(this.state!=='leap'&&!this.dead&&BossDyn.phaseUp(this)){this.cancelAttack();this.state='roar';this.st=0;BossDyn.roar(this,g);}
   }
   physics(dt){if(this.state==='leap')return;super.physics(dt);}
   onBreak(n,h){

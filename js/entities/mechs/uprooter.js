@@ -26,15 +26,22 @@ class Uprooter extends MechBoss{
   }
   get coreX(){const n=this.node('core');return n?n.wx:this.cx;}
   get coreY(){const n=this.node('core');return n?n.wy:this.cy;}
-  des(){return this.phase>=3?1.35:this.phase>=2?1.15:1;}
+  des(){return (this.phase>=3?1.35:this.phase>=2?1.15:1)*(BossDyn.linking(this)?1.2:1);}
+  /* связки: коса низ/верх, корчевание с добивкой, облака и таран сквозь них */
+  pickString(ad){const ph=this.phase,sc=this.has('scythe'),dr=this.has('drum'),tk=this.has('tank');const o=[];
+    if(ad<6.2)o.push([['low','high'],sc?2.6:0],[['high','low'],sc?2:0],[['low','uproot'],sc&&dr?1.4:0],[['spray','till'],tk&&dr?1.2:0],
+      [['low','high','till'],sc&&dr&&ph>=3?2:0],[['high','spray'],sc&&tk?1:0]);
+    else o.push([['till'],dr?2:0],[['uproot','low'],dr&&sc?2:0],[['spray','till'],tk&&dr?1.6:0],[['throw','uproot'],ph>=2&&dr?1.6:0],
+      [['throw','till'],ph>=2&&dr?1.2:0],[['uproot','uproot'],dr&&ph>=3?1.4:0],[['throw'],1]);
+    return BossDyn.pick(o)||['throw'];}
   behind(px){return Math.sign(px-this.cx)===-this.face;}
   isWinding(){return /Wind$/.test(this.state);}
   attackUses(n){const s=this.state;
     if(s==='lowWind'||s==='highWind'||s==='low'||s==='high')return n.id==='scythe';
     if(s==='tillWind'||s==='till'||s==='uprootWind')return n.id==='drum';
     if(s==='sprayWind')return n.id==='tank';return false;}
-  cancelAttack(){super.cancelAttack();if(['open','stunWall','choke'].indexOf(this.state)<0){this.state='recover';this.st=0;}}
-  threat(){if(super.threat())return true;return ['low','high','till','uproot','throw'].indexOf(this.state)>=0;}
+  cancelAttack(){super.cancelAttack();BossDyn.clear(this);if(['open','stunWall','choke'].indexOf(this.state)<0){this.state='recover';this.st=0;}}
+  threat(){if(super.threat())return true;return ['low','high','till','uproot','throw','buck'].indexOf(this.state)>=0;}
   safe(){return super.safe()||this.state==='choke';}
   /* облако гербицида, сдутое импульсом обратно: бак разъедает, машина задыхается */
   cloudHit(z){const g=this.world.game,tn=this.node('tank');
@@ -54,18 +61,27 @@ class Uprooter extends MechBoss{
     switch(this.state){
       case 'wake':this.vx=0;if(this.st>1.3){this.state='idle';this.st=0;this.cd=0.5;g.audio.bossRoar();g.camera.addShake(0.6);}break;
       case 'idle':{
-        if(want!==this.face){this.turnT+=dt;if(this.turnT>(0.75/des)){this.face=want;this.turnT=0;g.audio.hydraulic(0.6);}}else this.turnT=0;
-        const spd=1.7*des;this.vx=damp(this.vx,this.face===want?this.face*(ad>6?spd:ad<3.6?-spd*0.6:0.4*spd):0,2.4,dt);
-        if(this.cd<=0&&this.face===want){
-          const o=[],sc=this.has('scythe'),dr=this.has('drum'),tk=this.has('tank');
-          if(sc&&ad<6.2){o.push(['low',2.2]);o.push(['high',2.2]);}
-          if(dr&&ad>4.5)o.push(['till',2.4]);
-          if(dr&&ad>3)o.push(['uproot',1.8]);
-          if(tk&&ad<10)o.push(['spray',this.phase>=2?2:1.4]);
-          if(this.phase>=2)o.push(['throw',1.6]);
-          if(!o.length)o.push(['throw',1]);
-          this.begin(BossFX.pick(o));}
+        /* за кормой долго не постоишь: машина дёргается назад гусеницами */
+        if(want!==this.face){this.turnT+=dt;
+          if(this.turnT>0.55&&ad<4.2&&this.cd<=0.3){this.turnT=0;this.begin('buck');break;}
+          if(this.turnT>(0.7/des)){this.face=want;this.turnT=0;this.cd=Math.min(this.cd,0.1);g.audio.hydraulic(0.6);}}else this.turnT=0;
+        /* преследование: держит курьера на дистанции косы */
+        const spd=(this.phase>=3?3.6:3.0)*Math.min(des,1.2);this.vx=damp(this.vx,this.face===want?this.face*(ad>5.2?spd:ad<2.6?-spd*0.5:0.3*spd):0,3,dt);
+        if(this.cd<=0&&this.face===want)this.begin(BossDyn.queue(this,this.pickString(ad)));
         break;}
+      /* рывок назад: выхлоп из кормы (телеграф), гусеницы на реверс — корма бьёт */
+      case 'buckWind':{const Wd=0.5;this.vx=damp(this.vx,this.face*0.6,6,dt);
+        if(Math.random()<dt*40)g.particles.spawn({kind:'smoke',x:this.cx-this.face*2.8,y:this.y+0.6,vx:-this.face*2,vy:-1,life:0.7,size:0.3,grow:0.8,col:'#3a342c',drag:1.2,a:0.6});
+        this.telegraph(this.node('tank')&&this.has('tank')?this.node('tank'):this.node('core'),this.st/Wd,this.st>Wd-0.25);
+        if(this.st>=Wd){this.state='buck';this.st=0;this.hitDone=false;g.audio.dash();}break;}
+      case 'buck':{this.vx=-this.face*9;
+        const hb={x:this.face>0?this.x-0.6:this.x+this.w-1.8,y:this.y+0.6,w:2.4,h:this.h-0.6};
+        if(!this.hitDone&&aabb(hb,p.rect())){this.hitDone=true;this.damagePlayer();}
+        if(this.st>0.3||this.wall!==0){this.vx=0;this.state='recover';this.st=0;}break;}
+      case 'roar':this.vx=0;if(this.st>1.0){this.state='idle';this.st=0;this.cd=0.15;}break;
+      case 'overheat':this.vx=damp(this.vx,0,8,dt);
+        if(Math.random()<dt*40)g.particles.spawn({kind:'steam',x:this.cx+(Math.random()-0.5)*4,y:this.y+0.4,vx:0,vy:-3,life:0.9,size:0.45,grow:1,col:'#d8e0c0',drag:1.2});
+        if(this.st>1.5){this.state='idle';this.st=0;this.cd=0.2;}break;
       case 'lowWind':case 'highWind':{const Wd=0.85/des,low=this.state==='lowWind';this.vx=damp(this.vx,0,7,dt);
         this.telegraph(this.node('scythe'),this.st/Wd,this.st>Wd-0.36);
         if(this.st>=Wd){this.state=low?'low':'high';this.st=0;this.hitDone=false;g.audio.heavy();g.audio.melee();g.camera.addShake(0.3);}
@@ -74,10 +90,7 @@ class Uprooter extends MechBoss{
         const low=this.state==='low',hb={x:this.face>0?this.cx-0.5:this.cx-6.3,y:low?this.bottom-1.15:this.bottom-2.7,w:6.8,h:low?1.15:1.55};
         if(!this.hitDone&&this.st>0.05&&this.st<0.3&&aabb(hb,p.rect())){this.hitDone=true;this.damagePlayer();}
         if(low&&this.st<0.25&&Math.random()<dt*60)g.particles.spawn({kind:'leaf',x:this.cx+this.face*(1+Math.random()*5),y:this.bottom-0.2,vx:this.face*4,vy:-3,life:1.2,size:0.14,col:'#6f9a4a',rot:Math.random()*6,vr:8,drag:0.8,a:0.9});
-        if(this.st>0.45){
-          /* серия: в фазе II после низа сразу верх (и наоборот) */
-          if(this.phase>=2&&this.combo<1&&this.has('scythe')){this.combo++;this.state=low?'highWind':'lowWind';this.st=0.35;}
-          else{this.combo=0;this.state='recover';this.st=0;}}
+        if(this.st>0.4){this.state='recover';this.st=0;}
         break;}
       case 'tillWind':{const Wd=1.05/des;this.vx=damp(this.vx,-this.face*0.8,5,dt);
         this.telegraph(this.node('drum'),this.st/Wd,this.st>Wd-0.38);
@@ -120,13 +133,19 @@ class Uprooter extends MechBoss{
       case 'choke':this.vx=damp(this.vx,0,8,dt);
         if(Math.random()<dt*24)g.particles.spawn({kind:'steam',x:this.cx+(Math.random()-0.5)*4,y:this.y+0.6,vx:0,vy:-1.4,life:1,size:0.4,grow:0.6,col:'#9ab84a',drag:1,a:0.5});
         if(this.st>2.2){this.state='recover';this.st=0;}break;
-      case 'recover':this.vx=damp(this.vx,0,6,dt);if(this.st>0.65){this.state='idle';this.st=0;this.cd=(0.7+Math.random()*0.6)/des;}break;
+      case 'recover':{this.vx=damp(this.vx,0,6,dt);
+        if(BossDyn.more(this)){if(this.st>0.2){this.face=p.cx>this.cx?1:-1;this.begin(BossDyn.next(this));}break;}
+        if(this.st>0.45){const n=this.qn||0;BossDyn.clear(this);
+          if(this.phase>=3&&n>=3){this.state='overheat';this.st=0;g.audio.steamBurst();for(const q of this.nodes)if(!q.broken&&!q.locked)q.exT=Math.max(q.exT,1.5);break;}
+          this.state='idle';this.st=0;this.cd=(0.3+Math.random()*0.35)/des;}
+        break;}
       default:this.state='idle';this.st=0;
     }
     const broken=this.nodes.filter(n=>!n.core&&n.broken).length,core=this.node('core');
     this.phase=!core.locked?3:(broken>=1||this.integrity()<0.72)?2:1;
+    if(!this.dead&&BossDyn.phaseUp(this)){this.cancelAttack();this.state='roar';this.st=0;BossDyn.roar(this,g,'#c8d8a0');}
   }
-  begin(k){const g=this.world.game;this.st=0;this.hitDone=false;
+  begin(k){const g=this.world.game;this.st=0;this.hitDone=false;this.turnT=0;
     this.state=k+'Wind';if(k==='till')g.audio.elevator();else if(k==='spray')g.audio.steam(0.6);else g.audio.hydraulic(0.8);}
   onInterrupt(n){const g=this.world.game;
     if(n.id==='drum'){g.audio.explosion();g.particles.burst(n.wx,this.bottom,20,{kind:'debris',col:'#5a4a30',spd:7,life:0.9,size:0.13,g:28});}
@@ -246,7 +265,8 @@ updateBossProjectile=function(W,pr,dt){
     g.particles.burst(pr.x,pr.fy,18,{kind:'debris',col:'#5a4a30',spd:9,life:0.9,size:0.16,g:28,ang:-PI/2,spread:1.2});
     for(let i=0;i<3;i++)g.particles.spawn({kind:'leaf',x:pr.x,y:pr.fy-0.5,vx:(Math.random()-0.5)*4,vy:-6-Math.random()*4,life:1.4,size:0.14,col:'#4a3a20',rot:0,vr:6,drag:0.6,a:0.9});}
   pr.t+=dt;
-  if(!pr.hit&&pr.t<0.3&&p&&!p.dead&&Math.abs(p.cx-pr.x)<pr.r+0.3&&p.bottom>pr.fy-pr.h&&p.y<pr.fy){if(p.hurtBy(pr.dmg,pr.x))pr.hit=true;}
+  const hk=clamp(pr.t/0.12,0,1)*clamp((0.55-pr.t)/0.25,0,1),hh=pr.h*hk;
+  if(!pr.hit&&hh>0.3&&p&&!p.dead&&p.x+p.w-0.1>pr.x-0.55&&p.x+0.1<pr.x+0.55&&p.bottom>pr.fy-hh+0.1&&p.y<pr.fy){if(p.hurtBy(pr.dmg,pr.x))pr.hit=true;}
   return pr.t>0.55;
 };
 const _dbf=drawBossFX;

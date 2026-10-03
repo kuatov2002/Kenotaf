@@ -22,14 +22,23 @@ class Regulator extends MechBoss{
   }
   get coreX(){const n=this.node('core');return n?n.wx:this.cx;}
   get coreY(){const n=this.node('core');return n?n.wy:this.cy;}
-  tempo(){const b=this.has('balance')?1:0.8+0.4*Math.abs(Math.sin(this.t*0.7));return b*(this.phase>=3?1.4:this.phase>=2?1.2:1);}
+  tempo(){const b=this.has('balance')?1:0.8+0.4*Math.abs(Math.sin(this.t*0.7));return b*(this.phase>=3?1.4:this.phase>=2?1.2:1)*(BossDyn.linking(this)?1.15:1);}
+  /* связки по долям: молот → клинок, клинок → обратный клинок, скольжение → клинок, бой → шестерни */
+  pickString(ad){const ph=this.phase,hr=this.has('hour'),mn=this.has('minute');const o=[];
+    if(ad<5.5)o.push([['hour','minute'],hr&&mn?3:0],[['minute','hour'],hr&&mn?2:0],[['minute','minute'],mn?(ph>=2?2.2:1.2):0],
+      [['hour','chime'],hr?1.4:0],[['hour','minute','hour'],hr&&mn&&ph>=3?2:0],[['chime'],hr||mn?0:2]);
+    else o.push([['slide','minute'],mn&&ph>=2?2.6:0],[['chime','gear'],1.6],[['gear','slide'],mn&&ph>=2?1.6:0],[['gear'],1.2],
+      [['march','hour'],hr?2:0],[['march','minute'],mn?2:0],[['chime','slide','minute'],mn&&ph>=3?1.8:0]);
+    return BossDyn.pick(o)||['chime'];}
+  begin(k){this.state=k+'Wind';this.st=0;this.hitDone=false;this.world.game.audio.hydraulic(0.7);}
   behind(px){return Math.sign(px-this.cx)===-this.face;}
   isWinding(){return /Wind$/.test(this.state);}
   attackUses(n){const s=this.state;
+    if(s==='heelWind')return n.id==='balance';
     if(s==='hourWind')return n.id==='hour';if(s==='minuteWind'||s==='minute')return n.id==='minute';
     if(s==='chimeWind'||s==='gearWind')return n.id==='balance'||n.id==='core';return false;}
-  cancelAttack(){super.cancelAttack();if(['open','stunWall'].indexOf(this.state)<0){this.state='recover';this.st=0;}}
-  threat(){if(super.threat())return true;return ['hour','minute','slide'].indexOf(this.state)>=0;}
+  cancelAttack(){super.cancelAttack();BossDyn.clear(this);if(['open','stunWall'].indexOf(this.state)<0){this.state='recover';this.st=0;}}
+  threat(){if(super.threat())return true;return ['hour','minute','slide','heel','march'].indexOf(this.state)>=0;}
   ai(dt){
     const p=this.world.player,g=this.world.game,W=this.world,R=W.room;
     const tp=this.tempo();this.st+=dt;this.cd-=dt*tp;
@@ -41,18 +50,29 @@ class Regulator extends MechBoss{
     switch(this.state){
       case 'wake':this.vx=0;if(this.st>1.4){this.state='idle';this.st=0;this.cd=0.4;g.audio.bossRoar();for(let i=0;i<3;i++)W.later(i*180,()=>g.audio.tone(1568-i*200,0.6,'sine',0.04,0,g.audio.verb));}break;
       case 'idle':{
-        if(want!==this.face){this.turnT+=dt;if(this.turnT>0.5/tp){this.face=want;this.turnT=0;g.audio.hydraulic(0.4);}}else this.turnT=0;
-        this.vx=damp(this.vx,this.face===want?this.face*(ad>5?2.4:ad<2.4?-1.6:0):0,3,dt);
+        /* за спиной: на долю — удар пяткой назад (балансир на спине — это и цель, и телеграф) */
+        if(want!==this.face){this.turnT+=dt;
+          if(this.turnT>0.45&&ad<3.2&&this.beatT<0.06){this.turnT=0;this.begin('heel');break;}
+          if(this.turnT>0.45/tp){this.face=want;this.turnT=0;this.cd=Math.min(this.cd,0.05);g.audio.hydraulic(0.4);}}else this.turnT=0;
+        /* шагает к курьеру, держит дистанцию клинка */
+        this.vx=damp(this.vx,this.face===want?this.face*(ad>4.6?3.2*Math.min(tp,1.3):ad<2.2?-1.8:0):0,3.5,dt);
         /* атака начинается только на долю */
-        if(this.cd<=0&&this.face===want&&this.beatT<0.06){
-          const o=[];
-          if(this.has('hour')&&ad<5)o.push(['hour',2.4]);
-          if(this.has('minute')&&ad<6.5)o.push(['minute',2.6]);
-          o.push(['chime',ad>4?2.2:1.2]);
-          o.push(['gear',ad>5?2:1]);
-          if(this.phase>=2&&this.has('minute')&&ad>6)o.push(['slide',2.4]);
-          this.state=BossFX.pick(o)+'Wind';this.st=0;this.hitDone=false;g.audio.hydraulic(0.7);}
+        if(this.cd<=0&&this.face===want&&this.beatT<0.06)this.begin(BossDyn.queue(this,this.pickString(ad)));
         break;}
+      /* пятка: короткий удар назад ходулей */
+      case 'heelWind':{const Wd=0.5/tp;this.vx=damp(this.vx,0,8,dt);this.telegraph(this.node('balance')&&this.has('balance')?this.node('balance'):this.node('core'),this.st/Wd,this.st>Wd-0.25);
+        if(this.st>=Wd){this.state='heel';this.st=0;g.audio.mat('brass',1);g.camera.addShake(0.3);
+          const hb={x:this.face>0?this.cx-2.6:this.cx+0.2,y:this.bottom-2.2,w:2.4,h:2.2};if(aabb(hb,p.rect()))this.damagePlayer(1,this.cx);}break;}
+      case 'heel':this.vx=0;if(this.st>0.3){this.state='recover';this.st=0;}break;
+      /* марш: три размашистых шага по долям к курьеру (стрелки на взводе) */
+      case 'marchWind':{this.vx=damp(this.vx,0,8,dt);if(this.st>=0.3/tp){this.state='march';this.st=0;this.steps=0;}break;}
+      case 'march':{const tgt=this.face*7.5;this.vx=damp(this.vx,tgt,6,dt);this.walk+=dt*8;
+        if(this.beatT<dt*tp*1.01){this.steps++;g.audio.mat('brass',0.6);g.camera.addShake(0.2);}
+        if(this.steps>=3||ad<3.4||this.wall!==0){this.vx*=0.3;this.state='recover';this.st=0.1;}break;}
+      case 'roar':this.vx=0;if(this.st>1.0){this.state='idle';this.st=0;this.cd=0.1;}break;
+      case 'overheat':this.vx=damp(this.vx,0,8,dt);
+        if(Math.random()<dt*40)g.particles.spawn({kind:'spark',x:this.cx+(Math.random()-0.5)*1.4,y:this.bottom-2-Math.random()*2,vx:(Math.random()-0.5)*3,vy:-2,life:0.5,size:0.04,col:'#ffe6a3',add:true,g:8});
+        if(this.st>1.6){this.state='idle';this.st=0;this.cd=0.2;}break;
       case 'hourWind':{const Wd=0.95/tp;this.vx=damp(this.vx,0,8,dt);this.telegraph(this.node('hour'),this.st/Wd,this.st>Wd-0.36);
         if(this.st>=Wd){this.state='hour';this.st=0;const ix=this.cx+this.face*2.6;
           g.audio.explosion();g.audio.mat('brass',1);g.camera.addShake(0.8);g.hitstop(0.05);
@@ -87,11 +107,19 @@ class Regulator extends MechBoss{
         if(Math.random()<dt*60)g.particles.spawn({kind:'spark',x:this.cx,y:this.bottom,vx:-this.face*5,vy:-1,life:0.3,size:0.05,col:'#ffe6a3',add:true,g:10});
         if(ad2<3.4||this.wall!==0||this.st>0.9){this.vx=0;this.state='minuteWind';this.st=0.85/tp*0.45;}
         break;}
-      case 'recover':this.vx=damp(this.vx,0,7,dt);if(this.st>0.6/tp){this.state='idle';this.st=0;this.cd=(0.6+Math.random()*0.5)*(this.has('balance')?1:1.4);}break;
+      case 'recover':{this.vx=damp(this.vx,0,7,dt);
+        /* следующее звено — на ближайшую долю */
+        if(BossDyn.more(this)){if(this.st>0.12&&this.beatT<0.06){this.face=p.cx>this.cx?1:-1;this.begin(BossDyn.next(this));}break;}
+        if(this.st>0.4/tp){const n=this.qn||0;BossDyn.clear(this);
+          if(this.phase>=3&&n>=3){this.state='overheat';this.st=0;g.audio.steamBurst();for(const q of this.nodes)if(!q.broken&&!q.locked)q.exT=Math.max(q.exT,1.6);break;}
+          this.state='idle';this.st=0;this.cd=(0.25+Math.random()*0.35)*(this.has('balance')?1:1.3);}
+        break;}
       default:this.state='idle';this.st=0;
     }
     const broken=this.nodes.filter(n=>!n.core&&n.broken).length,core=this.node('core');
     this.phase=!core.locked?3:(broken>=1||this.integrity()<0.72)?2:1;
+    if(!this.dead&&BossDyn.phaseUp(this)){this.cancelAttack();this.state='roar';this.st=0;BossDyn.roar(this,g,'#f2e6c0');
+      for(let i=0;i<4;i++)W.later(i*120,()=>g.audio.tone(1568-i*180,0.5,'sine',0.04,0,g.audio.verb));}
   }
   /* полночь: прессы зала падают в такт (каждая вторая доля — по очереди) */
   midnightBeat(){const R=this.world.room,pr=(R.hazards||[]).filter(h=>h.ctl==='reg');if(!pr.length)return;

@@ -210,7 +210,7 @@ z1_cellar:gs=>({id:'z1_cellar',zone:'sump',name:'ПОДВАЛ ХАБА',w:18,h:9
     if(grate)R.pushables.push({x:14,y:7,w:2.2,h:0.45,id:'cgrate',kind:'grate',floor:true,hp:3,flag:'cellar_grate'});
     R.doors=[{x:0.0,y:4.9,w:1.2,h:2.1,to:'z1_hub',tx:5.0,ty:31.8,label:'ХАБ'},
       {x:14,y:8.0,w:2.2,h:1.0,to:'z1_drain',link:'cellar_hole',fall:true,label:'ДРЕНАЖ',reqFlag:'cellar_grate'}];
-    R.signs=[{x:12.6,y:2.0,keys:['↓','J'],text:'В ПРЫЖКЕ — УДАР ВНИЗ',showFlag:'cellar_open',hideFlag:'cellar_grate'}];
+    R.signs=[{x:12.6,y:2.0,keys:['S','J'],alt:'ЛКМ',text:'В ПРЫЖКЕ — УДАР ВНИЗ',showFlag:'cellar_open',hideFlag:'cellar_grate'}];
     R.enemies.push({type:'mokrica',x:3.4,y:6.38,patrol:[1.6,7.6],amb:true});
     R.lights=[lit(4,3,6,'#ffbe63',0.7,{flicker:1.3}),lit(11,3.4,5,'#69d68f',0.6),lit(15.1,8.4,4.5,'#69d68f',0.9)];
     R.emitters=[{type:'drip',x:6,y:2,rate:0.5},{type:'dust',rate:10},{type:'coolant',x:15.1,y:8.8,rate:2.5,sw:2}];
@@ -492,7 +492,7 @@ z1_boss:gs=>({id:'z1_boss',zone:'sump',name:'АРЕНА НАДСМОТРЩИКА
     else R.solids.push(S(0,22,36,3,'rust'));
     if(dead)R.hazards=[{x:2.4,y:24.2,w:15,h:0.8,kind:'pit',back:{x:17.9,y:20.3},backs:[{minX:-9,x:0.9,y:20.3},{minX:9.9,x:17.9,y:20.3}]}];
     R.pit=dead?[2.4,17.4]:null;
-    R.signs=dead?[{x:19.6,y:14.4,keys:['U'],alt:'V',text:'ГАРПУН · К РЫМУ',need:'hook'}]:[];
+    R.signs=dead?[{x:19.6,y:14.4,keys:['R'],text:'ГАРПУН · К РЫМУ',need:'hook'}]:[];
     RB.ring(R,7.2,15.4,'top',13.8);RB.ring(R,13.2,15.4,'top',13.8);
     R.boss=dead?null:{type:'overseer',x:20,y:18.4};
     R.bossTrigger={x:3.4,y:14,w:30,h:8};
@@ -604,7 +604,7 @@ z1_sluice:gs=>({id:'z1_sluice',zone:'sump',name:'СЕВЕРНЫЙ ШЛЮЗ',w:48
     R.doors=[{x:0.0,y:7.9,w:1.2,h:2.1,to:'z1_hub',tx:33.4,ty:16.4,label:'НАСОСНАЯ'},
       {x:40.6,y:7.6,w:1.6,h:2.4,to:'z2_escalator',tx:2.2,ty:20.6,label:'ЖИЛЫЕ СОТЫ',elevator:true},
       RB.R(R,10,'z1_pipes','ТРУБНЫЙ КОЛОДЕЦ')];
-    R.signs=[{x:7.2,y:5.0,keys:['U'],alt:'V',text:'ГАРПУН · К РЫМУ',need:'hook',hideFlag:'bridge_out'}];
+    R.signs=[{x:7.2,y:5.0,keys:['R'],text:'ГАРПУН · К РЫМУ',need:'hook',hideFlag:'bridge_out'}];
     R.interactables=[{kind:'lever',x:31,y:10,label:'СКЛАДНОЙ МОСТ',
       plaque:'ФЕРМА · ПОСТОЯННОЕ СОЕДИНЕНИЕ',flag:'bridge_out',sys:'bridge'}];
     if(!gs.loreIds[4])R.interactables.push({kind:'lore',loreId:4,x:35.6,y:10,title:'ЦИЛИНДР №4 · ГРАФИК ЛИФТА 07',
@@ -664,7 +664,7 @@ z1_drain:gs=>({id:'z1_drain',zone:'sump',name:'ДРЕНАЖ ХЛАДАГЕНТА
     R.doors=[{x:2.0,y:1.0,w:2.2,h:1.2,to:'z1_cellar',link:'cellar_hole',label:'ПОДВАЛ',oneway:true},
       {x:40.4,y:7.9,w:1.4,h:2.1,to:'z1_east',link:'drain_up',label:'ВОСТОЧНЫЙ КОРИДОР',latch:'drain_latch',latchHere:true},
       RB.R(R,10,'z1_canal','ОТСТОЙНЫЙ КАНАЛ')];
-    R.signs=[{x:4.6,y:6.4,keys:['↓','J'],text:'НАД КЛАПАНОМ — УДАР ВНИЗ'}];
+    R.signs=[{x:4.6,y:6.4,keys:['S','J'],alt:'ЛКМ',text:'НАД КЛАПАНОМ — УДАР ВНИЗ'}];
     R.interactables=gs.flags.got_plate_drain?[]:[{kind:'salvage',upgrade:'plate_drain',x:37.4,y:10,flag:'got_plate_drain',
       title:'ПЛАСТИНА КУРТКИ',
       lines:['НА УСТУПЕ — БРЕЗЕНТОВАЯ КУРТКА ДРЕНАЖНИКА. ХОЗЯИНА НЕТ.','НАГРУДНАЯ ПЛАСТИНА ЦЕЛА. ЗАКЛЁПКИ САДЯТСЯ НА ТВОЮ КУРТКУ.']}];

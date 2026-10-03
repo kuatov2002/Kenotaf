@@ -19,7 +19,7 @@ z1_gallery:gs=>({id:'z1_gallery',zone:'sump',sub:'workshop',name:'ГАЛЕРЕЯ
     RB.grate(R,gs,'ggrate',46,0.4,0.6,12.6,'gallery_grate');
     R.doors=[RB.L(13,'z1_start','СТАРТОВАЯ НИША'),RB.R(R,13,'z1_charge','ЗАРЯДНАЯ СТАНЦИЯ')];
     R.signs=[{x:7.6,y:7.4,keys:['J'],alt:'ЛКМ',text:'УДАР'},
-      {x:37,y:6.2,keys:['S','J'],text:'В ПРЫЖКЕ — УДАР ВНИЗ',hideFlag:'gallery_grate'}];
+      {x:37,y:6.2,keys:['S','J'],alt:'ЛКМ',text:'В ПРЫЖКЕ — УДАР ВНИЗ',hideFlag:'gallery_grate'}];
     R.enemies.push({type:'mokrica',x:24,y:12.38,patrol:[15.2,26.8],face:-1,amb:true},
       {type:'mokrica',x:37,y:9.98,patrol:[32.4,40.6],amb:true});
     RB.lamp(R,50,13);
@@ -83,9 +83,9 @@ z1_charge:gs=>({id:'z1_charge',zone:'sump',sub:'workshop',name:'ЗАРЯДНАЯ
       lines:['ВТОРАЯ СТАНЦИЯ. ЛАТУННЫЙ КЛАПАН С СОПЛОМ — ЕГО СТАВЯТ НА РАНЦЫ ОБХОДЧИКОВ.',
         'ВРЕЗКА. ЩЕЛЧОК. РАНЕЦ ВЫДЫХАЕТ ПАР НАЗАД.','КЛАПАН ДАЁТ РЫВОК: НА ЕГО ВРЕМЯ КУРЬЕРА НЕ ДОСТАТЬ.']});
     R.signs=[{x:9.6,y:9.2,keys:['K'],alt:'ПКМ',text:'ИМПУЛЬС',need:'pulse',hideFlag:'charge_crates'},
-      {x:22.6,y:9.3,keys:['K'],text:'КОГДА КОЛЬЦО СОМКНЁТСЯ',need:'pulse',hideFlag:'charge_weld'},
-      {x:41.5,y:9.6,keys:['SHIFT'],alt:'L',text:'РЫВОК СКВОЗЬ',need:'dash',hideFlag:'charge_test'},
-      {x:51,y:9.6,keys:['J'],text:'ПО СЛЕДУ НА ТРЕЩИНЕ',need:'dash',hideFlag:'charge_test'}];
+      {x:22.6,y:9.3,keys:['K'],alt:'ПКМ',text:'КОГДА КОЛЬЦО СОМКНЁТСЯ',need:'pulse',hideFlag:'charge_weld'},
+      {x:41.5,y:9.6,keys:['SHIFT'],text:'РЫВОК СКВОЗЬ',need:'dash',hideFlag:'charge_test'},
+      {x:51,y:9.6,keys:['J'],alt:'ЛКМ',text:'ПО СЛЕДУ НА ТРЕЩИНЕ',need:'dash',hideFlag:'charge_test'}];
     RB.lamp(R,60.5,15);
     RB.chalk(R,58.4,10.6,'38 БЫЛ ЗДЕСЬ',{s:0.36});
     R.tick=(dt,W)=>{

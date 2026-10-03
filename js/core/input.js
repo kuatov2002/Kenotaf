@@ -1,10 +1,12 @@
 "use strict";
 /* ============================== INPUT ============================== */
-/* Прыжок — только ПРОБЕЛ: W/↑ — направление (удар вверх, взгляд вверх), S/↓ — вниз
-   (присед, подкат, в воздухе — удар вниз с отскоком). Q/I — залатать куртку (держать). */
-const KEYMAP={jump:['Space'],up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],
-  right:['KeyD','ArrowRight'],attack:['KeyJ','KeyX'],pulse:['KeyK','KeyC'],
-  dash:['KeyL','ShiftLeft','ShiftRight','KeyZ'],use:['KeyE','KeyF'],heal:['KeyQ','KeyI'],hook:['KeyU','KeyV']};
+/* Одно действие — одна клавиша. Исключение — удар и импульс: у них есть и клавиша, и кнопка мыши
+   (J / ЛКМ, K / ПКМ), чтобы играть и без мыши. A/D — ход, W — вверх (взгляд, удар вверх),
+   S — присед, на бегу подкат, в воздухе удар вниз. SHIFT — рывок, E — действие, R — гарпун,
+   Q (держать) — залатать куртку. Стрелки работают только в меню. */
+const KEYMAP={jump:['Space'],up:['KeyW'],down:['KeyS'],left:['KeyA'],
+  right:['KeyD'],attack:['KeyJ'],pulse:['KeyK'],
+  dash:['ShiftLeft','ShiftRight'],use:['KeyE'],heal:['KeyQ'],hook:['KeyR']};
 /* геймпад, стандартная раскладка: A — прыжок, X — удар, B — импульс, Y — действие (E), RB/RT — рывок,
    LB/LT (держать) — залатать, стик / крестовина — движение и направление, START / BACK — пауза */
 const PAD_ACT={PadA:'jump',PadX:'attack',PadB:'pulse',PadY:'use',PadRB:'dash',PadRT:'hook',PadUp:'up',PadDown:'down'};
@@ -13,8 +15,8 @@ class Input{
     this.k=Object.create(null);this.p=Object.create(null);this.r=Object.create(null);
     this.pending={};for(const a in KEYMAP)this.pending[a]={n:0,t:-1e9};
     this.ml=false;this.mr=false;this.enabled=true;this.EXPIRY=220;this.skip=false;
-    const pv=['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab','KeyE','KeyF',
-      'KeyJ','KeyK','KeyL','KeyX','KeyC','KeyZ','ShiftLeft','ShiftRight','KeyQ','KeyI','KeyU','KeyV'];
+    const pv=['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab','KeyE',
+      'KeyJ','KeyK','ShiftLeft','ShiftRight','KeyQ','KeyR'];
     addEventListener('keydown',e=>{
       if(pv.indexOf(e.code)>=0)e.preventDefault();
       this.lastKey=performance.now();
@@ -43,12 +45,12 @@ class Input{
   clearAll(){this.k=Object.create(null);this.p=Object.create(null);this.r=Object.create(null);
     this.ml=false;this.mr=false;for(const a in this.pending){this.pending[a].n=0;this.pending[a].t=-1e9;}}
   down(...c){return this.enabled&&c.some(x=>this.k[x]);}
-  get move(){return this.enabled?((this.down('KeyD','ArrowRight','PadRight')?1:0)-(this.down('KeyA','ArrowLeft','PadLeft')?1:0)):0;}
-  get dn(){return this.down('KeyS','ArrowDown','PadDown');}
-  get up(){return this.down('KeyW','ArrowUp','PadUp');}
-  get healHeld(){return this.down('KeyQ','KeyI','PadLB');}
+  get move(){return this.enabled?((this.down('KeyD','PadRight')?1:0)-(this.down('KeyA','PadLeft')?1:0)):0;}
+  get dn(){return this.down('KeyS','PadDown');}
+  get up(){return this.down('KeyW','PadUp');}
+  get healHeld(){return this.down('KeyQ','PadLB');}
   get jumpHeld(){return this.down('Space','PadA');}
-  get attackHeld(){return this.enabled&&(this.ml||this.down('KeyJ','KeyX','PadX'));}
+  get attackHeld(){return this.enabled&&(this.ml||this.down('KeyJ','PadX'));}
   usingPad(){return (this.lastPad||0)>(this.lastKey||0);}
   /* опрос геймпада раз в кадр (до логики): удержание — в k, нажатия — как у клавиатуры */
   pollPad(){

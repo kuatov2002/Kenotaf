@@ -5,6 +5,9 @@
      node tools/progress.js                 — полный прогон + проверки «без способности X финал недостижим»
      node tools/progress.js --deny filter   — прогон, в котором игрок отказывается брать фильтр
      node tools/progress.js --quick         — только полный прогон
+     node tools/progress.js --strict        — сложность: переход засчитывается, только если повторяется при сдвиге
+                                              старта ±0.25 м и запаздывании нажатий на 33 мс (без пиксельной точности)
+   Всегда: ловушки — места, куда можно попасть, но откуда ни одним манёвром не выйти к двери (провал проверки).
    Код выхода 1, если нарушен инвариант метроидвании (финал достижим без обязательной способности). */
 'use strict';
 const path=require('path');
@@ -22,7 +25,7 @@ async function makeWorkers(url,n){
 }
 
 async function solve(ws,opts){
-  const deny=new Set(opts.deny||[]),log=opts.log||(()=>{});
+  const deny=new Set(opts.deny||[]),log=opts.log||(()=>{}),strict=!!opts.strict,trapLog={};
   const st={ab:[],flags:{},bosses:{},lore:{}};
   const P=ws[0].page;
   const src=await P.evaluate(()=>ProgressProbe.sources());
@@ -46,7 +49,8 @@ async function solve(ws,opts){
         const pg=ws[k].page;
         const info=await pg.evaluate(([r,s])=>ProgressProbe.info(r,s),[room,snap]);
         const starts=Object.values(entries[room]);
-        const au=await pg.evaluate(([r,s,st0])=>ProgressProbe.audit(r,s,st0),[room,snap,starts]);
+        const au=await pg.evaluate(([r,s,st0,o])=>ProgressProbe.audit(r,s,st0,o),[room,snap,starts,{strict}]);
+        if(au.traps&&au.traps.length){const k=room+' ['+snap.ab.join(',')+']';if(!trapLog[k])trapLog[k]=au.traps;}
         audits++;return {room,info,au};
       })));
     }
@@ -127,30 +131,33 @@ async function solve(ws,opts){
     log('  итерация '+iter+': аудитов '+results.length+', способности ['+st.ab.join(',')+'], в очереди '+dirty.size);
   }
   return {ab:st.ab,flags:st.flags,bosses:st.bosses,lore:Object.keys(st.lore).length,visited:[...visited].sort(),
-    ending,events,warn,audits,iter};
+    ending,events,warn,audits,iter,traps:trapLog};
 }
 
 (async()=>{
   const args=process.argv.slice(2);
   const deny=[];for(let i=0;i<args.length;i++)if(args[i]==='--deny')deny.push(args[++i]);
-  const quick=args.indexOf('--quick')>=0;
+  const quick=args.indexOf('--quick')>=0,strict=args.indexOf('--strict')>=0;
   const {srv,url}=await serve();
   const ws=await makeWorkers(url,PAR);
   let bad=0;
   const t0=Date.now();
   try{
-    const full=await solve(ws,{deny,log:s=>console.log(s)});
+    const full=await solve(ws,{deny,strict,log:s=>console.log(s)});
     console.log('\n=== '+(deny.length?'БЕЗ '+deny.join(', ').toUpperCase():'ПОЛНЫЙ ПРОГОН')+' ===');
     full.events.forEach(e=>console.log('  '+e));
     console.log('способности: '+full.ab.join(', ')+'   цилиндров: '+full.lore+'/30');
     console.log('комнат достигнуто: '+full.visited.length+'   финал: '+(full.ending?'ДОСТИЖИМ':'недостижим'));
     if(full.warn.length)console.log('ПРЕДУПРЕЖДЕНИЯ:\n  '+[...new Set(full.warn)].join('\n  '));
+    const tk=Object.keys(full.traps);
+    if(tk.length){bad++;console.log('ЛОВУШКИ (откуда не выйти к двери):');for(const k of tk)console.log('  '+k+': '+full.traps[k].slice(0,8).map(t=>t.x+','+t.y).join('  ')+(full.traps[k].length>8?' …(+'+(full.traps[k].length-8)+')':''));}
+    else console.log('ловушек нет');
     console.log('аудитов: '+full.audits+', итераций: '+full.iter+', '+Math.round((Date.now()-t0)/1000)+' с');
     if(!deny.length&&!full.ending){console.log('FAIL: финал недостижим даже со всеми способностями');bad++;}
     if(!deny.length&&!quick){
       /* инвариант метроидвании: без любой из способностей финал недостижим */
       for(const a of ALL_AB){
-        const r=await solve(ws,{deny:[a]});
+        const r=await solve(ws,{deny:[a],strict});
         const ok=!r.ending;
         console.log((ok?'ok   ':'FAIL ')+'без '+a.toUpperCase().padEnd(7)+' финал '+(r.ending?'ДОСТИЖИМ':'недостижим')+
           '; способности: ['+r.ab.join(',')+'], комнат '+r.visited.length);

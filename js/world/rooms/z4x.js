@@ -142,8 +142,10 @@ z4_bellows:gs=>({id:'z4_bellows',zone:'seal',sub:'pressure',name:'МЕХИ',w:44
   art:RB.art('seal','pressure'),
   build(R){
     RB.shell(R,'lead',{ceil:0.4});
-    R.solids.push(S(0,19,44,3,'lead'),S(34,16.6,6,2.4,'ply'),S(26,14.2,6,4.8,'ply'),S(18,11.8,6,7.2,'ply'),P(8,9.4,6));
-    R.hazards=[{x:32.2,y:9,w:1.6,h:10,kind:'steam',per:3.0,on:1.0},{x:24.2,y:7,w:1.6,h:12,kind:'steam',per:3.0,on:1.0,off:1.5}];
+    R.solids.push(S(0,19,44,3,'lead'),S(34,16.6,6,2.4,'ply'),S(26,14.2,6,4.8,'ply'),S(18,11.8,6,7.2,'ply'),P(8,9.4,6),
+      /* обратный путь с пола под полкой: ступени-ящики к верху мехов (без них низ слева — ловушка) */
+      S(12.4,17.2,2.6,1.8,'ply'),S(15,14.6,3,4.4,'ply'),S(24,16.6,2,2.4,'ply'));
+    R.hazards=[{x:32.2,y:9,w:1.6,h:10,kind:'steam',per:3.0,on:1.0},{x:24.2,y:7,w:1.6,h:9.6,kind:'steam',per:3.0,on:1.0,off:1.5}];
     R.doors=[RB.R(R,19,'z4_pendulum','МАЯТНИКОВАЯ ШАХТА')];
     RB.salvage(R,gs,{upgrade:'weld_kit2',x:10,y:9.4,flag:'got_weld_kit2',title:'СВАРОЧНЫЙ БАЛЛОН',
       lines:['НАД МЕХАМИ — ПОЛКА СМАЗЧИКА. БАЛЛОН АЦЕТИЛЕНА, ПОЛНЫЙ.','РЕМОНТА ХВАТИТ ЕЩЁ НА ОДИН ШОВ.']});

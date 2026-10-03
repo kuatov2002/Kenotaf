@@ -1,11 +1,11 @@
 "use strict";
 /* ============================== ABILITIES / GATES / CHECKPOINT / SALVAGE ============================== */
 const ABILITIES={
-  pulse:{short:'PULSE',name:'РЕЗАК PUSH-PULSE',keys:[['K'],['C'],['ПКМ']],
+  pulse:{short:'PULSE',name:'РЕЗАК PUSH-PULSE',keys:[['K'],['ПКМ']],
     desc:'ДВИГАЕТ ТО, ЧЕГО НЕ СДВИНУТЬ РУКАМИ.'},
-  dash:{short:'DASH',name:'КЛАПАН DASH',keys:[['SHIFT'],['L'],['Z']],
+  dash:{short:'DASH',name:'КЛАПАН DASH',keys:[['SHIFT']],
     desc:'КОРОТКИЙ РЫВОК. В ВОЗДУХЕ ТОЖЕ.'},
-  hook:{short:'HOOK',name:'ГАРПУН КРАНОВЩИКА',keys:[['U'],['V'],['RT']],
+  hook:{short:'HOOK',name:'ГАРПУН КРАНОВЩИКА',keys:[['R']],
     desc:'ТРОС К ЛАТУННОМУ РЫМУ. ЛЕБЁДКА ТЯНЕТ КУРЬЕРА ДАЛЬШЕ, ЧЕМ ДОСТАНЕТ ПРЫЖОК.'},
   claws:{short:'CLAWS',name:'КОШКИ КУРЬЕРА',keys:[['SPACE']],
     desc:'ЦЕПЛЯЮТСЯ ЗА РИФЛЁНУЮ СТАЛЬ.'},
@@ -13,7 +13,7 @@ const ABILITIES={
     desc:'ЛАТУНЬ ПОД СВОДОМ ДЕРЖИТ, ПОКА ДЕРЖИШЬ ПРЫЖОК.'},
   filter:{short:'FILTER',name:'СКАФАНДР MK-II',keys:[],
     desc:'В ПЫЛЬЦЕ МОЖНО ДЫШАТЬ — ПОКА ЕСТЬ ЗАПАС.'},
-  breaker:{short:'BREAK',name:'ПРОБОЙНИК РЕЗАКА',keys:[['K'],['C'],['ПКМ']],
+  breaker:{short:'BREAK',name:'ПРОБОЙНИК РЕЗАКА',keys:[['K'],['ПКМ']],
     desc:'ИМПУЛЬС ПРОБИВАЕТ СВИНЦОВЫЕ ЗАГЛУШКИ С ТРЕЩИНОЙ.'},
   vjump:{short:'VENT',name:'ВЫХЛОП РАНЦА',keys:[['SPACE']],
     desc:'В ВОЗДУХЕ — ЕЩЁ ОДИН ПРЫЖОК: РАНЕЦ СТРАВЛИВАЕТ ПАР ВНИЗ.'}

@@ -22,7 +22,7 @@ class Player extends Body{
     /* уклонение: возраст рывка/подката, флаг идеального уклонения, бонус к следующему удару */
     this.dashId=0;this.evAge=9;this.evIF=0;this.pfDone=false;this.empowerT=0;this.slideAge=9;this.hitHeavyT=0;
     /* гарпун (трос к рыму) и выхлоп (прыжок в воздухе) */
-    this.hook=null;this.hookCd=0;this.hookMiss=0;this.airJump=this.airJumps();this.vjT=0;
+    this.hook=null;this.hookCd=0;this.hookMiss=0;this.flingT=0;this.airJump=this.airJumps();this.vjT=0;
   }
   airJumps(){const w=this.world;return w&&w.game&&w.game.gs.has('vjump')?1:0;}
   maxEnergy(){return this.world.game.gs.flags.energy_cap?150:CFG.player.energy;}
@@ -66,7 +66,7 @@ class Player extends Body{
     if(this.pulseT>0)this.pulseT-=dt;
     if(this.slideCd>0)this.slideCd-=dt;
     if(this.dashCd>0)this.dashCd-=dt;
-    if(this.hookCd>0)this.hookCd-=dt;if(this.hookMiss>0)this.hookMiss-=dt;if(this.vjT>0)this.vjT-=dt;
+    if(this.hookCd>0)this.hookCd-=dt;if(this.flingT>0)this.flingT-=dt;if(this.hookMiss>0)this.hookMiss-=dt;if(this.vjT>0)this.vjT-=dt;
     if(this.wallLock>0)this.wallLock-=dt;
     if(this.grabbed>0)this.grabbed-=dt;
     if(this.landT>0)this.landT-=dt;
@@ -143,10 +143,12 @@ class Player extends Body{
         }
         this.face=mv>0?1:-1;
       }else{
-        const f=this.onGround?C.friction:C.airDrag;
+        /* после гарпуна — разгон сохраняется: в воздухе почти без торможения */
+        const f=this.onGround?C.friction:(this.flingT>0?C.airDrag*0.2:C.airDrag);
         if(Math.abs(this.vx)<=f*dt)this.vx=0;else this.vx-=(this.vx>0?1:-1)*f*dt;
       }
-      const cap=sliding?C.slideSpeed:(this.crouch?C.crouchMax:C.maxRun*(this.chargeT>0.12?C.heavyMove:1));
+      let cap=sliding?C.slideSpeed:(this.crouch?C.crouchMax:C.maxRun*(this.chargeT>0.12?C.heavyMove:1));
+      if(this.flingT>0&&!this.onGround&&mv*this.vx>=0)cap=Math.max(cap,Math.abs(this.vx));
       if(Math.abs(this.vx)>cap)this.vx=damp(this.vx,(this.vx>0?1:-1)*cap,C.overCap,dt);
     }else if(sliding){
       this.vx=damp(this.vx,0,1.6,dt);
@@ -393,27 +395,36 @@ class Player extends Body{
     const g=this.world.game,a=this.hookTarget();this.hookCd=0.28;
     if(!a){this.hookMiss=0.2;g.audio.hookMiss();return;}
     this.dashT=0;this.slideT=0;if(this.crouch&&this.setH(CFG.player.h))this.crouch=false;
-    this.hook={a,mode:'fly',t:0,len:0,d0:Math.hypot(a.x-this.cx,a.y-this.cy),stuck:0};
+    const dx0=a.x-this.cx;
+    this.hook={a,mode:'fly',t:0,len:0,d0:Math.hypot(dx0,a.y-this.cy),stuck:0,
+      vert:Math.abs(dx0)<1.3,s:Math.abs(dx0)<1.3?this.face:(dx0>0?1:-1)};
     this.face=a.x>=this.cx?1:-1;g.audio.harpoon();this.noiseLevel=Math.max(this.noiseLevel,0.5);
     g.tutorial.notify('hook');
   }
-  /* полёт троса → лебёдка тянет к рыму; у рыма — отпускает с подбросом; прыжок — отпустить раньше */
+  /* полёт троса → лебёдка разгоняет к рыму → курьер ПРОЛЕТАЕТ его: как только пересёк вертикаль рыма
+     (или подлетел вплотную), трос отпускает, а разгон остаётся — дуга вперёд и вверх.
+     Рым прямо над головой — подъём и выброс выше рыма (на уступ). Прыжок — отпустить раньше, с добавкой вверх. */
   updateHook(dt){
     const g=this.world.game,H=this.hook,C=CFG.player;H.t+=dt;
-    if(H.mode==='fly'){H.len+=dt*72;
+    if(H.mode==='fly'){H.len+=dt*80;
       if(H.len>=H.d0){H.mode='pull';H.t=0;g.audio.hookBite();
         g.particles.burst(H.a.x,H.a.y,10,{kind:'spark',col:'#ffe6a3',spd:4,life:0.3,size:0.05,add:true,g:8});}
       return;}
-    const tx=H.a.x,ty=H.a.y+0.95,dx=tx-this.cx,dy=ty-this.cy,d=Math.hypot(dx,dy)||1e-3;
-    const rel=pop=>{this.hook=null;this.hookCd=0.22;this.airDash=this.airDashes();this.airJump=this.airJumps();
-      if(pop){this.vy=Math.min(this.vy*0.4,-8.5);this.vx*=0.9;}g.audio.snap();};
-    if(this.jumpBuf>0){this.jumpBuf=0;rel(false);this.vy=-C.jumpV*0.86;this.didJump=true;this.jumpCutDone=false;g.audio.jump();return;}
-    if(d<0.75||H.t>1.1){rel(true);return;}
-    const sp=Math.min(HOOK.speed,11+H.t*70);
-    this.vx=damp(this.vx,dx/d*sp,20,dt);this.vy=damp(this.vy,dy/d*sp,20,dt);this.face=dx>=0?1:-1;
-    /* упёрся (стена, край) — трос не тянет сквозь сталь */
+    const tx=H.a.x,ty=H.a.y+(H.vert?0.2:0.55),dx=tx-this.cx,dy=ty-this.cy,d=Math.hypot(dx,dy)||1e-3;
+    const fling=(up)=>{const sp=Math.hypot(this.vx,this.vy);
+      this.hook=null;this.hookCd=0.16;this.airDash=this.airDashes();this.airJump=this.airJumps();
+      if(H.vert){this.vx=this.vx*0.3+this.face*2.5;this.vy=-Math.max(12.5,up);}
+      else{this.vx=H.s*Math.max(Math.abs(this.vx)*0.85,sp*0.7,12);this.vy=Math.min(this.vy*0.35,-Math.max(7.5,up));this.face=H.s;}
+      this.flingT=0.45;this.jumpCutDone=true;g.audio.snap();
+      g.particles.burst(this.cx,this.cy,10,{kind:'steam',col:'#dff0f6',spd:4,life:0.35,size:0.22,grow:0.6,drag:2.5});};
+    if(this.jumpBuf>0){this.jumpBuf=0;fling(C.jumpV*0.8);this.didJump=true;g.audio.jump();return;}
+    const crossed=!H.vert&&(H.s>0?this.cx>tx:this.cx<tx);
+    if(crossed||d<(H.vert?0.9:1.25)||H.t>1.3){fling(0);return;}
+    const sp=Math.min(HOOK.speed,13+H.t*65);
+    this.vx=damp(this.vx,dx/d*sp,16,dt);this.vy=damp(this.vy,dy/d*sp,16,dt);this.face=H.vert?this.face:H.s;
+    /* упёрся (стена, край) — трос не тянет сквозь сталь: отпускает с тем, что набрано */
     const prog=(H.pd===undefined?d:H.pd)-d;H.pd=d;
-    if(prog<sp*dt*0.15&&H.t>0.12){H.stuck+=dt;if(H.stuck>0.12){rel(true);return;}}else H.stuck=0;
+    if(prog<sp*dt*0.15&&H.t>0.12){H.stuck+=dt;if(H.stuck>0.12){fling(0);return;}}else H.stuck=0;
     if(Math.random()<dt*40)g.particles.spawn({kind:'spark',x:this.cx,y:this.cy,vx:-dx/d*3,vy:-dy/d*3,life:0.2,size:0.035,col:'#ffe6a3',add:true});
   }
   /* сварка шва: стоя, не в рывке, есть порция РЕМОНТА и есть что латать. Урон прерывает (порция не тратится) */
