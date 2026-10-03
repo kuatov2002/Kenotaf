@@ -44,6 +44,7 @@ class Mech extends Enemy{
     this.t+=dt;if(this.flash>0)this.flash-=dt;
     for(const n of this.nodes){if(n.exT>0)n.exT-=dt;if(n.markT>0)n.markT-=dt;if(n.hitT>0)n.hitT-=dt;n.tele=0;n.teleHot=false;n.red=false;}
     if(this.recoil>0)this.recoil=Math.max(0,this.recoil-dt*5);
+    if(this.squash>0)this.squash=Math.max(0,this.squash-dt*7);
     if(this.slamCd>0)this.slamCd-=dt;
     if(this.dead){this.deadT+=dt;return;}
     if(this.pinT>0){this.pinT-=dt;this.vx=0;this.vy=0;
@@ -199,6 +200,8 @@ class Mech extends Enemy{
   /* отклик тела на удар: вес решает, насколько он сдвинется */
   react(h,k){
     const m=this.mass;this.recoil=1;this.recoilDir=h.dir||0;this.alert=6;
+    /* корпус сжимается от удара: тяжёлый — сильнее; мелкие механизмы гнутся заметнее боссов */
+    this.squash=Math.max(this.squash||0,(h.heavy?1.4:1)*k);
     if(m>=3||this.pinT>0)return;
     const kb=(h.heavy?8.5:2.4)*k/Math.max(0.7,m);
     this.vx+=(h.dir||0)*kb;if(h.ky)this.vy+=h.ky*k/Math.max(1,m);
@@ -208,7 +211,7 @@ class Mech extends Enemy{
   }
   breakNode(n,h,guar){
     const g=this.world.game,W=this.world;
-    n.broken=true;n.hp=0;n.exT=0;n.markT=0;n.tele=0;n.teleHot=false;
+    n.broken=true;n.hp=0;n.exT=0;n.markT=0;n.tele=0;n.teleHot=false;this.squash=1.8;
     this.hp-=n.coreDmg||0;
     const dir=(h&&h.dir)||(h&&Math.sign(n.wx-h.sx))||-this.face;
     const part=this.partDebris(n);
@@ -254,6 +257,7 @@ class Mech extends Enemy{
     if(this.dead)return;
     c.save();c.translate(this.cx,this.bottom);if(this.face<0)c.scale(-1,1);
     if(this.recoil>0)c.translate(this.recoil*this.recoilDir*this.face*0.1,0);
+    if(this.squash>0){const k=this.squash*(this.isBoss?0.03:0.07);c.scale(1+k,1-k);}
     this.drawFX(c,t);drawNodeFX(c,this,t);
     c.restore();
   }
@@ -265,6 +269,7 @@ class Mech extends Enemy{
     if(this.face<0)c.scale(-1,1);
     /* отдача от удара: корпус уходит по направлению удара (в локальных осях) */
     if(this.recoil>0)c.translate(this.recoil*this.recoilDir*this.face*0.1,0);
+    if(this.squash>0){const k=this.squash*(this.isBoss?0.03:0.07);c.scale(1+k,1-k);}
     this.draw(c,t);
     c.restore();
     if(this.flash>0){c.save();c.globalCompositeOperation='source-atop';c.globalAlpha=clamp(this.flash*3,0,0.55);

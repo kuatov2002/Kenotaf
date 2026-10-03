@@ -648,10 +648,14 @@ class Player extends Body{
     else c.translate(this.cx,this.bottom);                        /* feet = физ. bottom */
     if(this.face<0)c.scale(-1,1);
     if(this.invuln>0&&this.hurtT<=0&&Math.floor(t*22)%2===0)c.globalAlpha=0.42;
-    let sx=1,sy=1;
+    let sx=1,sy=1;const C=CFG.player;
     if(this.landT>0){const k=this.landT/0.2;sx=1+0.14*k;sy=1-0.14*k;}
     else if(this.jumpStretch>0){const k=this.jumpStretch/0.14;sx=1-0.08*k;sy=1+0.1*k;}
-    else if(this.dashT>0){sx=1.08;sy=0.95;}
+    else if(this.dashT>0){/* рывок: первый миг — сжатие пружины, дальше — вытянут в линию */const u=1-this.dashT/C.dashTime;sx=u<0.15?0.9:1.1;sy=u<0.15?1.07:0.94;}
+    /* ключевые позы удара: замах — сжатие (набор), удар — растяжение по линии взмаха, доводка — возврат */
+    else if(this.atkPhase==='wind'){const k=clamp(1-this.atkPT/(this.atkHeavy?C.heavyWind:C.atkWind),0,1)*(this.atkHeavy?1.4:1);sx=1+0.06*k;sy=1-0.06*k;}
+    else if(this.slashT>0){const T0=C.slashT*(this.slashHeavy?1.5:1),u=1-this.slashT/T0;
+      if(u<0.4){const k=(1-u/0.4)*(this.slashHeavy?1.4:1);if(this.slashDir==='side'){sx=1+0.09*k;sy=1-0.05*k;}else{sx=1-0.05*k;sy=1+0.08*k;}}}
     if(sx!==1||sy!==1)c.scale(sx,sy);
     HeroArt.draw(c,this,t);
     c.restore();
@@ -689,6 +693,15 @@ class Player extends Body{
       c.save();c.globalCompositeOperation='lighter';const gr=c.createRadialGradient(ax,ay,0,ax,ay,0.55);
       gr.addColorStop(0,rgba('#ffffff',0.9*k));gr.addColorStop(0.4,rgba('#cfe6ee',0.6*k));gr.addColorStop(1,'rgba(140,210,240,0)');
       c.fillStyle=gr;c.beginPath();c.arc(ax,ay,0.55,0,TAU);c.fill();c.restore();}
+    /* смаз ключа: лента между путём головы и рукояти — плотная у головы, тает к началу взмаха */
+    const S=this._smear;
+    if(S&&S.length>1&&(this.slashT>0||this.atkPhase==='wind')){c.save();c.globalCompositeOperation='lighter';
+      const rc=this.slashRupture&&this.slashT>0,base=rc?'255,120,70':'255,232,190';
+      for(let i=1;i<S.length;i++){const a0=S[i-1],a1=S[i],k=i/(S.length-1),al=(this.slashT>0?0.55:0.22)*k;
+        c.fillStyle='rgba('+base+','+al+')';c.beginPath();c.moveTo(a0.gx,a0.gy);c.lineTo(a0.hx,a0.hy);c.lineTo(a1.hx,a1.hy);c.lineTo(a1.gx,a1.gy);c.closePath();c.fill();}
+      const h=S[S.length-1];c.strokeStyle='rgba(255,255,255,'+(this.slashT>0?0.8:0.3)+')';c.lineWidth=0.05;c.beginPath();c.moveTo(S[0].hx,S[0].hy);
+      for(const q of S)c.lineTo(q.hx,q.hy);c.stroke();c.restore();
+      this.world.game.renderer.glowAdd(h.hx,h.hy,0.9,rc?'#ff8a4a':'#ffe6a3',0.35);}
     if(this.slashT<=0)return;
     const T=CFG.player.slashT,u=this.slashT/T,a=clamp(u*1.5,0,1),grow=clamp((1-u)*4,0.6,1);
     const dir=this.slashDir,f=this.slashFace;

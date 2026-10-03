@@ -124,6 +124,12 @@ const HeroArt={
     this.armF(c,J,P,p,gs,t);
     /* мировые точки для эффектов (следующий кадр) */
     p._neck=this.toWorld(p,J.neck);p._wHead=this.toWorld(p,J.wHead);p._nozzle=this.toWorld(p,J.nozzle);
+    /* смаз ключа: путь головы и рукояти за последние кадры взмаха — лента рисуется в drawSlash */
+    {const sw=p.atkPhase==='wind'||p.slashT>0;
+      if(sw){const hand=this.toWorld(p,{x:J.armF.fx,y:J.armF.fy}),tr=p._smear||(p._smear=[]),last=tr[tr.length-1];
+        if(!last||Math.hypot(last.hx-p._wHead.x,last.hy-p._wHead.y)>0.02)tr.push({hx:p._wHead.x,hy:p._wHead.y,gx:hand.x,gy:hand.y,t:p.t});
+        while(tr.length>7)tr.shift();}
+      else p._smear=null;}
     const g=this.toWorld(p,{x:J.gaunt.x,y:J.gaunt.y});p._gaunt={x:g.x,y:g.y,a:J.gaunt.a};
   },
   leg(c,h,L,far,gs){
