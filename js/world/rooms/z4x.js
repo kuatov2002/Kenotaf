@@ -15,7 +15,7 @@ z4_gearworks:gs=>({id:'z4_gearworks',zone:'seal',sub:'gears',name:'ЗУБЧАТ�
     R.doors=[Object.assign(RB.L(21,'z4_antechamber','ПРЕДПЕЧАТЬЕ'),{elevator:true}),RB.R(R,9,'z4_pendulum','МАЯТНИКОВАЯ ШАХТА'),
       RB.hatch(30,21,'z4_pressure','КАМЕРА ДАВЛЕНИЯ')];
     RB.lore(R,gs,22,45,9);
-    R.enemies.push({type:'clockmaker',x:40,y:21-2.1,patrol:[34,48],amb:true},{type:'clockmaker',x:27,y:13.8-2.1,patrol:[26.2,30.6],amb:true},
+    R.enemies.push({type:'bellringer',x:40,y:21-2.1,patrol:[34,48],amb:true},{type:'clockmaker',x:27,y:13.8-2.1,patrol:[26.2,30.6],amb:true},
       {type:'lampada',x:14,y:8,amb:true});
     R.lights=[lit(6,4,9,'#cfe6ff',0.6),lit(22,4,9,'#cfe6ff',0.6),lit(38,4,9,'#cfe6ff',0.6),lit(54,6,7,'#f2e6c0',0.7),lit(30,20,4,'#8fb6c9',0.5)];
     R.emitters=[{type:'dust',rate:10},{type:'spark',x:20.5,y:9.4,rate:0.6},{type:'spark',x:36.5,y:4.6,rate:0.6}];
@@ -58,7 +58,7 @@ z4_escapement:gs=>({id:'z4_escapement',zone:'seal',sub:'gears',name:'АНКЕР�
     R.solids.push(S(0,19,56,3,'lead'),S(24,16.6,6,2.4,'lead'),S(0,7,8,0.8,'lead'),P(13,16.6,4),P(8,14.2,4),P(13,11.8,4),P(8,9.4,4));
     R.hazards=[PRESS(19.6,12.2,2,6.8,2.0,0),PRESS(33,12.2,2,6.8,2.0,0.5),PRESS(39,12.2,2,6.8,2.0,1.0),PRESS(45,12.2,2,6.8,2.0,1.5)];
     R.doors=[RB.L(19,'z4_pendulum','МАЯТНИКОВАЯ ШАХТА'),RB.R(R,19,'z4_clocktower','ЧАСОВАЯ БАШНЯ'),RB.L(7,'z4_counter','ПРОТИВОВЕСЫ')];
-    R.enemies.push({type:'clockmaker',x:27,y:16.6-2.1,patrol:[24.2,29.6],amb:true},{type:'clockmaker',x:50,y:19-2.1,patrol:[44,54],amb:true});
+    R.enemies.push({type:'clockmaker',x:27,y:16.6-2.1,patrol:[24.2,29.6],amb:true},{type:'gearthrower',x:50,y:19-2.1,patrol:[44,54],amb:true});
     R.lights=[lit(6,4,8,'#cfe6ff',0.6),lit(20,6,9,'#cfe6ff',0.6),lit(38,6,9,'#cfe6ff',0.6),lit(52,6,8,'#cfe6ff',0.6)];
     R.emitters=[{type:'dust',rate:10}];
     R.extraGame=(c,L,r)=>{Kit.gear(c,28,6,4.2,32,0.3,'#3d3a30');Kit.sign(c,30,2,4.6,0.85,'АНКЕР · ШАГ 2.0 С','#c9a227','#191612',1121);};
@@ -118,7 +118,7 @@ z4_gate:gs=>({id:'z4_gate',zone:'seal',sub:'gears',name:'ВОРОТА АРХИВ
     R.solids.push(S(0,27,40,3,'lead'),P(4,24.6,5),P(11,22.2,5),P(18,19.8,5),P(25,17.4,5),P(31,13.8,4,0.6,'lead'),P(35.5,10.6,4.5,0.6,'lead'),P(30,8,10,0.6));
     R.doors=[RB.L(27,'z4_quiet','КАМОРКА'),RB.R(R,8,'z5_hall','АРХИВ СОВЕТА')];
     R.signs=[{x:24,y:10,keys:['SPACE','SPACE'],text:'В ВОЗДУХЕ — ЕЩЁ РАЗ',need:'vjump'}];
-    R.enemies.push({type:'lampada',x:20,y:12,amb:true},{type:'clockmaker',x:20,y:27-2.1,patrol:[10,30],amb:true});
+    R.enemies.push({type:'lampada',x:20,y:12,amb:true},{type:'pendulum',x:20,y:27-2.1,patrol:[10,30],amb:true});
     R.lights=[lit(8,20,8,'#cfe6ff',0.5),lit(22,14,8,'#cfe6ff',0.5),lit(35,6,8,'#ffcf8a',0.8)];
     R.emitters=[{type:'dust',rate:10}];
     R.extraGame=(c,L,r)=>{Kit.arch(c,32,1.4,7,6.6);Kit.stencil(c,31,1.2,'АРХИВ СОВЕТА · ВХОД ВОСПРЕЩЁН',0.3,'rgba(232,201,106,.5)',0.5);};
@@ -166,7 +166,8 @@ z4_counter:gs=>({id:'z4_counter',zone:'seal',sub:'gears',name:'ПРОТИВОВ�
     RB.salvage(R,gs,{upgrade:'plate_counter',x:28,y:8,flag:'got_plate_counter',title:'ПЛАСТИНА КУРТКИ',
       lines:['НА ВЕРХНЕЙ БАЛКЕ — ЛАТУННЫЙ КЛИН ПРОТИВОВЕСА, ТОНКИЙ, КАК ЛИСТ.','ОН ДЕРЖАЛ ВЕС ЧАСОВ ДВЕСТИ ЛЕТ. УДЕРЖИТ И ДАВЛЕНИЕ КУРТКИ.']});
     R.enemies.push({type:'lampada',x:10,y:14,amb:true});
-    RB.elite(R,gs,{type:'clockmaker',x:8,y:31-1.9,patrol:[2,14],eliteName:'МАСТЕР ХОДА',eliteFlag:'elite_counter',
+    RB.elite(R,gs,{type:'clockmaker',x:8,y:31-1.9,patrol:[2,14],eliteName:'МАСТЕР ХОДА',
+      mini:{k:'ЗОНА IV · ПРОТИВОВЕСЫ',e:'ТОТ, КТО ЗАВОДИТ ПЕЧАТЬ',l:'«ОПОЗДАНИЕ — ТОЖЕ ПРЕСТУПЛЕНИЕ.»',addons:['gear','ring'],prop:'bell'},eliteFlag:'elite_counter',
       reward:{upgrade:'stun_long',x:6,y:31,flag:'got_stun_long',title:'ЗУБИЛО ЧАСОВЩИКА',
         lines:['В ФУТЛЯРЕ МАСТЕРА — ЗУБИЛО ДЛЯ ЗАКЛИНИВАНИЯ ХОДА. ИМ ОСТАНАВЛИВАЛИ ЧАСЫ НА РЕМОНТ.','С НИМ СОРВАННЫЙ ЗАМАХ ДЕРЖИТ МЕХАНИЗМ ОТКРЫТЫМ ДОЛЬШЕ.']}});
     R.lights=[lit(24,26,8,'#cfe6ff',0.5),lit(10,16,8,'#cfe6ff',0.5),lit(26,6,6,'#ffd9a0',0.7)];

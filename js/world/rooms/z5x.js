@@ -62,7 +62,7 @@ z5_reading:gs=>({id:'z5_reading',zone:'archive',sub:'reading',name:'ЧИТАЛЬ
       Object.assign(RB.L(7.2,'z5_private','?'),{reqFlag:'lead_private',reqMsg:'СВИНЦОВАЯ ЗАГЛУШКА'})];
     if(!gs.flags.lead_private)R.pushables.push({kind:'lead',x:0,y:4.8,w:1.6,h:2.4,id:'priv_lead',flag:'lead_private'});
     RB.lamp(R,26,19);RB.lore(R,gs,27,44,17.6);
-    R.enemies.push({type:'clockmaker',x:16,y:19-2.1,patrol:[6,22],amb:true},{type:'clockmaker',x:48,y:19-2.1,patrol:[40,52],amb:true},{type:'lampada',x:34,y:6,amb:true});
+    R.enemies.push({type:'scribe',x:16,y:19-2.35,patrol:[6,22],amb:true},{type:'mailbot',x:48,y:19-1.55,patrol:[40,52],amb:true},{type:'chandler',x:34,y:6,amb:true});
     R.lights=[lit(12,15,6,'#9fe6a0',0.6),lit(44,15,6,'#9fe6a0',0.6),lit(26,4,10,'#ffcf8a',0.7),lit(2,5.6,3,'#ffd9a0',0.6,{flicker:2})];
     R.emitters=[{type:'dust',rate:10}];
     R.extraGame=(c,L,r)=>{for(const m of R.magnetRects){Kit.craneGirder(c,m.x,m.y-1.2,m.w,1.2);Kit.magnetRivets(c,m.x,m.y,m.w);}
@@ -81,7 +81,9 @@ z5_council:gs=>({id:'z5_council',zone:'archive',sub:'council',name:'ЗАЛ СО�
         'ГОЛОС ПЕРВЫЙ: «ПРОТИВ». ВТОРОЙ: «ПРОТИВ». ТРЕТИЙ, ЧЕТВЁРТЫЙ, ПЯТЫЙ: «ПРОТИВ».',
         'ШЕСТОЙ: «ПРОТИВ». СЕДЬМОЙ — ДОЛГОЕ ШИПЕНИЕ, ПОТОМ: «ПРОТИВ».',
         'В КРЕСЛАХ НИКОГО. СОВЕТ — ЭТО ПЛАСТИНКИ. ЗАПИСАНЫ ДВЕСТИ ЛЕТ НАЗАД.']});
-    R.enemies.push({type:'censor',variant:'elite',elite:true,eliteName:'СТРАЖ СОВЕТА',x:10,y:25-2.05,patrol:[3,15],amb:true},{type:'censor',x:36,y:25-2.05,patrol:[30,43],amb:true});
+    if(!gs.flags.elite_council)R.enemies.push({type:'censor',variant:'elite',elite:true,eliteName:'СТРАЖ СОВЕТА',eliteFlag:'elite_council',x:10,y:25-2.05,patrol:[3,15],
+      mini:{k:'ЗОНА V · ЗАЛ СОВЕТА',e:'ПОСЛЕДНИЙ ПОСТ У ПЛАСТИНОК',l:'«СОВЕТ НЕ ПРИНИМАЕТ.»',addons:['parry','paper'],prop:'buckler'}});
+    R.enemies.push({type:'keeper',x:36,y:25-2.05,patrol:[30,43],amb:true});
     R.lights=[lit(23,6,14,'#e8c96a',0.8),lit(11,18,6,'#ffcf8a',0.5),lit(35,18,6,'#ffcf8a',0.5)];
     R.emitters=[{type:'dust',rate:8}];
     R.extraGame=(c,L,r)=>{for(let i=0;i<7;i++){const a=PI+0.25+i/6*(PI-0.5),x=23+Math.cos(a)*14,y=24.6+Math.sin(a)*4;

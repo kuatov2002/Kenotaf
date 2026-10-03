@@ -339,6 +339,36 @@ S.red_no_interrupt=`${OV()}
   for(let i=0;i<400&&!b.nodes.some(n=>n.teleHot);i++)LAB.step(1);const red=b.nodes.some(n=>n.teleHot&&n.red);
   game.world.player.face=1;game.world.player.invuln=1e9;LAB.step(1,[],{0:['pulse']});LAB.step(4);
   return {ok:red&&b.state!=='open'&&game.gs.heat===0,info:{red,state:b.state}};`;
+/* вариации и новый класс: каждый собирается, живёт 6 с перед курьером без ошибок; активные приёмы — срабатывают */
+S.variants_all=`if(!ROOMDEFS.__lab)ROOMDEFS.__lab=gs=>({id:'__lab',zone:'sump',name:'СТЕНД',w:60,h:22,noDress:true,build(R){R.solids=[S(-2,-2,64,2.4,'steel'),S(-2,0,2,22,'steel'),S(60,0,2,22,'steel'),S(0,17,60,5,'concrete')];}});
+  const keys=Object.keys(VARIANTS).concat(['mailbot']),res={},fired={};let errs=0;
+  for(const a in ADDONS)if(ADDONS[a].act){const f=ADDONS[a].act;ADDONS[a].__f=f;ADDONS[a].act=function(...q){fired[a]=1;return f.apply(this,q);};}
+  for(const k of keys){LAB.setup('__lab',28,17-1.68,['pulse','dash']);const W=game.world,p=LAB.p();W.entryT=9;W.playerActed=true;
+    const fly=['herald','chandelier','chandler','drone'].indexOf(k)>=0,e=new ENEMY_TYPES[k](W,{type:k,patrol:[20,26]},24,fly?(k==='chandelier'?9.5:13.5):15);W.enemies.push(e);e.face=1;e.alert=6;
+    for(let i=0;i<120*8;i++){p.invuln=1e9;game.gs.hp=5;if(i%60===0&&k!=='chandelier')p.x=e.cx+(k==='pendulum'?1.6:4)-p.w/2;if(k==='chandelier'&&i===100)p.x=e.cx-p.w/2;
+      try{LAB.step(1);}catch(er){errs++;}}
+    res[k]=e.dead?'dead':e.state;}
+  for(const a in ADDONS)if(ADDONS[a].__f){ADDONS[a].act=ADDONS[a].__f;delete ADDONS[a].__f;}
+  const active=Object.keys(ADDONS).filter(a=>ADDONS[a].act);
+  return {ok:errs===0&&keys.length===16&&active.filter(a=>fired[a]).length>=active.length-1,info:{errs,fired:Object.keys(fired).join('+'),missing:active.filter(a=>!fired[a]).join('+')}};`;
+
+/* мини-боссы зон: вход на участок — двери заперты, полоса; половина — ярость (чаще приёмы);
+   разобран — двери открыты, награда; приёмы реально идут в бою */
+S.mini_arenas=`const out=[];
+  for(const room of ['z1_foundry','z2_chapel','z3_herbarium','z4_counter','z5_council']){
+    LAB.setup(room,4,10,['pulse','dash','hook','claws','filter','magnet','breaker','vjump']);const W=game.world;W.load(room,2,2);
+    const m=W.miniBoss;if(!m){out.push({room,err:'нет мини-босса'});continue;}
+    W.entryT=9;W.playerActed=true;const p=LAB.p();p.invuln=1e9;
+    const acts={};for(const a in ADDONS)if(ADDONS[a].act){const f=ADDONS[a].act;ADDONS[a].__f=f;ADDONS[a].act=function(...q){acts[a]=(acts[a]||0)+1;return f.apply(this,q);};}
+    p.x=m.cx+3;p.y=m.bottom-p.h-0.1;p.vy=0;
+    for(let i=0;i<120*12;i++){p.invuln=1e9;game.gs.hp=5;LAB.step(1);if(i%90===0){p.x=m.cx+(i%180?3:-3);p.y=m.bottom-p.h-0.1;}}
+    const lock=W.arenaLock,eng=!!m.engaged;
+    for(const n of m.nodes)if(!n.broken&&!n.core&&n.id!=='core')n.hp=n.max*0.2;m.hp=m.maxHp*0.3;LAB.step(10);const rage=!!m.enraged;
+    for(const n of m.nodes)if(!n.broken)m.breakNode(n,{dir:1,sx:n.wx,sy:n.wy});if(!m.dead)m.die({dir:1});LAB.step(30);
+    for(const a in ADDONS)if(ADDONS[a].__f){ADDONS[a].act=ADDONS[a].__f;delete ADDONS[a].__f;}
+    out.push({room,eng,lock,rage,open:!W.arenaLock,acts:Object.keys(acts).join('+')});}
+  return {ok:out.every(o=>o.eng&&o.lock&&o.rage&&o.open&&o.acts),info:out};`;
+
 /* «СНАРУЖИ · НИЧЕГО · НЕТ»: три звона уклоняемы идеальным вводом — рывок ровно перед касанием кольца
    (к ближней стене / к центру площадки), с разных точек арены фазы III. Сложно, но не гарантированный урон */
 S.arc_contra_dodge=AR+`brk('glass');LAB.step(400);brk('cage');LAB.step(900);const W=game.world,R=W.room;

@@ -245,7 +245,7 @@ z1_east:gs=>({id:'z1_east',zone:'sump',name:'ВОСТОЧНЫЙ КОРИДОР',
     R.doors=[{x:0.0,y:9.9,w:1.2,h:2.1,to:'z1_hub',tx:33.4,ty:28.6,label:'НАСОСНАЯ'},
       {x:36.8,y:9.9,w:1.2,h:2.1,to:'z1_arena',tx:1.8,ty:17.6,label:'РЕМОНТНЫЙ ЦЕХ'},
       {x:31.2,y:11.6,w:1.6,h:0.9,down:true,to:'z1_drain',link:'drain_up',label:'ДРЕНАЖ',latch:'drain_latch',msg:'ЛЮК ЗАДРАЕН СНИЗУ.'}];
-    R.enemies.push({type:'mokrica',x:8,y:11.38,patrol:[3,15],amb:true},{type:'wrench',x:26,y:10.45,patrol:[23,35],amb:true});
+    R.enemies.push({type:'mailbot',x:8,y:12-1.55,patrol:[3,15],amb:true},{type:'wrench',x:26,y:10.45,patrol:[23,35],amb:true});
     R.lights=[lit(5,4.4,10,'#ffbe63',0.95),lit(14,4.2,9.5,'#ffbe63',0.85,{flicker:1.1}),
       lit(24,4.4,10,'#ffa64a',0.9),lit(33,4.2,10,'#ffbe63',0.9),
       lit(9,11.4,5,'#ffb070',0.55),lit(28,11.4,5,'#ffb070',0.5),
@@ -609,7 +609,7 @@ z1_sluice:gs=>({id:'z1_sluice',zone:'sump',name:'СЕВЕРНЫЙ ШЛЮЗ',w:48
       plaque:'ФЕРМА · ПОСТОЯННОЕ СОЕДИНЕНИЕ',flag:'bridge_out',sys:'bridge'}];
     if(!gs.loreIds[4])R.interactables.push({kind:'lore',loreId:4,x:35.6,y:10,title:'ЦИЛИНДР №4 · ГРАФИК ЛИФТА 07',
       text:'«ПОСЛЕДНИЙ ПОДЪЁМ ВЫШЕ ЭДЕМА — 214 ЛЕТ НАЗАД. ДАЛЬШЕ ГРАФИК ПУСТ.»'});
-    R.enemies.push({type:'lampada',x:21,y:6.5,amb:true},{type:'mokrica',x:36,y:9.38,patrol:[30,44],amb:true});
+    R.enemies.push({type:'lampada',x:21,y:6.5,amb:true},{type:'roller',x:36,y:9.38,patrol:[30,44],amb:true});
     R.lights=[lit(4,4,8,'#ffbe63',0.9),lit(13,5,6,'#c8452f',0.7,{flicker:0.8}),
       lit(30,4,9,'#ffbe63',0.9),lit(42,4,7,'#ffbe63',0.8),lit(21,14,10,'#3d6a52',0.5),
       lit(41.4,8.6,4,'#8fd6ff',0.7),lit(1.4,8.6,3,'#8fd6ff',0.4),lit(46.8,8.6,3,'#8fd6ff',0.4)];

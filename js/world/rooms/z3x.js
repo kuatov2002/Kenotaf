@@ -12,7 +12,7 @@ z3_orchard:gs=>({id:'z3_orchard',zone:'eden',sub:'orchard',name:'ФРУКТОВ�
     R.solids.push(S(0,25,60,3,'marble'),S(52,21.6,8,3.4,'marble'),S(8,22.6,9,2.4,'marble'),S(24,20.2,10,4.8,'marble'),S(38,22.6,8,2.4,'marble'),
       P(27,17.8,5),P(20,15.4,5),P(4,13,12),P(40,15.4,6));
     R.doors=[RB.L(25,'z3_apiary','ПАСЕКА'),RB.R(R,21.6,'z3_greenhouse','ОРАНЖЕРЕИ'),RB.hatch(18.6,25,'z3_roots','КОРНЕВАЯ ГАЛЕРЕЯ')];
-    R.enemies.push({type:'gardener',x:28,y:20.2-1.8,patrol:[25,33],amb:true},{type:'gardener',x:46,y:25-1.8,patrol:[40,51],amb:true},
+    R.enemies.push({type:'sprayer',x:28,y:20.2-1.8,patrol:[25,33],amb:true},{type:'gardener',x:46,y:25-1.8,patrol:[40,51],amb:true},
       {type:'pollinator',x:12,y:8,amb:true},{type:'pollinator',x:44,y:10,amb:true},{type:'lampada',x:34,y:6,amb:true});
     R.lights=[lit(10,3,10,'#fff2c0',0.7),lit(30,3,10,'#fff2c0',0.75),lit(50,3,10,'#fff2c0',0.7),lit(18.6,23.6,3,'#8a7a5a',0.5)];
     R.emitters=[{type:'leaf',rate:3},{type:'pollen',x:20,y:10,rate:2,sw:30},{type:'dust',rate:8}];
@@ -33,7 +33,7 @@ z3_apiary:gs=>({id:'z3_apiary',zone:'eden',sub:'apiary',name:'ПАСЕКА',w:46
       P(18.2,21.4,1.6,0.4,'ply'),P(20.2,18.8,1.6,0.4,'ply'),P(28.2,21.4,1.6,0.4,'ply'),P(26.2,18.8,1.6,0.4,'ply'),P(11.6,21.6,2,0.4,'ply'));
     R.doors=[RB.R(R,24,'z3_orchard','ФРУКТОВЫЙ САД'),RB.L(6.6,'z3_hive','?')];
     RB.lore(R,gs,30,42,24);
-    R.enemies.push({type:'pollinator',x:16,y:10,amb:true},{type:'pollinator',x:30,y:8,amb:true},{type:'pollinator',x:40,y:12,amb:true},
+    R.enemies.push({type:'pollinator',x:16,y:10,amb:true},{type:'drone',x:30,y:8,amb:true},{type:'drone',x:32.5,y:9,amb:true},{type:'pollinator',x:40,y:12,amb:true},
       {type:'lampada',x:24,y:6,amb:true});
     R.lights=[lit(8,6,9,'#ffcf6a',0.7),lit(24,5,10,'#ffcf6a',0.8),lit(38,6,9,'#ffcf6a',0.7),lit(2.5,4.6,3,'#ffe6a3',0.8,{flicker:2})];
     R.emitters=[{type:'pollen',x:23,y:12,rate:4,sw:20},{type:'dust',rate:8}];
@@ -52,7 +52,7 @@ z3_roots:gs=>({id:'z3_roots',zone:'eden',sub:'roots',name:'КОРНЕВАЯ ГА
     R.doors=[Object.assign(RB.top(6.2,'z3_orchard','САД'),{h:1.4}),RB.R(R,20,'z3_canal','ОРОСИТЕЛЬНЫЙ КАНАЛ'),
       {x:33.6,y:17.9,w:1.4,h:2.1,to:'z3_seedvault',label:'?',reqFlag:'lead_roots',reqMsg:'СВИНЦОВАЯ ЗАГЛУШКА'}];
     if(!gs.flags.lead_roots)R.pushables.push({kind:'lead',x:33.3,y:17.6,w:2.0,h:2.4,id:'roots_lead',flag:'lead_roots'});
-    R.enemies.push({type:'mokrica',x:20,y:20-0.62,patrol:[16,23],amb:true},{type:'mokrica',variant:'shell',x:48,y:20-0.95,patrol:[45,56],amb:true},
+    R.enemies.push({type:'rootling',x:20,y:20-0.62,patrol:[16,23],amb:true},{type:'mokrica',variant:'shell',x:48,y:20-0.95,patrol:[45,56],amb:true},
       {type:'gardener',x:36,y:20-1.8,patrol:[31,39],amb:true},{type:'lampada',x:28,y:8,amb:true});
     RB.chalk(R,36.6,15.4,'СЕМЕНА',{s:0.4});
     R.lights=[lit(7,5,7,'#7fe0d0',0.6),lit(20,15,6,'#7fe0d0',0.6),lit(34,17,5,'#ffd9a0',0.6,{flicker:2}),lit(48,14,7,'#c090f0',0.5),lit(56.8,18.6,3,'#8fd6ff',0.4)];
@@ -95,7 +95,8 @@ z3_herbarium:gs=>({id:'z3_herbarium',zone:'eden',sub:'herbarium',name:'ГЕРБ�
     R.doors=[RB.L(15,'z3_canal','КАНАЛ'),RB.R(R,15,'z3_sunhall','ЗАЛ ЛАМП-СОЛНЦ')];
     RB.lamp(R,5,15);RB.lore(R,gs,18,22,12);
     R.enemies.push({type:'pollinator',x:34,y:7,amb:true});
-    RB.elite(R,gs,{type:'gardener',x:26,y:15-1.8,patrol:[16,36],eliteName:'СТАРШИЙ САДОВНИК',eliteFlag:'elite_herb',
+    RB.elite(R,gs,{type:'gardener',x:26,y:15-1.8,patrol:[16,36],eliteName:'СТАРШИЙ САДОВНИК',
+      mini:{k:'ЗОНА III · ГЕРБАРИЙ',e:'ХРАНИТЕЛЬ ЧЕТЫРЁХСОТ ДВЕНАДЦАТИ ВИДОВ',l:'«ЧЕГО НЕТ В ГЕРБАРИИ, ТОГО НЕТ ВООБЩЕ.»',addons:['cloud','rivet'],prop:'tank'},eliteFlag:'elite_herb',
       reward:{upgrade:'heavy_fast',x:22,y:12,flag:'got_heavy_fast',title:'ТЯЖЁЛАЯ РУКОЯТЬ',
         lines:['РУКОЯТЬ САДОВОГО СЕКАТОРА, ЗАЛИТАЯ СВИНЦОМ: ЧТОБЫ РЕЗ ШЁЛ С ОДНОГО ЗАМАХА.','НА РЕЗАКЕ КУРЬЕРА ОНА ДЕРЖИТСЯ КАК РОДНАЯ: ЗАРЯЖЕННЫЙ УДАР КОПИТСЯ БЫСТРЕЕ.']}});
     R.lights=[lit(5,4,8,'#ffe6b0',0.7),lit(22,4,9,'#ffe6b0',0.75),lit(38,4,8,'#ffe6b0',0.7),lit(22,10,4,'#bfeee8',0.6)];

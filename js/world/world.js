@@ -41,7 +41,7 @@ class World{
     gs.room=id;gs.visited[id]=true;
     this.time=0;this.projectiles.length=0;this.enemies.length=0;
     this.pushables.length=0;this.interactables.length=0;this.debris.length=0;this.scrap.clear();g.combat.reset();this.zones=[];
-    this.boss=null;this.stage=null;this.bossDoorClosed=false;this.waveIdx=-1;this.waveT=0;this.doorCd=0.35;
+    this.boss=null;this.stage=null;this.miniBoss=null;this.arenaLock=false;this.bossDoorClosed=false;this.waveIdx=-1;this.waveT=0;this.doorCd=0.35;
     this.anims={};
     this.wheelSeq=false;this.wheelT=0;this.wheelDone2=false;
     this.nearDoor=null;this.nearInter=null;
@@ -64,7 +64,9 @@ class World{
       const e=this.room.enemies[i],C=ENEMY_TYPES[e.type];if(!C)continue;
       const key=e.type+'@'+e.x+','+e.y,amb=e.amb||!this.room.clearFlag;
       if(amb&&sl[key])continue;
-      const en=new C(this,e,e.x,e.y);if(amb)en.key=key;en.spawnKey=key;this.empower(en,e);this.enemies.push(en);}
+      const en=new C(this,e,e.x,e.y);if(amb)en.key=key;en.spawnKey=key;this.empower(en,e);this.enemies.push(en);
+      /* мини-босс: элита с ареной — два своих приёма поверх базы (js/entities/variants.js) */
+      if(e.mini&&e.elite&&typeof applyVariantDef==='function'){applyVariantDef(en,{name:e.eliteName,tint:null,addons:e.mini.addons,prop:e.mini.prop},'mini');en.mini=e.mini;this.miniBoss=en;}}
     if(this.room.boss){
       const b=this.room.boss;
       const BC={overseer:Overseer,primarch:Primarch,archivist:Archivist,uprooter:Uprooter,regulator:Regulator}[b.type];
@@ -123,6 +125,17 @@ class World{
     if(t){const k=1+0.12*t;for(const n of en.nodes){n.hp*=k;n.max*=k;}en.hp*=k;en.maxHp*=k;en.tierW=1+0.04*t;}
     if(d.elite){en.elite=true;const k=1.8;for(const n of en.nodes){n.hp*=k;n.max*=k;}en.hp*=k;en.maxHp*=k;
       en.tierW=(en.tierW||1)*1.12;en.scrapOnDeath=14;en.eliteName=d.eliteName||'ЭЛИТА';}}
+  /* арена мини-босса: вошёл в его участок — двери заперты, полоса, табличка; половина — ярость; разобран — открыто */
+  updateMini(dt){const m=this.miniBoss,g=this.game,p=this.player;if(!m)return;
+    if(m.dead){if(this.arenaLock){this.arenaLock=false;g.hud.bossOff();g.audio.door();BossStage.end(this);}this.miniBoss=null;return;}
+    if(!m.engaged){const d=(m.def&&m.def.patrol)||[m.cx-6,m.cx+6],A={x:d[0]-2,y:m.y-5,w:d[1]-d[0]+4,h:m.h+6};
+      if(p&&!p.dead&&aabb(p.rect(),A)&&!this.calm(m)){m.engaged=true;this.arenaLock=true;m.alert=8;m.investigate={x:p.cx,y:p.cy,t:5};
+        g.audio.door();g.camera.addShake(0.5);BossStage.intro(this,m,{k:m.mini.k,n:m.eliteName,e:m.mini.e,l:m.mini.l});}
+      return;}
+    let s=0,w=0;for(const n of m.nodes){s+=n.broken?0:n.hp/n.max;w++;}const k=clamp(0.5*(w?s/w:1)+0.5*m.hp/(m.maxHp||m.hp),0,1);
+    g.hud.boss(m.eliteName,k);
+    if(!m.enraged&&k<0.5){m.enraged=true;m.tierW=(m.tierW||1)*1.2;m.addonCdK=0.6;m._acd=Math.min(m._acd||0,0.5);g.audio.bossRoar();g.camera.addShake(0.6);
+      g.hud.say('В ЯРОСТИ: ЧАЩЕ И БЫСТРЕЕ.',m.eliteName);}}
   onEliteDown(e){const g=this.game,d=e.def||{};if(d.eliteFlag)g.gs.flag(d.eliteFlag);
     g.hud.say(e.eliteName+' · РАЗОБРАН.','');
     const rid=this.room.id;if(d.reward&&!g.gs.flags[d.reward.flag])this.later(900,()=>{if(this.room&&this.room.id===rid)this.interactables.push(new Interactable(Object.assign({kind:'salvage'},d.reward),this));});
@@ -174,6 +187,7 @@ class World{
       this.game.camera.frame=(b&&b.activated&&!b.dead&&b.camFrame)?b.camFrame():null;}
     /* сцена босса: вступление-«открытка» и смена зала в последней фазе (js/world/bossstage.js) */
     if(this.stage)BossStage.update(this,dt);
+    this.updateMini(dt);
     for(let i=0;i<this.pushables.length;i++)this.pushables[i].update(dt);
     this.updateProjectiles(dt);
     updateZones(this,dt);
@@ -248,7 +262,7 @@ class World{
     }
   }
   /* сброс позиции: курьер возвращается туда, где вошёл в зал */
-  canUnstuck(){const R=this.room;return !!(R&&this.player&&!this.player.dead&&!this.bossDoorClosed&&!(R.waves&&this.waveIdx>=0&&!this.game.gs.flags[R.clearFlag]));}
+  canUnstuck(){const R=this.room;return !!(R&&this.player&&!this.player.dead&&!this.arenaLock&&!this.bossDoorClosed&&!(R.waves&&this.waveIdx>=0&&!this.game.gs.flags[R.clearFlag]));}
   unstuck(){if(!this.canUnstuck())return;const p=this.player,a=this.arrive,g=this.game;
     p.x=a.x-p.w/2;p.y=a.y-p.h/2;p.vx=0;p.vy=0;p.hook=null;p.dashT=0;p.invuln=Math.max(p.invuln,0.8);
     g.camera.reset(p.cx,p.cy,g.camera.zoom);g.flash(0.25,'#000');g.audio.door();}
@@ -476,7 +490,7 @@ class World{
     const g=this.game,R=this.room,p=this.player;
     this.nearDoor=null;this.nearInter=null;this.nearRest=null;
     if(this.doorCd>0)this.doorCd-=dt;
-    const busy=this.bossDoorClosed||(R.waves&&this.waveIdx>=0&&!g.gs.flags[R.clearFlag]);
+    const busy=this.bossDoorClosed||this.arenaLock||(R.waves&&this.waveIdx>=0&&!g.gs.flags[R.clearFlag]);
     if(!busy&&!p.dead){
       for(let i=0;i<R.doors.length;i++){
         const d=R.doors[i];

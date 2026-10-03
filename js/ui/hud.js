@@ -101,7 +101,7 @@ class HUD{
       this.energy(g.world.player.energy/g.world.player.maxEnergy()*100);
       if(this._hp!==g.gs.hp){this._hp=g.gs.hp;this.syncHp();}
     }
-    if(g.world&&!g.world.boss)this.bossOff();
+    if(g.world&&!g.world.boss&&!(g.world.miniBoss&&g.world.miniBoss.engaged))this.bossOff();
     {const gs=g.gs,wl=this._wl||(this._wl=document.getElementById('weldLine')),wf=this._wf||(this._wf=document.getElementById('weldFill'));
       const k=clamp((gs.weld||0)/gs.weldMax(),0,1);if(this._wk!==k){this._wk=k;wf.style.width=(k*100)+'%';}
       wl.classList.toggle('ready',(gs.weld||0)>=CFG.player.healCost&&gs.hp<gs.maxHp());}

@@ -179,7 +179,7 @@ z2_stairwell:gs=>({id:'z2_stairwell',zone:'hives',name:'ЛЕСТНИЧНАЯ К�
       {x:18.6,y:12.9,w:1.4,h:2.1,to:'z2_turbine',label:'ТУРБИННЫЙ ЗАЛ'}];
     R.signs=[{x:4.2,y:30.4,keys:[],text:'КОЛОДЕЦ · ТОЛЬКО ДЛЯ МОНТАЖНИКОВ'}];
     R.checkpoint={x:2.4,y:39,h:1.7,lit:gs.cp.room==='z2_stairwell'};
-    R.enemies=gs.flags.stair_clear?[]:[{type:'censor',x:5,y:12.9,patrol:[3,8]},{type:'censor',x:15,y:12.9,patrol:[13,17]}];
+    R.enemies=gs.flags.stair_clear?[]:[{type:'censor',x:5,y:12.9,patrol:[3,8]},{type:'stamper',x:15,y:12.9,patrol:[13,17]}];
     R.clearFlag='stair_clear';
     R.enemies.push({type:'lampada',x:10,y:6,amb:true});
     R.lights=[lit(3,36,7,'#d9a441',0.7),lit(16,34,6,'#d9a441',0.6),lit(9.8,34,5,'#ffcf8a',0.55),

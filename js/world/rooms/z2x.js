@@ -16,8 +16,8 @@ z2_market:gs=>({id:'z2_market',zone:'hives',sub:'market',name:'РЫНОК ЯРУ
     R.doors=[RB.L(19,'z2_escalator','ЭСКАЛАТОР'),RB.R(R,19,'z2_school','ШКОЛА №3'),
       {x:33.2,y:16.9,w:1.4,h:2.1,to:'z2_printing',label:'?',reqFlag:'lead_market',reqMsg:'СВИНЦОВАЯ ЗАГЛУШКА'}];
     if(!gs.flags.lead_market)R.pushables.push({kind:'lead',x:32.9,y:16.6,w:2.0,h:2.4,id:'market_lead',flag:'lead_market'});
-    R.enemies.push({type:'mokrica',x:10,y:19-0.62,patrol:[4,14],amb:true},{type:'aristocrat',x:23,y:19-2.35,patrol:[16,30],amb:true},
-      {type:'aristocrat',x:53,y:19-2.35,patrol:[46,61],amb:true},{type:'lampada',x:36,y:8,amb:true});
+    R.enemies.push({type:'mokrica',x:10,y:19-0.62,patrol:[4,14],amb:true},{type:'duelist',x:23,y:19-2.35,patrol:[16,30],amb:true},
+      {type:'aristocrat',x:53,y:19-2.35,patrol:[46,61],amb:true},{type:'chandelier',x:36,y:8,amb:true});
     RB.chalk(R,60,16.4,'38 →',{s:0.42});
     R.lights=[lit(6,6,9,'#ffcf7a',0.8),lit(20,5,9,'#ffcf7a',0.85,{flicker:0.9}),lit(34,6,9,'#ffcf7a',0.8),lit(50,5,9,'#ffcf7a',0.85),
       lit(33.6,18,3,'#ffd9a0',0.6,{flicker:2}),lit(1.2,17,3,'#ffd9a0',0.4),lit(62.8,17,3,'#ffd9a0',0.4),lit(42,20.6,3,'#c8452f',0.4)];
@@ -70,7 +70,7 @@ z2_laundry:gs=>({id:'z2_laundry',zone:'hives',sub:'laundry',name:'ПРАЧЕЧН
       {x:39,y:11,w:2,h:6,kind:'steam',per:2.2,on:0.7,off:0.5}];
     R.doors=[RB.L(9.8,'z2_school','ШКОЛА'),RB.R(R,17,'z2_apartment','КВАРТИРЫ'),
       {x:22.2,y:14.9,w:1.4,h:2.1,to:'z2_atrium',link:'laundry_sc',label:'АТРИУМ',latch:'laundry_latch',latchHere:true}];
-    R.enemies.push({type:'mokrica',x:24,y:17-0.62,patrol:[20,26],amb:true},{type:'repairer',x:42,y:17-1.55,patrol:[37,46],amb:true},
+    R.enemies.push({type:'mokrica',x:24,y:17-0.62,patrol:[20,26],amb:true},{type:'mailbot',x:42,y:17-1.55,patrol:[37,46],amb:true},
       {type:'lampada',x:30,y:6,amb:true});
     R.lights=[lit(4,6,8,'#dfe8f0',0.7),lit(17.7,10,6,'#dfe8f0',0.6),lit(34.7,10,6,'#dfe8f0',0.6),lit(22.9,15.6,3,'#ffd9a0',0.6),
       lit(46.8,15.6,3,'#ffd9a0',0.4)];
@@ -117,7 +117,8 @@ z2_chapel:gs=>({id:'z2_chapel',zone:'hives',sub:'chapel',name:'ЧАСОВНЯ О
       P(28,24.6,5),P(34,22.2,5),P(28,19.8,5),P(34,17.4,5),P(28,15,5),P(34,12.6,4));
     R.doors=[RB.R(R,10.2,'z2_roofs','КРЫШИ СОТ')];
     R.clearFlag='chapel_clear';
-    if(!clear)R.enemies.push({type:'censor',variant:'elite',elite:true,eliteName:'СТАРШИЙ ЦЕНЗОР',x:18,y:27-2.05,patrol:[12,26]});
+    if(!clear)R.enemies.push({type:'censor',variant:'elite',elite:true,eliteName:'СТАРШИЙ ЦЕНЗОР',x:18,y:27-2.05,patrol:[12,26],
+      mini:{k:'ЗОНА II · ЧАСОВНЯ ОСНОВАТЕЛЕЙ',e:'ЦЕНЗОР ПЕРВОГО РАЗРЯДА',l:'«МОЛИТВЫ ТОЖЕ ПРОХОДЯТ ЦЕНЗУРУ.»',addons:['brand','parry'],prop:'stamp'}});
     else RB.salvage(R,gs,{upgrade:'plate_chapel',x:8,y:25.4,flag:'got_plate_chapel',title:'ПЛАСТИНА КУРТКИ',
       lines:['НА АЛТАРЕ, ПОД ПОКРОВОМ, — ЛАТУННАЯ ПЛАСТИНА С ГРАВИРОВКОЙ: «ЗА ВЕРНОСТЬ ЯРУСУ».','ТЕПЕРЬ ОНА ДЕРЖИТ ДАВЛЕНИЕ В КУРТКЕ ТОГО, КТО УШЁЛ С ЯРУСА.']});
     RB.lore(R,gs,17,14,27);

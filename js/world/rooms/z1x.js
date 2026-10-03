@@ -199,7 +199,7 @@ z1_boiler:gs=>({id:'z1_boiler',zone:'sump',sub:'boiler',name:'КОТЕЛЬНАЯ
       P(31,12.4,6),P(38,10.6,6),S(44.6,6,7.4,0.8,'steel'),S(40.2,16.6,1.6,2.4,'ply'));
     R.hazards=[{x:17.3,y:12,w:1.6,h:7,kind:'steam',per:2.8,on:0.9,off:0},{x:33,y:13,w:2,h:6,kind:'steam',per:2.4,on:0.8,off:1.2}];
     R.doors=[RB.L(19,'z1_hub','НАСОСНАЯ СТАНЦИЯ'),RB.R(R,19,'z1_foundry','ЛИТЕЙНЫЙ ЦЕХ'),RB.R(R,6,'z1_cache','НИША КОЧЕГАРОВ')];
-    R.enemies.push({type:'wrench',x:22,y:14.4-1.55,patrol:[20,27.5],amb:true},{type:'repairer',x:42,y:19-1.55,patrol:[36,49],amb:true},
+    R.enemies.push({type:'wrench',x:22,y:14.4-1.55,patrol:[20,27.5],amb:true},{type:'riveter',x:42,y:19-1.55,patrol:[36,49],amb:true},
       {type:'lampada',x:40,y:5,amb:true});
     R.lights=[lit(4,4,8,'#ffbe63',0.8),lit(11.5,12,7,'#ff7a4a',0.7,{flicker:0.6}),lit(24,10,8,'#ff7a4a',0.7,{flicker:0.8}),
       lit(17.4,18,4,'#e8e0d0',0.4),lit(34,18,4,'#e8e0d0',0.4),lit(41,6,7,'#ffbe63',0.7),
@@ -239,7 +239,8 @@ z1_foundry:gs=>({id:'z1_foundry',zone:'sump',sub:'foundry',name:'ЛИТЕЙНЫ�
     RB.lamp(R,6,27);RB.lore(R,gs,29,35,12);
     R.enemies.push({type:'bomber',x:23,y:27-1.55,patrol:[19,28.5],amb:true},
       {type:'bomber',x:58,y:12-1.55,patrol:[52,62],amb:true},{type:'lampada',x:46,y:18,amb:true});
-    RB.elite(R,gs,{type:'repairer',variant:'welder',x:36,y:12-1.55,patrol:[28,42],eliteName:'БРИГАДИР ЛИТЕЙКИ',eliteFlag:'elite_foundry',
+    RB.elite(R,gs,{type:'repairer',variant:'welder',x:36,y:12-1.55,patrol:[28,42],eliteName:'БРИГАДИР ЛИТЕЙКИ',
+      mini:{k:'ЗОНА I · ЛИТЕЙНЫЙ ЦЕХ',e:'СТАРШИЙ СВАРЩИК ЦЕХА',l:'«ПЛАН ПО ЛИТЬЮ ВЫПОЛНЕН НА ДВЕСТИ ЛЕТ ВПЕРЁД.»',addons:['rivet','brand'],prop:'gun'},eliteFlag:'elite_foundry',
       reward:{upgrade:'mark_long',x:38,y:12,flag:'got_mark_long',title:'ЖИРНЫЙ МЕЛ',
         lines:['В НАГРУДНОМ КАРМАНЕ БРИГАДИРА — БРУСОК ЖИРНОГО МЕЛА. ИМ РАЗМЕЧАЛИ БРАК.','ТЕПЕРЬ БРАК РАЗМЕЧАЕТ КУРЬЕР: СЛЕД РЫВКА НА ДЕТАЛИ ДЕРЖИТСЯ ДОЛЬШЕ.']}});
     R.lights=[lit(16,26,7,'#ff8a3a',1.1),lit(32,26,7,'#ff8a3a',1.1),lit(44,26,7,'#ff8a3a',1.1),
@@ -274,7 +275,7 @@ z1_canal:gs=>({id:'z1_canal',zone:'sump',sub:'drains',name:'ОТСТОЙНЫЙ �
     if(!gs.flags.lead_canal)R.pushables.push({kind:'lead',x:46.7,y:12.7,w:2.0,h:2.3,id:'canal_lead',flag:'lead_canal'});
     RB.chalk(R,50.4,11.2,'НЕБО',{s:0.48,rot:-0.12});
     R.enemies.push({type:'mokrica',x:15,y:15-0.62,patrol:[12.5,19.5],amb:true},{type:'mokrica',variant:'shell',x:44,y:15-0.95,patrol:[39,54],amb:true},
-      {type:'lampada',x:30,y:6,amb:true});
+      {type:'herald',x:30,y:6,amb:true});
     R.lights=[lit(4,4,7,'#ffbe63',0.7,{flicker:1.2}),lit(22.5,17,7,'#69d68f',1.0),lit(36,17,6,'#69d68f',1.0),
       lit(29,8,6,'#ffbe63',0.6),lit(47.6,13.6,3.4,'#ffd9a0',0.8,{flicker:2.2}),lit(54.8,13.6,3,'#8fd6ff',0.5),lit(1.2,8.6,3,'#8fd6ff',0.5)];
     R.emitters=[{type:'coolant',x:22.5,y:16.2,rate:3,sw:5},{type:'coolant',x:36,y:16.2,rate:3,sw:4},{type:'drip',x:10,y:1,rate:0.8},
