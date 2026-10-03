@@ -58,10 +58,13 @@ class HUD{
     if(this._p!==text){this.el.promptT.textContent=text;this._p=text;}
     this.el.prompt.classList.add('on');
   }
-  say(t,s){this.el.capT.textContent=t;this.el.capS.textContent=s||'';
+  say(t,s,sp){this.el.capT.textContent=t;this.el.capS.textContent=s||'';this.speaker(sp);
     this.el.cap.classList.add('on');this.capT0=3.6;}
-  caption(t,s){if(!t){this.el.cap.classList.remove('on');return;}
-    this.el.capT.textContent=t;this.el.capS.textContent=s||'';this.el.cap.classList.add('on');this.capT0=999;}
+  caption(t,s,sp){if(!t){this.el.cap.classList.remove('on');this.speaker(null);return;}
+    this.el.capT.textContent=t;this.el.capS.textContent=s||'';this.speaker(sp);this.el.cap.classList.add('on');this.capT0=999;}
+  /* портрет говорящего (js/ui/portraits.js): курьер, почтмейстер, садовник, Курьер 38, Совет */
+  speaker(sp){this.capSp=PORTRAITS[sp]?sp:null;this.el.cap.classList.toggle('sp',!!this.capSp);
+    if(this.capSp)Portraits.draw(this.el.cap.querySelector('.pt'),this.capSp,performance.now()/1000);}
   showLore(text,title){this.say(text,title||'ЦИЛИНДР ЛОРА');this.capT0=9;this.syncAbilities();}
   showAbilityCard(key,o){const ab=Object.assign({},ABILITIES[key]||{},o||{});if(!ab.name)return;const el=this.el.abc;
     el.querySelector('.k').textContent=ab.kicker||'МОДУЛЬ УСТАНОВЛЕН';
@@ -84,6 +87,7 @@ class HUD{
   show(v){this.el.hud.classList.toggle('hidden',!v);}
   update(dt){
     if(this.capT0>0){this.capT0-=dt;if(this.capT0<=0)this.el.cap.classList.remove('on');}
+    if(this.capSp&&this.el.cap.classList.contains('on'))Portraits.draw(this.el.cap.querySelector('.pt'),this.capSp,performance.now()/1000);
     if(this.cardT>0){this.cardT-=dt;if(this.cardT<=0)this.el.card.classList.remove('on');}
     if(this.abT>0){this.abT-=dt;if(this.abT<=0)this.el.abc.classList.remove('on');}
     /* цель не висит на экране. Только если игрок долго топчется без продвижения —

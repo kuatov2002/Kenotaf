@@ -58,6 +58,7 @@ class World{
     this.room.playerRef=this.player;
     for(let i=0;i<this.room.pushables.length;i++)this.pushables.push(new Pushable(this.room.pushables[i],this));
     for(let i=0;i<this.room.interactables.length;i++)this.interactables.push(new Interactable(this.room.interactables[i],this));
+    HubNPC.place(this);   /* почтмейстер и садовник — в хабе, куда переехали */
     /* обычные (amb) враги, убитые с последнего отдыха, не появляются; стражи с clearFlag — по флагу комнаты */
     const sl=this.slain[id]||{};
     for(let i=0;i<this.room.enemies.length;i++){
@@ -100,7 +101,7 @@ class World{
     if(pb.flag)g.gs.flag(pb.flag);
     this.removeSolid(pb.id);
     g.audio.gate();g.camera.addShake(0.75);g.hitstop(0.06);
-    const col=pb.kind==='grate'?'#6b4a3a':'#6a5540',n=Math.min(46,10+Math.round(pb.w*pb.h*2.4));
+    const col=pb.kind==='grate'?'#6b4a3a':pb.kind==='crack'?'#7a6a58':'#6a5540',n=Math.min(46,10+Math.round(pb.w*pb.h*2.4));
     for(let i=0;i<n;i++)g.particles.spawn({kind:'debris',x:pb.x+Math.random()*pb.w,y:pb.y+Math.random()*pb.h,
       vx:dir*(3+Math.random()*9)+(Math.random()-0.5)*3,vy:-2-Math.random()*7,g:30,life:1.1+Math.random()*0.7,
       size:0.1+Math.random()*0.2,col:col,rot:Math.random()*6,vr:(Math.random()-0.5)*14,drag:0.35});
@@ -126,6 +127,12 @@ class World{
     if(t){const k=1+0.12*t;for(const n of en.nodes){n.hp*=k;n.max*=k;}en.hp*=k;en.maxHp*=k;en.tierW=1+0.04*t;}
     if(d.elite){en.elite=true;const k=1.8;for(const n of en.nodes){n.hp*=k;n.max*=k;}en.hp*=k;en.maxHp*=k;
       en.tierW=(en.tierW||1)*1.12;en.scrapOnDeath=14;en.eliteName=d.eliteName||'ЭЛИТА';}}
+  /* мел Курьера 38: подошёл к метке — она прочитана (счёт его меток — письмо почтмейстера, финал) */
+  chalk38(){const R=this.room,p=this.player,g=this.game,gs=g.gs;if(!R.chalk||!p||p.dead)return;
+    for(let i=0;i<R.chalk.length;i++){const q=R.chalk[i];if(q.text.indexOf('38')<0)continue;
+      const k='c38c_'+R.id+'_'+i;if(gs.flags[k])continue;
+      if(Math.abs(p.cx-q.x)<3.2&&Math.abs(p.cy-q.y)<3.5){gs.flags[k]=true;gs.flags.c38_marks=(gs.flags.c38_marks||0)+1;gs.save();
+        g.hud.say('МЕЛ: «'+q.text+'»','СЛЕД КУРЬЕРА 38 · '+gs.flags.c38_marks);g.audio.tone(520,0.4,'sine',0.02,500);}}}
   /* арена мини-босса: вошёл в его участок — двери заперты, полоса, табличка; половина — ярость; разобран — открыто */
   updateMini(dt){const m=this.miniBoss,g=this.game,p=this.player;if(!m)return;
     if(m.dead){if(this.arenaLock){this.arenaLock=false;g.hud.bossOff();g.audio.door();BossStage.end(this);}this.miniBoss=null;return;}
@@ -190,6 +197,7 @@ class World{
     if(this.stage)BossStage.update(this,dt);
     this.updateMini(dt);
     this.game.trials.update(this,dt);
+    this.chalk38();
     for(let i=0;i<this.pushables.length;i++)this.pushables[i].update(dt);
     this.updateProjectiles(dt);
     updateZones(this,dt);

@@ -61,7 +61,7 @@ class Combat{
       if(pb.pushed&&pb.kind!=='counterweight')continue;
       if(!aabb(hb,pb.rect()))continue;
       if(sd==='down')pogo=true;
-      if(pb.strike(sd==='side'?f:(sd==='down'?2:-2))){hitAny=true;plain=true;continue;}
+      if(pb.strike(sd==='side'?f:(sd==='down'?2:-2),heavy)){hitAny=true;plain=true;continue;}
       hitAny=true;plain=true;g.audio.hitMetal();
       g.particles.burst(clamp(p.cx,pb.x,pb.x+pb.w),clamp(p.cy,pb.y,pb.y+pb.h),10,{kind:'spark',col:'#ffd27a',spd:5,life:0.35,size:0.05,add:true});
     }
@@ -128,6 +128,7 @@ class Combat{
           g.particles.burst(clamp(p.cx+dir*1.2,pb.x,pb.x+pb.w),clamp(p.cy,pb.y,pb.y+pb.h),12,{kind:'spark',col:'#dfe4ea',spd:5,life:0.35,size:0.05,add:true,g:12});}
       }else if((pb.kind==='crate'||pb.kind==='grate')&&!pb.pushed&&!pb.floor){
         hitAny=true;w.breakPushable(pb,dir);
+      }else if(pb.kind==='crack'&&!pb.pushed){hitAny=true;pb.strike(dir,false);
       }else if(pb.kind==='core'&&!pb.pushed){
         hitAny=true;pb.vx+=dir*11;pb.vy-=2;g.audio.hitMetal();g.camera.addShake(0.25);
         g.particles.burst(pb.x+pb.w/2,pb.y+pb.h/2,12,{kind:'spark',col:'#cfe6ee',spd:6,life:0.4,size:0.05,add:true});

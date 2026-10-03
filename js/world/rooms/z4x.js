@@ -21,6 +21,7 @@ z4_gearworks:gs=>({id:'z4_gearworks',zone:'seal',sub:'gears',name:'ЗУБЧАТ�
     R.emitters=[{type:'dust',rate:10},{type:'spark',x:20.5,y:9.4,rate:0.6},{type:'spark',x:36.5,y:4.6,rate:0.6}];
     R.extraGame=(c,L,r)=>{for(const [x,y,w] of [[10,18.6,5],[18,16.2,5],[26,13.8,5],[34,11.4,5],[42,9,6]])Kit.gear(c,x+w/2,y+1.4,1.4,16,r()*TAU,'#4a4a44');
       Kit.sign(c,51,5.6,5.2,0.85,'МАЯТНИКОВАЯ ШАХТА →','#c9a227','#191612',1101);};
+    RB.stash(R,gs,{id:'s_gears',x:53,y:9,title:'КОРОБКА СМАЗЧИКА',text:'ВЕТОШЬ, МАСЛЁНКА, ЭЛЕКТРОДЫ. НА ДНЕ ЦАРАПИНА: «ЧАСЫ СПЕШАТ НА СОРОК ОДНУ МИНУТУ».'});
   }}),
 /* Маятниковая шахта: вниз, мимо качающегося маятника. На уступе — последняя метка Курьера 38. */
 z4_pendulum:gs=>({id:'z4_pendulum',zone:'seal',sub:'pendulum',name:'МАЯТНИКОВАЯ ШАХТА',w:24,h:46,
@@ -173,6 +174,8 @@ z4_counter:gs=>({id:'z4_counter',zone:'seal',sub:'gears',name:'ПРОТИВОВ�
     R.lights=[lit(24,26,8,'#cfe6ff',0.5),lit(10,16,8,'#cfe6ff',0.5),lit(26,6,6,'#ffd9a0',0.7)];
     R.machines=[{kind:'chain',x:4,y:0.4,len:7,ph:0},{kind:'chain',x:9,y:0.4,len:6,ph:1}];
     R.extraGame=(c,L,r)=>{for(const x of [3,8])Kit.plate(c,x-1,7.6,2,2.4,'lead',(x*7)|0,{bolts:true});};
+    /* за трещиной у левой стены — заначка Курьера 38 */
+    RB.niche(R,gs,'n_counter','l',31,'lead',{c38:true,lines:["СЛОМАННЫЙ ГАЕЧНЫЙ КЛЮЧ И ЗАПИСКА.","«КОЛЕСО ТЯЖЁЛОЕ. ОДНОМУ НЕ ПОВЕРНУТЬ. ВЕРНУСЬ С КЕМ-НИБУДЬ»."]});
   }}),
 z4_vault:gs=>({id:'z4_vault',zone:'seal',sub:'pressure',name:'ХРАНИЛИЩЕ КЛЮЧЕЙ',w:22,h:12,secret:true,noCut:true,
   art:RB.art('seal','pressure',{fgd:false}),

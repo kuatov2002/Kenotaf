@@ -145,7 +145,8 @@ z3_collector:gs=>({id:'z3_collector',zone:'eden',name:'ЗАТОПЛЕННЫЙ К
     const GX=52.1,F=gs.flags;
     const gT=W=>W.anims.gardener?W.anims.gardener.t:(F.gh_beam?99:-1);
     const pose=T=>T<0?0:T<0.9?0:T<2.1?EZ.io(seg01(T,0.9,2.1)):T<2.3?1:1+EZ.io(seg01(T,2.3,3.3));
-    R.interactables.push({kind:'talk',x:GX,y:16,w:1.6,h:1.9,flag:'got_magnet',title:'САДОВНИК',ability:'magnet',
+    const gdHere=HubNPC.room(gs,'gd')==='z3_collector';
+    if(gdHere)R.interactables.push({kind:'talk',x:GX,y:16,w:1.6,h:1.9,flag:'got_magnet',title:'САДОВНИК',speaker:'gardener',ability:'magnet',
       ready:W=>gT(W)>=3.3,
       lines:['…ТРЕТЬИ СУТКИ ПОД БАЛКОЙ. СПАСИБО, КУРЬЕР.','ЧТО У ТЕБЯ В КАРМАНЕ? ПАХНЕТ… ДОЖДЁМ?',
              'ДАЙ ВЗГЛЯНУТЬ. …НЕТ. ТАКОГО ВИДА В ЭДЕМЕ НЕТ.','Я ЗНАЮ ЗДЕСЬ КАЖДЫЙ ЛИСТ. ЭТОТ РОС НЕ ПОД ЛАМПОЙ.',
@@ -158,6 +159,7 @@ z3_collector:gs=>({id:'z3_collector',zone:'eden',name:'ЗАТОПЛЕННЫЙ К
       const face=p>1.6&&pl?(pl.cx<GX?-1:1):1;
       Kit.gardener(c,GX,16,p,face,t,{boots:!F.got_magnet,reach:T<0});
       if(T<0)beamDraw(c,51.5,15.2,-0.1);}}];
+    if(!gdHere)R.npcs=[];
     R.tick=(dt,W)=>{const a=W.anims.beam;if(!a||a.done)return;const g=W.game;
       if(a.cx===undefined){a.cx=51.5;a.cy=15.2;a.r=-0.1;a.vx=a.dir*4.6;a.vy=-7.5;a.vr=a.dir*3.6;}
       a.vy+=40*dt;a.cx+=a.vx*dt;a.cy+=a.vy*dt;a.r+=a.vr*dt;

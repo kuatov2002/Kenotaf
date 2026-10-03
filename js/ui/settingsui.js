@@ -81,11 +81,16 @@ class ArchiveUI{
       b.textContent=has?('№'+id+' · '+LORE[id].title):('№'+id+' · · ·');
       b.onclick=()=>this.show(+b.dataset.arch);
       if(has)this.ids.push(id);list.appendChild(b);}
+    const ph=Object.keys(PHONO).filter(k=>gs.flags['ph_'+k]);
+    if(ph.length){const h=document.createElement('div');h.className='archsep';h.textContent='ФОНОГРАММЫ МЕХАНИЗМОВ · '+ph.length+' / '+Object.keys(PHONO).length;list.appendChild(h);
+      for(const k of ph){const b=document.createElement('div');b.className='btn arc';b.dataset.arch=String(this.ids.length);
+        b.textContent='◦ '+PHONO[k].n;b.onclick=()=>this.show(+b.dataset.arch);this.ids.push('ph:'+k);list.appendChild(b);}}
     document.getElementById('archInfo').textContent='ЦИЛИНДРЫ · '+(gs.lore||0)+' / '+ids.length;
     this.el.classList.remove('hidden');document.getElementById('pause').classList.add('hidden');
     this.show(0);}
   show(i){const id=this.ids&&this.ids[i],t=document.getElementById('archText');
     if(id===undefined){t.innerHTML='<p class="em">ЦИЛИНДРОВ ПОКА НЕТ. ИЩИ ЛАТУННЫЕ ФОНОГРАММЫ С ГОЛУБЫМ СВЕЧЕНИЕМ.</p>';return;}
+    if(typeof id==='string'){const P=PHONO[id.slice(3)];t.innerHTML='<div class="at">ПОСЛЕДНЯЯ ФОНОГРАММА · '+P.n+'</div><p>'+P.t+'</p>';return;}
     const L=LORE[id];t.innerHTML='<div class="at">№'+id+' · '+L.title+'</div><p>'+L.text+'</p>'+(L.where?'<div class="aw">'+L.where+'</div>':'');}
   close(){this.el.classList.add('hidden');document.getElementById('pause').classList.remove('hidden');}
 }

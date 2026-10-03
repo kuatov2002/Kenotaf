@@ -416,6 +416,7 @@ z1_arena:gs=>({id:'z1_arena',zone:'sump',name:'РЕМОНТНАЯ АРЕНА',w:
     };
     R.extraMid=(c,L,r)=>{Kit.pumpUnit(c,6,L.h*0.86,1.6,{seed:51,tag:'ПР-3'});
       Kit.pumpUnit(c,26,L.h*0.86,1.6,{seed:53,tag:'ПР-4'});};
+    RB.stash(R,gs,{id:'s_arena',x:20.4,y:14.4,title:'ЯЩИК РЕМОНТНИКА',text:'ЗАПАСНЫЕ ЭЛЕКТРОДЫ. ПОД НИМИ — ГРАФИК ДЕЖУРСТВ, ГДЕ ВСЕ ФАМИЛИИ ЗАЧЁРКНУТЫ, КРОМЕ ОДНОЙ.'});
   }}),
 z1_safe:gs=>({id:'z1_safe',zone:'sump',name:'СЕЙФ-КОМНАТА',w:22,h:14,
   art:{bg:Art.bgSump,mid:Art.midSump,game:Art.gameSump},

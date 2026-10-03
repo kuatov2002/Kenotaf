@@ -31,6 +31,17 @@ const RB={
     R.solids.push(S(x,y,w,h,'ply',{dyn:true,pid:id}));R.pushables.push({kind:'crate',x,y,w,h,id,flag:f});},
   grate(R,gs,id,x,y,w,h,flag,floor){const f=flag||('grate_'+id);if(gs.flags[f])return;
     R.solids.push(S(x,y,w,h,'steel',{dyn:true,pid:id}));R.pushables.push({kind:'grate',x,y,w,h,id,hp:3,flag:f,floor:!!floor});},
+  /* ложная стена: трещина, сквозняк из щели, глухой звук под ключом; три удара (тяжёлый — один), импульс — тоже удар */
+  crack(R,gs,id,x,y,w,h,mat){const f='crack_'+id;if(gs.flags[f])return;
+    R.solids.push(S(x,y,w,h,mat||'concrete',{dyn:true,pid:id}));R.pushables.push({kind:'crack',x,y,w,h,id,hp:3,flag:f,mat:mat||'concrete'});},
+  /* ниша у стены на уровне пола: полка сверху, ложная стена спереди, заначка внутри.
+     side 'l' / 'r' — у левой / правой стены; fy — пол под нишей */
+  niche(R,gs,id,side,fy,mat,stash){const x0=side==='l'?0:R.w-2.8;
+    R.solids.push(S(x0,fy-2.7,2.8,0.4,mat));
+    RB.crack(R,gs,id,side==='l'?2.4:R.w-2.8,fy-2.3,0.4,2.3,mat);
+    RB.stash(R,gs,Object.assign({id,x:side==='l'?1.2:R.w-1.2,y:fy},stash));},
+  /* заначка: шов ремонта и чья-то жизнь; c38 — заначка Курьера 38 (его метка) */
+  stash(R,gs,o){if(!gs.flags['stash_'+o.id])R.interactables.push(Object.assign({kind:'stash',w:1.4,h:1.4},o));},
   /* мелом на стене: метки Курьера 38 — нить, по которой идёт игрок */
   chalk(R,x,y,text,o){(R.chalk=R.chalk||[]).push(Object.assign({x,y,text},o||{}));},
   /* подзона: язык зоны + её вариант (свет, дымка, фон, декор) */

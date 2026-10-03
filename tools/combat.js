@@ -367,6 +367,57 @@ S.pack_modules=`const g=game,gs=g.gs,R={};
     R.feltNoise<0.45&&R.noise>0.45&&!R.reach[0]&&R.reach[1]&&R.weldHit===0&&R.weldInt>0&&R.ram>0&&R.ui.worn===1&&R.ui.slot===1;
   return {ok,info:R};`;
 
+/* ТАЙНИКИ: ложная стена — три удара (тяжёлый — один, импульс — удар); за ней заначка (шов ремонта);
+   мел и заначки 38 считаются; его последний цилиндр у колеса ставит c38_met */
+S.secrets=`const g=game,gs=g.gs,R={};
+  LAB.setup('z1_cache',3,8-1.68,['pulse','dash']);let W=g.world;const p=LAB.p();LAB.step(5);
+  let pb=W.pushables.find(q=>q.kind==='crack');R.crack=!!pb;p.x=pb.x-1.0;p.face=1;p.y=8-1.68;
+  const solid=()=>W.room.solids.some(s=>s.pid===pb.id&&!s.hidden);R.solid0=solid();
+  for(let i=0;i<3;i++){g.combat.melee(p,'side',{});LAB.step(40);}R.broken=pb.pushed&&!solid()&&!!gs.flags[pb.flag];
+  const st=W.interactables.find(i=>i.def.kind==='stash');gs.weld=0;st.use(g);R.weld=gs.weld;R.stash=!!gs.flags['stash_'+st.def.id];
+  /* тяжёлый удар — с одного раза; импульс — тоже удар */
+  LAB.setup('z2_censor',3,21-1.68,['pulse','dash']);W=g.world;LAB.step(5);pb=W.pushables.find(q=>q.kind==='crack');
+  p.x=pb.x+pb.w+0.3;p.face=-1;p.y=21-1.68;g.combat.melee(p,'side',{heavy:true});R.heavy=pb.pushed;
+  LAB.setup('z3_apiary',3,24-1.68,['pulse','dash']);W=g.world;LAB.step(5);pb=W.pushables.find(q=>q.kind==='crack');
+  const P2=LAB.p();P2.x=pb.x+pb.w+0.3;P2.face=-1;P2.y=24-1.68;const hp0=pb.hp;g.combat.pulse(P2);R.pulse=hp0-pb.hp;
+  /* мел 38: подошёл — прочитан */
+  LAB.setup('z1_gallery',45,13-1.68,['pulse','dash']);W=g.world;gs.flags.c38_marks=0;const P3=LAB.p();P3.x=48.8;LAB.step(20);R.chalk=gs.flags.c38_marks;
+  /* заначка 38 — тоже метка */
+  LAB.setup('z1_foundry',60,27-1.68,['pulse','dash'],['crack_n_foundry']);W=g.world;const s38=W.interactables.find(i=>i.def.kind==='stash');
+  s38.use(g);let n=0;while(g.cinematic.active&&n<3000){g.cinematic.update(1/60);n++;}R.stash38=gs.flags.c38_marks;
+  /* у колеса */
+  LAB.setup('z5_boss',3,30-1.68,['pulse','dash'],['archivist_dead']);W=g.world;const c=W.interactables.find(i=>i.def.kind==='c38');
+  c.use(g);n=0;while(g.cinematic.active&&n<4000){g.cinematic.update(1/60);n++;}R.met=!!gs.flags.c38_met;
+  return {ok:R.crack&&R.solid0&&R.broken&&R.weld>=50&&R.stash&&R.heavy&&R.pulse===1&&R.chalk===1&&R.stash38===1&&R.met,info:R};`;
+
+/* ПОЧТМЕЙСТЕР И САДОВНИК: переезжают в хабы по ходу игры, говорят о находках и подсказывают; в реплике — портрет */
+S.hub_npcs=`const g=game,gs=g.gs,R={};
+  const kinds=()=>g.world.interactables.filter(i=>i.def.kind==='hubtalk').map(i=>i.def.who).join('+');
+  const inPost=()=>g.world.interactables.some(i=>i.def.kind==='postmaster');
+  LAB.setup('z2_post',38,20-1.68,['pulse','dash']);R.post0=inPost();
+  LAB.setup('z3_greenhouse',8,30-1.68,['pulse','dash'],['post_on','got_magnet','gard_moved']);gs.visited.z3_greenhouse=true;g.world.load('z3_greenhouse',8,30-1.68);R.green=kinds();
+  g.world.load('z2_post',38,20-1.68);R.post1=inPost();
+  gs.bosses.uprooter=true;gs.visited.z4_antechamber=true;g.world.load('z4_antechamber',3,24-1.68);R.ante=kinds();
+  gs.bosses.regulator=true;gs.visited.z5_hall=true;g.world.load('z5_hall',3,21-1.68);R.hall=kinds();
+  const t=g.world.interactables.find(i=>i.def.kind==='hubtalk'&&i.def.who==='gd');gs.flags.c38_marks=4;t.use(g);
+  R.lines=g.cinematic.def.lines.length;R.portrait=document.getElementById('caption').classList.contains('sp');
+  let n=0;while(g.cinematic.active&&n<4000){g.cinematic.update(1/60);n++;}
+  /* садовник остаётся в коллекторе, пока курьер не ушёл оттуда */
+  LAB.setup('z3_collector',3,16-1.68,['pulse','dash','magnet'],['got_magnet','gh_beam']);R.coll=g.world.interactables.some(i=>i.def.kind==='talk');
+  return {ok:R.post0&&R.green==='pm+gd'&&!R.post1&&R.ante==='pm+gd'&&R.hall==='pm+gd'&&R.lines>=3&&R.portrait&&R.coll,info:R};`;
+
+/* ПРИСЛУШАТЬСЯ: разобранный механизм оставляет валик; E — строка, флаг, запись в архиве; второй такой же — без валика */
+S.listen=`const g=game,gs=g.gs,R={};
+  LAB.setup('z1_start',34,11-1.68,['pulse','dash']);const W=g.world,p=LAB.p();
+  const e=LAB.e(LAB.spawn('repairer',37,11-1.55));e.die({dir:1});LAB.step(10);
+  const ph=W.interactables.find(i=>i.def.kind==='phono');R.drop=!!ph&&ph.def.key==='repairer';R.floor=ph?+ph.y.toFixed(1):null;
+  ph.use(g);R.flag=!!gs.flags.ph_repairer;R.cap=document.querySelector('#caption .s').textContent;
+  const e2=LAB.e(LAB.spawn('repairer',38,11-1.55));e2.die({dir:1});R.again=W.interactables.some(i=>i.def.kind==='phono');
+  const v=LAB.e(LAB.spawn('stamper',36,11-2.05));v.die({dir:1});R.variant=(W.interactables.find(i=>i.def.kind==='phono')||{def:{}}).def.key;
+  g.state='play';g.togglePause();g.archiveUI.open();R.arch=[...document.querySelectorAll('#archList .btn')].some(b=>b.textContent.indexOf('РЕМОНТНИК')>=0);
+  g.archiveUI.close();g.togglePause();
+  return {ok:R.drop&&R.floor===11&&R.flag&&R.cap.indexOf('ФОНОГРАММА')>=0&&!R.again&&R.variant==='stamper'&&R.arch,info:R};`;
+
 S.heat_gain=`${PRE()}game.gs.heat=0;
   const e=LAB.e(LAB.spawn('repairer',35.4,11-1.55));e.cd=0;
   LAB.until("e.state==='wind'&&e.nodes[0].teleHot",600);game.world.player.face=1;LAB.step(1,[],{0:['pulse']});LAB.step(2);

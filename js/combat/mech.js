@@ -239,6 +239,7 @@ class Mech extends Enemy{
     W.scrap.spawn(this.cx,this.cy,this.scrapOnDeath||3,dir);
     g.fx.kill(this.cx,this.cy,this.bodyMat,this.isBoss);
     this.onDeath(h);
+    dropPhono(W,this);   /* последняя фонограмма: латунный валик у корпуса (js/world/phono.js) */
     if(this.elite&&!this.isBoss)W.onEliteDown(this);
     W.checkClear();
   }

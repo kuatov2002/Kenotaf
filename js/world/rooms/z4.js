@@ -161,5 +161,6 @@ z4_exam_c:gs=>({id:'z4_exam_c',zone:'seal',name:'ЭКЗАМЕН C · ЗАЛ АР
       Kit.pipe(c,[[0,1.6],[42,1.6]],0.26,'lead',{seed:1011,rustN:0});
       for(let i=0;i<10;i++)Kit.bolt(c,2+i*4,17.1,0.08);
     };
+    R.pushables=R.pushables||[];RB.niche(R,gs,'n_examc','r',17,'lead',{title:'ШПАРГАЛКА',text:'«ПЕРИОД — ДВА ПИ НА КОРЕНЬ ИЗ L НА G. НЕ ЗАБЫТЬ: Я — НЕ МАЯТНИК».'});
   }}),
 });

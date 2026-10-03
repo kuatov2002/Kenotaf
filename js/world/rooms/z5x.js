@@ -49,6 +49,8 @@ z5_stacks:gs=>({id:'z5_stacks',zone:'archive',sub:'stacks',name:'ХРАНИЛИ�
     R.lights=[lit(15,40,8,'#ffcf8a',0.6),lit(9,32,7,'#ffcf8a',0.6),lit(14,24,6,'#ffcf8a',0.5),lit(8,15,6,'#ffcf8a',0.6),lit(26,10,6,'#ffcf8a',0.6)];
     R.emitters=[{type:'dust',rate:12}];
     R.extraGame=(c,L,r)=>{for(const m of R.magnetRects){Kit.craneGirder(c,m.x,m.y-1.2,m.w,1.2);Kit.magnetRivets(c,m.x,m.y,m.w);}};
+    /* за трещиной внизу у правой стены — заначка Курьера 38 */
+    RB.niche(R,gs,'n_stacks','r',43,'ply',{c38:true,lines:["ПУСТОЙ КОНВЕРТ. АДРЕС: «ЯРУС −41. КОМУ-НИБУДЬ».","ВНУТРИ ПАХНЕТ ЛИСТОМ."]});
   }}),
 z5_reading:gs=>({id:'z5_reading',zone:'archive',sub:'reading',name:'ЧИТАЛЬНЫЙ ЗАЛ',w:54,h:22,
   art:RB.art('archive','reading'),
@@ -67,6 +69,7 @@ z5_reading:gs=>({id:'z5_reading',zone:'archive',sub:'reading',name:'ЧИТАЛЬ
     R.emitters=[{type:'dust',rate:10}];
     R.extraGame=(c,L,r)=>{for(const m of R.magnetRects){Kit.craneGirder(c,m.x,m.y-1.2,m.w,1.2);Kit.magnetRivets(c,m.x,m.y,m.w);}
       for(const x of [10,42]){c.fillStyle='#2f6b44';c.beginPath();c.moveTo(x+1.5,17.0);c.lineTo(x+2.5,17.0);c.lineTo(x+2.3,16.7);c.lineTo(x+1.7,16.7);c.closePath();c.fill();}};
+    RB.stash(R,gs,{id:'s_reading',x:13,y:4.6,title:'НА БАЛКЕ',text:'ПОДУШКА И КНИГА БЕЗ ОБЛОЖКИ. ЗДЕСЬ ЧИТАЛИ ТО, ЧТО НЕЛЬЗЯ.'});
   }}),
 /* Зал Совета: семь кресел, на каждом — фонограф. Пластинки записаны двести лет назад. */
 z5_council:gs=>({id:'z5_council',zone:'archive',sub:'council',name:'ЗАЛ СОВЕТА',w:46,h:28,
@@ -76,7 +79,7 @@ z5_council:gs=>({id:'z5_council',zone:'archive',sub:'council',name:'ЗАЛ СО�
     R.solids.push(S(0,25,46,3,'marble'),S(17,22.6,12,2.4,'marble'),P(8,20.2,6),P(32,20.2,6));
     R.doors=[RB.L(25,'z5_reading','ЧИТАЛЬНЫЙ ЗАЛ'),RB.R(R,25,'z5_crypt','СКЛЕП ОСНОВАТЕЛЕЙ')];
     RB.lore(R,gs,11,23,22.6);
-    R.interactables.push({kind:'talk',x:20,y:22.6,w:2,h:1.8,flag:'council_heard',title:'СЕМЬ ФОНОГРАФОВ',again:['ИГЛЫ СТОЯТ НА ПОСЛЕДНЕЙ ДОРОЖКЕ. ЗАСЕДАНИЕ — ЧЕРЕЗ МЕСЯЦ.'],
+    R.interactables.push({kind:'talk',x:20,y:22.6,w:2,h:1.8,flag:'council_heard',title:'СЕМЬ ФОНОГРАФОВ',speaker:'council',again:['ИГЛЫ СТОЯТ НА ПОСЛЕДНЕЙ ДОРОЖКЕ. ЗАСЕДАНИЕ — ЧЕРЕЗ МЕСЯЦ.'],
       lines:['ПОД КАЖДЫМ КРЕСЛОМ — ФОНОГРАФ. ИГЛЫ ОПУЩЕНЫ. КУРЬЕР ТРОГАЕТ РЫЧАГ.',
         'ГОЛОС ПЕРВЫЙ: «ПРОТИВ». ВТОРОЙ: «ПРОТИВ». ТРЕТИЙ, ЧЕТВЁРТЫЙ, ПЯТЫЙ: «ПРОТИВ».',
         'ШЕСТОЙ: «ПРОТИВ». СЕДЬМОЙ — ДОЛГОЕ ШИПЕНИЕ, ПОТОМ: «ПРОТИВ».',
@@ -141,6 +144,8 @@ z5_boss:gs=>({id:'z5_boss',zone:'archive',sub:'council',name:'ЗАЛ ПЕЧАТ�
       R.hazards=[4,10,16,30,36,42].map(x=>({x:x,y:27.8,w:2.6,h:2.2,kind:'steam',ctl:'arch'}))
         .concat([19.2,25.2].map(x=>({x:x,y:17.8,w:5.6,h:3.8,kind:'steam',ctl:'arch3'})));}
     if(dead&&!done)R.interactables.push({kind:'wheel',x:25,y:21.6,label:'КОЛЕСО ПЕЧАТИ',flag:'wheel_turned'});
+    /* Курьер 38 у станины колеса: дошёл, держал, не докрутил. Его цилиндр — в фонографе на коленях */
+    if(dead)R.interactables.push({kind:'c38',x:29.8,y:21.6,w:1.8,h:1.8});
     R.machines=[{kind:'sealwheel',x:25,y:15.2,r:4.2,turned:done},{kind:'archivist',x:25,y:8,alive:dead}];
     R.lights=[lit(25,15,14,done?'#fff6dd':'#a09070',done?1.3:0.7),lit(7,10,9,'#ffcf8a',0.5),lit(43,10,9,'#ffcf8a',0.5),lit(25,28,12,'#ffd9a0',0.4),
       lit(7,24.6,4,'#ffcf8a',0.4),lit(43,24.6,4,'#ffcf8a',0.4)];
@@ -182,5 +187,6 @@ z5_private:gs=>({id:'z5_private',zone:'archive',sub:'reading',name:'ЛИЧНЫЙ
     R.lights=[lit(11,3,8,'#ffcf8a',0.9)];
     R.extraGame=(c,L,r)=>{for(let i=0;i<40;i++){c.fillStyle='#d8cdb6';c.save();c.translate(2+r()*18,10.9-r()*0.3);c.rotate((r()-0.5)*0.8);c.fillRect(-0.15,-0.1,0.3,0.2);c.restore();}
       c.fillStyle='#3a2a1a';c.fillRect(12,7.6,5,3.4);c.fillStyle='#7a2a1c';c.fillRect(12.4,8,4.2,1.6);};
+    RB.niche(R,gs,'n_private','l',11,'ply',{title:'ПЕЧАТЬ ОСНОВАТЕЛЯ',text:'ЗАВЁРНУТА В ЧЕРНОВИК ЗАВЕТА. «НЕ ОТКРЫВАТЬ» ЗАЧЁРКНУТО. СВЕРХУ: «НЕ ЗАБЫВАТЬ».'});
   }})
 });

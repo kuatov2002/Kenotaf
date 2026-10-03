@@ -342,7 +342,8 @@ z2_post:gs=>({id:'z2_post',zone:'hives',name:'ГЛАВПОЧТАМТ · СОРТ
     R.hazards=[{x:8,y:23.6,w:28,h:1.4,kind:'pit',back:{x:37.4,y:18.32}}];
     R.doors=[{x:46.8,y:17.9,w:1.2,h:2.1,to:'z2_atrium',label:'АТРИУМ'}];
     R.checkpoint={x:38.2,y:20,h:1.7,lit:gs.cp.room==='z2_post'};
-    R.interactables=[{kind:'postmaster',x:41.6,y:20,w:2.4,h:2.4},
+    const pmHere=HubNPC.room(gs,'pm')==='z2_post';
+    R.interactables=[...(pmHere?[{kind:'postmaster',x:41.6,y:20,w:2.4,h:2.4}]:[]),
       /* главный клапан — у конторки: почтмейстер открывает его при первой встрече (или курьер — сам) */
       {kind:'valve',post:true,x:44.8,y:20,label:'ГЛАВНЫЙ КЛАПАН ПНЕВМОСЕТИ',flag:'post_on'},
       {kind:'station',station:'post',x:36.9,y:20,tubeTop:0.4}];
@@ -358,7 +359,7 @@ z2_post:gs=>({id:'z2_post',zone:'hives',name:'ГЛАВПОЧТАМТ · СОРТ
           c.fillStyle='rgba(255,255,255,.35)';c.fillRect(x-0.11,y-0.26,0.05,0.52);}}
         else{const y=6+((i*37)%9);c.fillStyle='#7d6120';rr(c,x-0.17,y-0.32,0.34,0.64,0.13);c.fill();}}
     };
-    R.npcs=[{bounds:()=>({x:39.2,y:15.6,w:4.8,h:4.6}),draw:(c,t)=>{
+    if(pmHere)R.npcs=[{bounds:()=>({x:39.2,y:15.6,w:4.8,h:4.6}),draw:(c,t)=>{
       const W=game.world,p=W.player,near=p&&Math.abs(p.cx-41.6)<4.5;
       drawPostmaster(c,41.6,18.8,t,near?(p.cx<41.6?-1:1):0);}}];
     R.extraGame=(c,L,r)=>{
@@ -400,6 +401,8 @@ z2_post:gs=>({id:'z2_post',zone:'hives',name:'ГЛАВПОЧТАМТ · СОРТ
       for(const m of R.magnetRects){Kit.plate(c,m.x,m.y,m.w,m.h,'steel',1206,{rust:0.3,boltStep:0.9});
         Kit.magnetRivets(c,m.x,m.y+m.h-0.5,m.w);}
     };
+    /* левая площадка: туда — только по магнитной траверсе */
+    RB.stash(R,gs,{id:'s_post',x:3,y:16,title:'КАПСУЛА БЕЗ АДРЕСА',text:'ЛЕДЕНЕЦ В ФАНТИКЕ: «ПОЧТМЕЙСТЕРУ — ОТ ДЕТЕЙ ЯРУСА −38».'});
   }})
 });
 /* ============================== КВАРТИРА 14-Б ============================== */

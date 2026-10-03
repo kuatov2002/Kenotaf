@@ -135,6 +135,7 @@ class Game{
       if(this.world.room)document.getElementById('pauseInfo').textContent=
         ZONES[this.world.room.zone].name+' · '+this.world.room.name;
       document.getElementById('journal').innerHTML=journalHTML(this.gs);
+      Portraits.draw(document.getElementById('jpt'),'courier',performance.now()/1000);
       document.getElementById('btnUnstuck').classList.toggle('dim',!this.world.canUnstuck());
       if(!this.mapCv){this.mapCv=document.getElementById('mapcv');
         this.mapCv.addEventListener('click',()=>{this.map.whole=!this.map.whole;this.map.render(this.mapCv);});}

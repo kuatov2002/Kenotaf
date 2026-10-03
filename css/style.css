@@ -84,6 +84,12 @@ canvas#game{position:absolute;inset:0;width:100%;height:100%;display:block;backg
 .maplegend .lg-q{color:#e8c96a;width:auto;font-weight:600}.maplegend .lg-el{border-top:2px dashed #8fd6ff;height:0;width:14px}
 .pside .btns{margin-top:18px}.pside .btn{min-width:0;width:100%}
 .pside #journal{margin:0 0 4px;max-width:none}
+/* портреты: в реплике — слева от текста; в записях курьера — его портрет */
+#caption .pt{display:none;position:absolute;left:-118px;top:50%;width:104px;height:104px;transform:translateY(-50%);filter:drop-shadow(0 4px 10px #000)}
+#caption.sp .pt{display:block}
+.jhead{display:flex;gap:14px;align-items:flex-start}
+.jhead #jpt{width:72px;height:72px;flex:0 0 72px;filter:drop-shadow(0 3px 8px #000)}
+@media (max-width:900px){#caption .pt{position:static;transform:none;width:64px;height:64px;margin:0 auto 6px}}
 @media (max-width:900px){.pausegrid{grid-template-columns:1fr}}
 #journal{margin:14px auto 4px;max-width:min(560px,86vw);text-align:left;border-left:2px solid rgba(232,201,106,.55);padding:6px 0 6px 14px}
 #journal .jh{font-size:10px;letter-spacing:.4em;color:#c9a227;margin-bottom:8px}
@@ -197,6 +203,7 @@ kbd.kc{min-width:30px;height:30px;padding:0 8px;display:inline-grid;place-items:
 .archlist{display:flex;flex-direction:column;gap:5px;max-height:62vh;overflow-y:auto;padding-right:6px}
 .btn.arc{min-width:0;width:100%;text-align:left;padding:8px 26px;font-size:11px;letter-spacing:.16em}
 .btn.arc.dim{opacity:.28}
+.archsep{margin:12px 0 4px;font-size:10px;letter-spacing:.36em;color:#9fe0ff;opacity:.8}
 .archtext{border-left:2px solid rgba(159,224,255,.45);padding:6px 0 6px 18px;min-height:160px}
 /* стенд: табло времени */
 #trialhud{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:2px;pointer-events:none;

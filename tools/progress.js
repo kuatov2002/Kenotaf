@@ -84,6 +84,7 @@ async function solve(ws,opts){
         else if(it.kind==='lever'||it.kind==='gauge'||it.kind==='valve'){setFlag(it.flag,'flag '+it.flag+' ('+tag+')');
           if(st.flags.valve_l&&st.flags.valve_r)setFlag('turbines_on','flag turbines_on');
           if(st.flags.gaugeA&&st.flags.gaugeB&&st.flags.gaugeC)setFlag('seal_gauges','flag seal_gauges (три магистрали)');}
+        else if(it.kind==='stash'&&it.id)setFlag('stash_'+it.id,'  заначка '+it.id+' ('+room+')');
         else if(it.kind==='wheel'){setFlag(it.flag,'КОЛЕСО ПЕЧАТИ ('+tag+')');setFlag('wheel_open','wheel_open');ending=true;}
       }
       /* цели импульса / удара */
@@ -92,7 +93,7 @@ async function solve(ws,opts){
       let cores=0;
       for(const pb of info.push){
         if(!reached.has(pb.id))continue;
-        if(pb.kind==='grate'){if(pb.flag)setFlag(pb.flag,'flag '+pb.flag+' (удар)');continue;}
+        if(pb.kind==='grate'||pb.kind==='crack'){if(pb.flag)setFlag(pb.flag,'flag '+pb.flag+' (удар)');continue;}
         if(!hasPulse)continue;
         if(pb.kind==='counterweight')setFlag('blast_open','flag blast_open (импульс)');
         else if(pb.kind==='beam')setFlag('gh_beam','flag gh_beam (импульс по балке)');
@@ -147,6 +148,11 @@ async function solve(ws,opts){
     console.log('\n=== '+(deny.length?'БЕЗ '+deny.join(', ').toUpperCase():'ПОЛНЫЙ ПРОГОН')+' ===');
     full.events.forEach(e=>console.log('  '+e));
     console.log('способности: '+full.ab.join(', ')+'   цилиндров: '+full.lore+'/30');
+    /* заначки: каждая достижима (за ложной стеной — после удара по ней) */
+    const allStash=await ws[0].page.evaluate(()=>{const o=[];for(const id in ROOMDEFS){if(id==='__lab')continue;try{const R=new Room(ROOMDEFS[id],game.gs);for(const d of R.interactables)if(d.kind==='stash')o.push(d.id);}catch(e){}}return o;});
+    const lost=allStash.filter(k=>!full.flags['stash_'+k]);
+    console.log('заначек: '+(allStash.length-lost.length)+'/'+allStash.length+(lost.length?'  НЕ ДОСТИЧЬ: '+lost.join(', '):''));
+    if(!deny.length&&lost.length)bad++;
     console.log('комнат достигнуто: '+full.visited.length+'   финал: '+(full.ending?'ДОСТИЖИМ':'недостижим'));
     if(full.warn.length)console.log('ПРЕДУПРЕЖДЕНИЯ:\n  '+[...new Set(full.warn)].join('\n  '));
     const tk=Object.keys(full.traps);

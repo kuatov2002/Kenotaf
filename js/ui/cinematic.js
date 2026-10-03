@@ -19,7 +19,7 @@ class Cinematic{
     const g=this.game,d=this.def,lines=d.lines||[];
     this.li++;this.age=0;
     if(this.li<lines.length){
-      g.hud.caption(lines[this.li],d.title||'');g.audio.tone(320+this.li*60,0.3,'sine',0.03,420);
+      g.hud.caption(lines[this.li],d.title||'',d.speaker);g.audio.tone(320+this.li*60,0.3,'sine',0.03,420);
       this.lt=this.lineDur(lines[this.li]);return;}
     this.phase='out';this.lt=0.8;
     g.hud.caption('','');document.getElementById('caption').classList.remove('skip');

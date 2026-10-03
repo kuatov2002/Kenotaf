@@ -6,7 +6,10 @@ class Interactable{
   canUse(gs){const d=this.def;
     if(d.kind==='salvage'||d.kind==='lever'||d.kind==='valve'||d.kind==='gauge'||d.kind==='wheel'||d.kind==='mapplate')return !gs.flags[d.flag];
     if(d.kind==='lore')return !gs.loreIds[d.loreId];
-    if(d.kind==='station'||d.kind==='postmaster'||d.kind==='trialbell')return true;
+    if(d.kind==='stash')return !gs.flags['stash_'+d.id];
+    if(d.kind==='c38')return !gs.flags.c38_met;
+    if(d.kind==='phono')return !gs.flags['ph_'+d.key];
+    if(d.kind==='station'||d.kind==='postmaster'||d.kind==='trialbell'||d.kind==='hubtalk')return true;
     if(d.kind==='trialpost')return !this.world.game.trials.run;
     if(d.kind==='broadcast')return !gs.flags.broadcast_done;
     if(d.kind==='talk'){if(gs.flags[d.flag]&&!d.again)return false;return d.ready?d.ready(this.world):true;}
@@ -18,6 +21,8 @@ class Interactable{
   prompt(){const d=this.def;
     if(d.kind==='salvage'||d.kind==='salvageBlocked')return 'САЛЬВАЖ · '+d.title;
     if(d.kind==='lore')return 'ИЗВЛЕЧЬ ЦИЛИНДР';
+    if(d.kind==='stash')return d.c38?'ЗАНАЧКА · МЕТКА 38':'ЗАНАЧКА';
+    if(d.kind==='c38')return 'ПРИСЛУШАТЬСЯ · КУРЬЕР 38';
     if(d.kind==='talk')return 'ГОВОРИТЬ · '+d.title;
     if(d.kind==='wheel')return 'ВРАЩАТЬ КОЛЕСО ПЕЧАТИ';
     if(d.kind==='mapplate')return 'СВЕРИТЬ ПЛАНШЕТ · '+d.title;
@@ -25,6 +30,8 @@ class Interactable{
       return 'ПНЕВМОПОЧТА · '+(pend||(STATIONS[d.station]?STATIONS[d.station].name+' · ПЕРЕЕЗД':''));}
     if(d.kind==='postmaster')return 'ГОВОРИТЬ · ПОЧТМЕЙСТЕР';
     if(d.kind==='trialpost')return 'СТЕНД · СТАРТ';
+    if(d.kind==='phono')return 'ПРИСЛУШАТЬСЯ · '+d.name;
+    if(d.kind==='hubtalk')return 'ГОВОРИТЬ · '+(d.who==='pm'?'ПОЧТМЕЙСТЕР':'САДОВНИК');
     if(d.kind==='trialbell')return 'ЗВОНОК · РЕКОРД';
     if(d.kind==='broadcast')return 'ВЕЩАТЬ НА ВСЕ ЯРУСЫ';
     return d.label||'ОСМОТРЕТЬ';}
@@ -66,7 +73,25 @@ class Interactable{
           'ВНИЗУ, НА ЯРУСЕ −41, КТО-ТО ВЫКЛЮЧАЕТ НАСОС И ПРИСЛУШИВАЕТСЯ.']});
     }else if(d.kind==='postmaster'){
       const sc=postmasterScene(gs);
-      game.cinematic.play({x:this.x,y:this.y,title:'ПОЧТМЕЙСТЕР',lines:sc.lines,upgrades:sc.upgrades,setFlags:sc.flags});
+      game.cinematic.play({x:this.x,y:this.y,title:'ПОЧТМЕЙСТЕР',speaker:'postmaster',lines:sc.lines,upgrades:sc.upgrades,setFlags:sc.flags});
+    }else if(d.kind==='stash'){
+      /* заначка: шов ремонта (полный) и след чужой жизни; заначки 38 — ещё и его метка */
+      gs.flags['stash_'+d.id]=true;game.combat.gainWeld(CFG.player.healCost);game.audio.pickup();game.hud.syncHp&&game.hud.syncHp();
+      game.particles.burst(this.x,this.y-0.5,14,{kind:'spark',col:'#ffe6a3',spd:3,life:0.5,size:0.04,add:true,g:6});
+      if(d.c38){gs.flags.c38_marks=(gs.flags.c38_marks||0)+1;
+        game.cinematic.play({x:this.x,y:this.y,title:'ЗАНАЧКА КУРЬЕРА 38',speaker:'c38',lines:d.lines});}
+      else game.hud.say(d.text||'',(d.title||'ЗАНАЧКА')+' · ШОВ РЕМОНТА');
+      gs.save();w.interactables=w.interactables.filter(i=>i!==this);
+    }else if(d.kind==='c38'){
+      /* у колеса: курьерская сумка №38 и цилиндр в фонографе — его последняя запись */
+      game.cinematic.play({x:this.x,y:this.y,title:'КУРЬЕР 38 · ПОСЛЕДНИЙ ЦИЛИНДР',speaker:'c38',setFlags:['c38_met'],lines:C38_LAST});
+    }else if(d.kind==='phono'){
+      /* игла по дорожке: шорох и строка о том, что механизм охранял */
+      gs.flag('ph_'+d.key);const P=PHONO[d.key];game.audio.phono(clamp(P.t.length*0.05,2.5,6));
+      game.hud.say(P.t,'ПОСЛЕДНЯЯ ФОНОГРАММА · '+d.name);game.hud.capT0=7;
+      w.interactables=w.interactables.filter(i=>i!==this);
+    }else if(d.kind==='hubtalk'){
+      game.cinematic.play({x:this.x,y:this.y,title:d.who==='pm'?'ПОЧТМЕЙСТЕР':'САДОВНИК',speaker:d.who==='pm'?'postmaster':'gardener',lines:HubNPC.lines(game,d.who)});
     }else if(d.kind==='trialpost'){game.trials.arm(w,this);
     }else if(d.kind==='trialbell'){const r=game.trials.rec(w.room.id),T=TRIALS[w.room.id];
       game.hud.say('ЛУЧШЕЕ '+fmtT(r.best)+' · НОРМА '+fmtT(T&&T.par)+(gs.flags['trial_'+w.room.id]?' · СДАНО':''),T?T.n:'');
@@ -86,7 +111,7 @@ class Interactable{
       w.interactables=w.interactables.filter(i=>i!==this);
     }else if(d.kind==='talk'){
       if(!gs.flags[d.flag])game.salvage.collect(d);
-      else game.cinematic.play({x:d.x,y:d.y,title:d.title,lines:d.again});
+      else game.cinematic.play({x:d.x,y:d.y,title:d.title,speaker:d.speaker,lines:d.again});
     }else if(d.kind==='salvage'||d.kind==='salvageBlocked'){
       if(d.kind==='salvageBlocked'&&!gs.has('pulse')){
         game.hud.say('БАЛКУ НЕ СДВИНУТЬ РУКАМИ. НУЖЕН ИМПУЛЬС РЕЗАКА.','');game.audio.hitMetal();return;}
@@ -94,10 +119,13 @@ class Interactable{
   }
   draw(c,t,gs){
     const d=this.def,live=this.canUse(gs);
-    if(!live&&d.kind!=='lever'&&d.kind!=='valve'&&d.kind!=='mapplate')return;
+    if(!live&&d.kind!=='lever'&&d.kind!=='valve'&&d.kind!=='mapplate'&&d.kind!=='c38')return;
     if(d.kind==='station'){drawStation(c,this,t,gs);return;}
     if(d.kind==='postmaster')return;
     if(d.kind==='trialpost'){drawTrialPost(c,this,t,gs);return;}
+    if(d.kind==='stash'){drawStash(c,this,t);return;}
+    if(d.kind==='phono'){drawPhono(c,this,t);return;}
+    if(d.kind==='c38'){drawC38(c,this,t,live);return;}
     if(d.kind==='trialbell'){drawTrialBell(c,this,t,gs);return;}
     const p=live?0.5+0.5*Math.sin(t*3):0;
     /* 0 → 1: рукоять/штурвал доворачивается за доли секунды после E */
@@ -147,7 +175,7 @@ class Interactable{
     }else if(d.kind==='broadcast'){
       c.fillStyle=rgba('#69d68f',0.15+0.12*p);c.beginPath();c.arc(this.x,this.y-1.0,1.4,0,TAU);c.fill();
       game.renderer.glowAdd(this.x,this.y-1.0,1.6,'#69d68f',0.3+0.2*p);
-    }else if(d.kind==='talk'){
+    }else if(d.kind==='talk'||d.kind==='hubtalk'){
       /* «…» над головой: с ним можно поговорить */
       const hy=this.y-2.35+Math.sin(t*2)*0.05;
       c.fillStyle='rgba(12,10,8,.75)';rr(c,this.x-0.42,hy-0.2,0.84,0.4,0.16);c.fill();
@@ -168,8 +196,14 @@ class Pushable{
   constructor(def,world){Object.assign(this,def);this.world=world;this.vx=0;this.vy=0;
     this.pushed=!!def.pushed;this.defY=def.y;this.t=0;this.maxHp=def.hp||1;this.hp=this.maxHp;this.hitT=0;}
   rect(){return {x:this.x,y:this.y,w:this.w,h:this.h};}
-  /* решётка: удар гнёт прутья, на последнем ударе она вылетает */
-  strike(dir){
+  /* решётка: удар гнёт прутья, на последнем ударе она вылетает; ложная стена — глухо, крошится */
+  strike(dir,heavy){
+    if(this.kind==='crack'&&!this.pushed){const g=this.world.game;this.hp-=heavy?3:1;this.hitT=0.22;
+      g.audio.tone(96,0.32,'triangle',0.06,70);g.audio.mat('ply',0.5);g.camera.addShake(0.25);g.hitstop(CFG.hsMelee);
+      g.particles.burst(this.x+this.w/2,this.world.player.cy,10,{kind:'debris',col:'#6a5a4a',spd:4,life:0.6,size:0.07,g:20});
+      g.particles.burst(this.x+this.w/2,this.world.player.cy,6,{kind:'dust',col:'#a89a86',spd:1.6,life:1.0,size:0.2,grow:0.8,drag:1.5});
+      if(this.hp<=0){this.world.breakPushable(this,dir);g.audio.tone(70,0.6,'triangle',0.05,40);}
+      return true;}
     if(this.kind!=='grate'||this.pushed)return false;
     const g=this.world.game;this.hp--;this.hitT=0.18;this.bend=(this.bend||0)+dir;
     g.audio.hitMetal();g.camera.addShake(0.3);g.hitstop(CFG.hsMelee);
@@ -179,6 +213,14 @@ class Pushable{
   }
   update(dt){
     this.t+=dt;if(this.hitT>0)this.hitT-=dt;
+    /* сквозняк из трещины: пыль тянет наружу, вблизи — тонкий свист */
+    if(this.kind==='crack'&&!this.pushed){const W=this.world,p=W.player,g=W.game;if(!p)return;
+      const d=Math.abs(p.cx-(this.x+this.w/2))+Math.abs(p.cy-(this.y+this.h/2))*0.5;
+      if(d<16&&Math.random()<dt*2.2){const out=this.x<W.room.w/2?1:-1;
+        g.particles.spawn({kind:'dust',x:this.x+this.w/2+out*0.2,y:this.y+0.3+Math.random()*(this.h-0.6),vx:out*(0.8+Math.random()*0.8),vy:(Math.random()-0.5)*0.3,
+          life:1.6,size:0.04,col:'#d8d0c0',drag:0.6,a:0.5});}
+      this.whT=(this.whT||0)-dt;if(d<4.5&&this.whT<=0){this.whT=3.2+Math.random()*1.5;g.audio.tone(1280+Math.random()*200,0.9,'sine',0.006,1180);}
+      return;}
     if(this.kind==='counterweight'){const a=this.world.anims.blast;
       this.y=this.defY+2.6*(a?EZ.in(seg01(a.t,0.25,2.05)):(this.pushed?1:0));return;}
     if(this.kind!=='core'||this.pushed)return;
@@ -285,6 +327,18 @@ class Pushable{
       c.restore();
       if(this.hitT>0){c.save();c.globalCompositeOperation='lighter';c.fillStyle=rgba('#ffcf7a',this.hitT*2);
         c.fillRect(this.x-0.1,this.y,this.w+0.2,this.h);c.restore();}
+    }else if(this.kind==='crack'){
+      /* ложная стена: та же кладка, что и вокруг, но с трещиной и тёмной щелью; удары её крошат */
+      const dmg=1-this.hp/this.maxHp,sh=this.hitT>0?(Math.random()-0.5)*0.06:0;
+      c.save();c.translate(sh,0);
+      Kit.plate(c,this.x,this.y,this.w,this.h,this.mat||'concrete',(this.id.length*31)|0,{rust:0.4});
+      c.strokeStyle='rgba(12,10,8,.85)';c.lineWidth=0.035+dmg*0.03;c.lineCap='round';
+      const cx=this.x+this.w/2;c.beginPath();c.moveTo(cx-0.05,this.y+0.1);
+      for(let i=1;i<=6;i++){c.lineTo(cx+((i%2)?0.11:-0.09)*(1+dmg),this.y+this.h*i/6.2);}c.stroke();
+      c.beginPath();c.moveTo(cx+0.06,this.y+this.h*0.35);c.lineTo(cx+0.17,this.y+this.h*0.42);c.moveTo(cx-0.05,this.y+this.h*0.7);c.lineTo(cx-0.16,this.y+this.h*0.78);c.stroke();
+      if(dmg>0){c.fillStyle='rgba(8,6,4,'+(0.3+dmg*0.4)+')';c.fillRect(cx-0.05*dmg,this.y+this.h*0.25,0.1*dmg,this.h*0.5);}
+      c.restore();
+      if(this.hitT>0){c.save();c.globalCompositeOperation='lighter';c.fillStyle=rgba('#ffcf7a',this.hitT*1.5);c.fillRect(this.x,this.y,this.w,this.h);c.restore();}
     }else if(this.kind==='core'){
       Kit.leadCore(c,this.x+this.w/2,this.y+this.h/2,this.w*0.52);
       const p=0.5+0.5*Math.sin(t*3);

@@ -41,6 +41,7 @@ z3_apiary:gs=>({id:'z3_apiary',zone:'eden',sub:'apiary',name:'ПАСЕКА',w:46
       rr(c,x+0.05,y+k+0.05,3.9,0.9,0.1);c.fill();c.fillStyle='#2a1a08';c.fillRect(x+1.6,y+k+0.6,0.8,0.1);}
       Kit.plate(c,12,11.7,4,0.3,'brass',1011,{});
       c.fillStyle='rgba(120,80,20,.8)';rr(c,0.5,3.8,3.4,2.8,0.6);c.fill();SA.honeycomb(c,0.6,4,3.2,2.4,0.4,'#c9a227','rgba(255,220,120,.8)',r,0.3);};
+    RB.niche(R,gs,'n_apiary','l',24,'marble',{title:'ЗАНАЧКА ПАСЕЧНИКА',text:'СОТЫ, ЗАЛИТЫЕ ВОСКОМ, И ЛОЖКА. ЕЛ ТАЙКОМ ОТ НОРМЫ.'});
   }}),
 /* Корневая галерея: под садами — земля, корни, светящиеся грибы. Свинцовая заглушка в стене. */
 z3_roots:gs=>({id:'z3_roots',zone:'eden',sub:'roots',name:'КОРНЕВАЯ ГАЛЕРЕЯ',w:58,h:22,
@@ -85,6 +86,7 @@ z3_canal:gs=>({id:'z3_canal',zone:'eden',sub:'irrigation',name:'ОРОСИТЕЛ
     R.extraGame=(c,L,r)=>{for(const m of R.magnetRects){Kit.craneGirder(c,m.x,m.y-1.2,m.w,1.2);Kit.magnetRivets(c,m.x,m.y,m.w);}
       Kit.plate(c,28,7.9,4,0.3,'brass',1021,{});
       Kit.sign(c,52,9.4,4,0.85,'ГЕРБАРИЙ →','#5a7a3a','#f0f0e0',1022);};
+    RB.stash(R,gs,{id:'s_canal',x:30,y:7.6,title:'ЛЕЙКА С ДВОЙНЫМ ДНОМ',text:'В ДНЕ — ЭЛЕКТРОДЫ И ЗАПИСКА: «КАНАЛ ТЕЧЁТ ВВЕРХ. ПРОВЕРЯЛ ТРИЖДЫ».'});
   }}),
 /* Гербарий: тишина, стеклянные шкафы с засушенными листьями. Каталог Эдема (№18). Фонарь. */
 z3_herbarium:gs=>({id:'z3_herbarium',zone:'eden',sub:'herbarium',name:'ГЕРБАРИЙ',w:44,h:18,
@@ -119,6 +121,8 @@ z3_sunhall:gs=>({id:'z3_sunhall',zone:'eden',sub:'sunhall',name:'ЗАЛ ЛАМП
     R.lights=[lit(26,3,14,'#fff6d8',0.85),lit(10,24,8,'#fff2c0',0.55),lit(40,14,8,'#fff2c0',0.55)];
     R.emitters=[{type:'dust',rate:16},{type:'leaf',rate:1.5}];
     R.extraGame=(c,L,r)=>{Kit.sign(c,2,24,4.2,0.85,'ГРАФИК СВЕТА · 14/10','#5a7a3a','#f0f0e0',1041);};
+    /* за трещиной у правой стены — заначка Курьера 38 */
+    RB.niche(R,gs,'n_sunhall','r',29,'marble',{c38:true,lines:["ПЛАТОК, В НЁМ — ПРОРОСШИЕ СЕМЕНА.","ПРИПИСКА: «ПРОРАСТАЮТ И ПОД ЛАМПАМИ, И БЕЗ НИХ. ЗНАЧИТ, СВЕТ ЕСТЬ И НАВЕРХУ»."]});
   }}),
 /* Сарай Корчевателя: инструменты, ящики гербицида; на крюке — форменная куртка Курьера 38. */
 z3_shed:gs=>({id:'z3_shed',zone:'eden',sub:'shed',name:'САРАЙ КОРЧЕВАТЕЛЯ',w:32,h:14,quiet:true,

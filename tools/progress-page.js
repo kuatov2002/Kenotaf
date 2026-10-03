@@ -18,8 +18,9 @@ window.ProgressProbe={
         if(d.kind==='salvage'||d.kind==='lever'||d.kind==='valve'||d.kind==='gauge'||d.kind==='wheel')can=!game.gs.flags[d.flag];
         else if(d.kind==='lore')can=!game.gs.loreIds[d.loreId];
         else if(d.kind==='talk')can=!game.gs.flags[d.flag];
+        else if(d.kind==='stash')can=!game.gs.flags['stash_'+d.id];
         return {i,kind:d.kind,flag:d.flag||null,ability:d.ability||null,upgrade:d.upgrade||null,loreId:d.loreId||null,
-          need:d.need||null,can,title:d.title||d.label||d.kind};});
+          need:d.need||null,can,title:d.title||d.label||d.kind,id:d.id||null};});
       return {id,w:R.w,h:R.h,
         doors:R.doors.map((d,i)=>({i,to:d.to||null,label:d.label||'',locked:game.gates.doorLocked(d),latch:d.latch||null,latchHere:!!d.latchHere,
           oneway:d.oneway||null})),
